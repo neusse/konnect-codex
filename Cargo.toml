@@ -1,6 +1,6 @@
 [package]
 name = "konnect-codex"
-version = "0.1.4"
+version = "0.5.1"
 edition = "2021"
 rust-version = "1.85"
 authors = ["Konnect contributors"]
@@ -9,7 +9,7 @@ description = "Reversible Codex companion installer for Konnect"
 readme = "README.md"
 repository = "https://github.com/neusse/konnect-codex"
 homepage = "https://github.com/neusse/konnect-codex"
-include = ["src/**", "template/**", "docs/assets/**", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
+include = [".codex/**", "src/**", "template/**", "docs/assets/**", "build.rs", "compatibility.json", "Cargo.toml", "Cargo.lock", "README.md", "RELEASE_NOTES.md", "LICENSE"]
 
 [dependencies]
 anyhow = "1"

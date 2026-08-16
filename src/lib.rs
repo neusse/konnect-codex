@@ -26,7 +26,9 @@ const PLUGIN_MANIFEST_TEMPLATE: &str =
     include_str!("../template/konnect-codex/.codex-plugin/plugin.json");
 const MCP_TEMPLATE: &str = include_str!("../template/konnect-codex/.mcp.json");
 const HOOKS_TEMPLATE: &str = include_str!("../template/konnect-codex/hooks/hooks.json");
-const OVERLAY_SKILL: &str = include_str!("../template/konnect-codex/skills/konnect-codex/SKILL.md");
+const COMPATIBILITY_JSON: &str = include_str!("../compatibility.json");
+
+include!(concat!(env!("OUT_DIR"), "/reviewed_assets.rs"));
 
 #[derive(Clone, Debug)]
 pub struct CompanionPaths {
@@ -73,6 +75,7 @@ pub struct SyncOptions {
     pub adapter_binary: PathBuf,
     pub activate: bool,
     pub dry_run: bool,
+    pub prefer_native_skills: bool,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -91,6 +94,14 @@ impl OperationReport {
 enum InstallState {
     Enabled,
     Disabled,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum SkillMode {
+    #[default]
+    Reviewed,
+    NativePreferred,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -121,6 +132,10 @@ struct InstallManifest {
     state: InstallState,
     marketplace_created: bool,
     #[serde(default)]
+    skill_mode: SkillMode,
+    #[serde(default)]
+    supported_konnect_version: String,
+    #[serde(default)]
     hook_contexts: BTreeMap<String, String>,
     files: Vec<ManagedFile>,
 }
@@ -134,44 +149,35 @@ struct GeneratedFile {
 
 #[derive(Clone, Debug)]
 struct SourceAssets {
-    root: PathBuf,
     skills: Vec<(String, PathBuf)>,
     agents: Vec<PathBuf>,
 }
 
-#[derive(Clone, Debug)]
-struct SourceHook {
-    name: String,
-    event: String,
-    matcher: Option<String>,
-    context: String,
-}
-
-#[derive(Serialize)]
-struct CodexAgent {
-    name: String,
-    description: String,
-    developer_instructions: String,
+#[derive(Clone, Debug, Deserialize)]
+struct Compatibility {
+    konnect_version: String,
+    konnect_commit: String,
+    guidance_sha256: String,
+    hook_sha256: String,
 }
 
 pub fn sync(options: SyncOptions) -> Result<OperationReport> {
     validate_executable(&options.konnect_binary, "Konnect")?;
     validate_executable(&options.adapter_binary, "konnect-codex")?;
 
-    let assets = discover_assets(options.source.as_deref(), &options.paths.home)?;
-    let source_hooks = discover_source_hooks(&assets.root, &options.konnect_binary)?;
-    let native_skills = discover_native_skills(&assets, &options.paths);
+    let compatibility = compatibility()?;
+    if let Some(source) = options.source.as_deref() {
+        verify_guidance_source(source, &options.konnect_binary, &compatibility)?;
+    }
+    let native_skills = if options.prefer_native_skills {
+        discover_native_skills(&options.paths)
+    } else {
+        BTreeSet::new()
+    };
     let old_manifest = load_manifest_if_present(&options.paths.manifest_path)?;
     let generated_config = render_config(options.config_source.as_deref())?;
-    let fingerprint = source_fingerprint(
-        &assets,
-        &source_hooks,
-        &native_skills,
-        generated_config.as_bytes(),
-    )?;
+    let fingerprint = reviewed_fingerprint(&native_skills, generated_config.as_bytes());
     let generated = generate_files(
-        &assets,
-        &source_hooks,
         &native_skills,
         &options.paths,
         &options.adapter_binary,
@@ -183,25 +189,16 @@ pub fn sync(options: SyncOptions) -> Result<OperationReport> {
 
     let mut report = OperationReport::default();
     report.push(format!(
-        "Source: {} ({} skills, {} agents)",
-        assets.root.display(),
-        assets.skills.len(),
-        assets.agents.len()
+        "Reviewed for Konnect v{} ({})",
+        compatibility.konnect_version, compatibility.konnect_commit
     ));
     report.push(format!(
-        "Skills: {} native, {} companion copies",
+        "Skills: {} native, {} reviewed companion copies",
         native_skills.len(),
-        assets.skills.len().saturating_sub(native_skills.len())
+        reviewed_domain_skill_count().saturating_sub(native_skills.len())
     ));
     report.push("Codex profile: complete eager MCP catalogue".to_string());
-    report.push(format!(
-        "Translated hooks: {}",
-        if source_hooks.is_empty() {
-            "1 built-in fallback".to_string()
-        } else {
-            source_hooks.len().to_string()
-        }
-    ));
+    report.push("Reviewed hooks: 1".to_string());
 
     if options.dry_run {
         for file in &generated {
@@ -244,7 +241,16 @@ pub fn sync(options: SyncOptions) -> Result<OperationReport> {
     let mut manifest = InstallManifest {
         schema_version: 1,
         adapter_version: env!("CARGO_PKG_VERSION").to_string(),
-        source_root: assets.root,
+        source_root: options
+            .source
+            .as_ref()
+            .map(|path| canonical_or_original(path))
+            .unwrap_or_else(|| {
+                PathBuf::from(format!(
+                    "embedded-konnect-{}",
+                    compatibility.konnect_version
+                ))
+            }),
         source_fingerprint: fingerprint,
         konnect_binary: canonical_or_original(&options.konnect_binary),
         config_source: options
@@ -258,10 +264,13 @@ pub fn sync(options: SyncOptions) -> Result<OperationReport> {
             .as_ref()
             .map(|old| old.marketplace_created)
             .unwrap_or(marketplace_created),
-        hook_contexts: source_hooks
-            .iter()
-            .map(|hook| (hook.name.clone(), hook.context.clone()))
-            .collect(),
+        skill_mode: if options.prefer_native_skills {
+            SkillMode::NativePreferred
+        } else {
+            SkillMode::Reviewed
+        },
+        supported_konnect_version: compatibility.konnect_version,
+        hook_contexts: BTreeMap::new(),
         files: generated
             .iter()
             .map(|file| ManagedFile {
@@ -449,6 +458,11 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
     let mut report = OperationReport::default();
     report.push(format!("State: {:?}", manifest.state).to_ascii_lowercase());
     report.push(format!("Source: {}", manifest.source_root.display()));
+    report.push(format!("Skill mode: {:?}", manifest.skill_mode).to_ascii_lowercase());
+    report.push(format!(
+        "Supported Konnect: {}",
+        manifest.supported_konnect_version
+    ));
     report.push(format!(
         "Source fingerprint: {}",
         manifest.source_fingerprint
@@ -494,10 +508,11 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
                 manifest.konnect_binary.display()
             )
         })?;
-    report.push(format!(
-        "Konnect: {}",
-        String::from_utf8_lossy(&version.stdout).trim()
-    ));
+    let installed_version = String::from_utf8_lossy(&version.stdout).trim().to_string();
+    let expected_version = format!("konnect {}", compatibility()?.konnect_version);
+    let compatible_version = installed_version == expected_version;
+    report.push(format!("Konnect: {installed_version}"));
+    report.push(format!("Version compatibility: {compatible_version}"));
 
     let marketplace_ok = marketplace_has_owned_entry(&paths.marketplace_path)?;
     report.push(format!("Marketplace entry: {marketplace_ok}"));
@@ -508,7 +523,7 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
 
     report.messages.extend(native_status(paths)?.messages);
     report.push(
-        if healthy_count == manifest.files.len() && eager && marketplace_ok {
+        if healthy_count == manifest.files.len() && eager && marketplace_ok && compatible_version {
             "Health: PASS".to_string()
         } else {
             "Health: FAIL".to_string()
@@ -541,13 +556,12 @@ pub fn native_status(paths: &CompanionPaths) -> Result<OperationReport> {
         NATIVE_SKILLS.len(),
         marker.exists()
     ));
-    if skill_count == NATIVE_SKILLS.len() && native_agent_count >= 2 {
+    if skill_count > 0 {
         report.push(
-            "Native support may be approaching parity; verify hooks and eager tool discovery before uninstalling the companion.",
+            "Native skills are installed. The companion uses its reviewed skills by default; uninstall native Codex guidance to avoid duplicate names, or sync with --prefer-native-skills.",
         );
     } else {
-        report
-            .push("Native support is partial; the companion is still adding material capability.");
+        report.push("The reviewed companion skills are the active Codex guidance.");
     }
     Ok(report)
 }
@@ -689,81 +703,10 @@ fn discover_assets(source: Option<&Path>, home: &Path) -> Result<SourceAssets> {
             root.display()
         );
     }
-    Ok(SourceAssets {
-        root,
-        skills,
-        agents,
-    })
-}
-
-fn discover_source_hooks(root: &Path, konnect_binary: &Path) -> Result<Vec<SourceHook>> {
-    let settings_path = root.join("settings.json");
-    if !settings_path.is_file() {
-        return Ok(Vec::new());
-    }
-    let settings: JsonValue = serde_json::from_str(&fs::read_to_string(settings_path)?)?;
-    let Some(events) = settings.get("hooks").and_then(JsonValue::as_object) else {
-        return Ok(Vec::new());
-    };
-    let mut hooks = Vec::new();
-    let mut seen = BTreeSet::new();
-    for (event, groups) in events {
-        let Some(groups) = groups.as_array() else {
-            continue;
-        };
-        for group in groups {
-            let matcher = group
-                .get("matcher")
-                .and_then(JsonValue::as_str)
-                .map(str::to_string);
-            let Some(handlers) = group.get("hooks").and_then(JsonValue::as_array) else {
-                continue;
-            };
-            for handler in handlers {
-                let Some(command) = handler.get("command").and_then(JsonValue::as_str) else {
-                    continue;
-                };
-                if !command.to_ascii_lowercase().contains("konnect") {
-                    continue;
-                }
-                let words: Vec<&str> = command.split_whitespace().collect();
-                let Some(skill_index) = words.iter().position(|word| *word == "skill") else {
-                    continue;
-                };
-                let Some(name) = words.get(skill_index + 1) else {
-                    continue;
-                };
-                let name = name.trim_matches(['\'', '"']).to_string();
-                let key = format!("{event}\0{}\0{name}", matcher.as_deref().unwrap_or(""));
-                if !seen.insert(key) {
-                    continue;
-                }
-                let output = Command::new(konnect_binary)
-                    .args(["skill", &name])
-                    .output()
-                    .with_context(|| format!("could not read Konnect hook guidance '{name}'"))?;
-                if !output.status.success() {
-                    bail!(
-                        "Konnect could not provide hook guidance '{name}': {}",
-                        String::from_utf8_lossy(&output.stderr)
-                    );
-                }
-                hooks.push(SourceHook {
-                    name,
-                    event: event.clone(),
-                    matcher: matcher.clone(),
-                    context: String::from_utf8(output.stdout)?,
-                });
-            }
-        }
-    }
-    hooks.sort_by(|a, b| (&a.event, &a.name).cmp(&(&b.event, &b.name)));
-    Ok(hooks)
+    Ok(SourceAssets { skills, agents })
 }
 
 fn generate_files(
-    assets: &SourceAssets,
-    source_hooks: &[SourceHook],
     native_skills: &BTreeSet<String>,
     paths: &CompanionPaths,
     adapter_binary: &Path,
@@ -793,32 +736,6 @@ fn generate_files(
     });
 
     let mut hooks: JsonValue = serde_json::from_str(HOOKS_TEMPLATE)?;
-    if !source_hooks.is_empty() {
-        let events = hooks
-            .get_mut("hooks")
-            .and_then(JsonValue::as_object_mut)
-            .context("hook template is missing its hooks object")?;
-        events.remove("PreToolUse");
-        for source_hook in source_hooks {
-            let groups = events
-                .entry(source_hook.event.clone())
-                .or_insert_with(|| json!([]))
-                .as_array_mut()
-                .context("generated hook event is not an array")?;
-            let mut group = json!({
-                "hooks": [{
-                    "type": "command",
-                    "command": format!("konnect-codex hook konnect-skill {}", source_hook.name),
-                    "timeout": 5,
-                    "statusMessage": format!("Loading Konnect guidance: {}", source_hook.name)
-                }]
-            });
-            if let Some(matcher) = &source_hook.matcher {
-                group["matcher"] = json!(matcher);
-            }
-            groups.push(group);
-        }
-    }
     if let Some(events) = hooks.get_mut("hooks").and_then(JsonValue::as_object_mut) {
         for groups in events.values_mut().filter_map(JsonValue::as_array_mut) {
             for group in groups {
@@ -845,51 +762,27 @@ fn generate_files(
         role: ManagedRole::Plugin,
     });
 
-    files.push(GeneratedFile {
-        path: paths
-            .plugin_dir
-            .join("skills")
-            .join("konnect-codex")
-            .join("SKILL.md"),
-        content: OVERLAY_SKILL.as_bytes().to_vec(),
-        role: ManagedRole::Plugin,
-    });
-
-    for (name, skill_dir) in &assets.skills {
-        if native_skills.contains(name) {
+    for (relative, content) in REVIEWED_SKILL_FILES {
+        let name = Path::new(relative)
+            .components()
+            .next()
+            .context("reviewed skill path has no skill name")?
+            .as_os_str()
+            .to_string_lossy();
+        if name != PLUGIN_NAME && native_skills.contains(name.as_ref()) {
             continue;
         }
-        for (relative_path, source_path) in walk_files(skill_dir)? {
-            let content = fs::read(&source_path)?;
-            let content = if relative_path == Path::new("SKILL.md") {
-                transform_skill(&String::from_utf8(content)?)
-                    .as_bytes()
-                    .to_vec()
-            } else {
-                content
-            };
-            files.push(GeneratedFile {
-                path: paths
-                    .plugin_dir
-                    .join("skills")
-                    .join(name)
-                    .join(relative_path),
-                content,
-                role: ManagedRole::Plugin,
-            });
-        }
+        files.push(GeneratedFile {
+            path: paths.plugin_dir.join("skills").join(relative),
+            content: content.to_vec(),
+            role: ManagedRole::Plugin,
+        });
     }
 
-    let mut used_agent_names = BTreeSet::new();
-    for source_path in &assets.agents {
-        let raw = fs::read_to_string(source_path)?;
-        let (file_name, converted) = convert_agent(&raw)?;
-        if !used_agent_names.insert(file_name.clone()) {
-            bail!("two source agents convert to the same Codex filename: {file_name}");
-        }
+    for (file_name, content) in REVIEWED_AGENT_FILES {
         files.push(GeneratedFile {
             path: paths.agents_dir.join(file_name),
-            content: converted.into_bytes(),
+            content: content.to_vec(),
             role: ManagedRole::Agent,
         });
     }
@@ -902,80 +795,17 @@ fn generate_files(
     Ok(files)
 }
 
-fn discover_native_skills(assets: &SourceAssets, paths: &CompanionPaths) -> BTreeSet<String> {
+fn discover_native_skills(paths: &CompanionPaths) -> BTreeSet<String> {
     let marker = paths.home.join(".konnect").join(".installed-codex");
     if !marker.is_file() {
         return BTreeSet::new();
     }
 
     let skills_dir = paths.home.join(".agents").join("skills");
-    assets
-        .skills
-        .iter()
-        .filter(|(name, _)| skills_dir.join(name).join("SKILL.md").is_file())
-        .map(|(name, _)| name.clone())
-        .collect()
-}
-
-fn transform_skill(raw: &str) -> String {
-    raw.lines()
-        .filter(|line| !line.trim_start().starts_with("argument-hint:"))
-        .collect::<Vec<_>>()
-        .join("\n")
-        .replace("guides Claude", "guides Codex")
-        .replace("Claude through", "Codex through")
-        .replace("Claude to", "Codex to")
-        .replace("Claude's", "Codex's")
-}
-
-fn convert_agent(raw: &str) -> Result<(String, String)> {
-    let stripped = raw
-        .strip_prefix("---")
-        .context("agent is missing YAML frontmatter")?;
-    let (frontmatter, body) = stripped
-        .split_once("\n---")
-        .context("agent YAML frontmatter is not terminated")?;
-    let fields = parse_simple_frontmatter(frontmatter);
-    let source_name = fields
-        .get("name")
-        .context("agent frontmatter is missing name")?;
-    let description = fields
-        .get("description")
-        .context("agent frontmatter is missing description")?
-        .trim_matches('"')
-        .to_string();
-
-    let stem = source_name
-        .trim_end_matches("-agent")
-        .trim_start_matches("kicad-")
-        .replace("schematic-build", "schematic-builder")
-        .replace("design-review", "design-reviewer")
-        .replace('-', "_");
-    let name = format!("konnect_{stem}");
-    let file_name = format!("{name}.toml");
-
-    let mut instructions = body.trim_start_matches(['\r', '\n']).to_string();
-    instructions = instructions.replace(
-        "Load the required toolsets immediately:",
-        "The Codex companion eagerly exposes all Konnect toolsets. Confirm the required tools are visible; use these router calls only when running against a lazy server:",
-    );
-    instructions = instructions.replace(
-        "If the project involves PCB layout, also load:",
-        "If the project involves PCB layout and the server is lazy, also load:",
-    );
-    let prelude = "Use Konnect MCP tools for every KiCad-source mutation. Never edit .kicad_sch, .kicad_pcb, .kicad_pro, .kicad_sym, .kicad_mod, fp-lib-table, or sym-lib-table as text. The companion normally exposes every tool schema eagerly, so call visible domain tools directly. Treat the supplied quality bars as engineering defaults and reconcile them with the user's requirements and component datasheets. Validate every requested artifact before completion, and report unsupported server capabilities explicitly.\n\n";
-    let agent = CodexAgent {
-        name,
-        description,
-        developer_instructions: format!("{prelude}{instructions}"),
-    };
-    Ok((file_name, toml::to_string_pretty(&agent)?))
-}
-
-fn parse_simple_frontmatter(raw: &str) -> BTreeMap<String, String> {
-    raw.lines()
-        .filter_map(|line| line.split_once(':'))
-        .map(|(key, value)| (key.trim().to_string(), value.trim().to_string()))
+    reviewed_skill_names()
+        .into_iter()
+        .filter(|name| name != PLUGIN_NAME)
+        .filter(|name| skills_dir.join(name).join("SKILL.md").is_file())
         .collect()
 }
 
@@ -1006,37 +836,133 @@ fn render_config(source: Option<&Path>) -> Result<String> {
     ))
 }
 
-fn source_fingerprint(
-    assets: &SourceAssets,
-    source_hooks: &[SourceHook],
-    native_skills: &BTreeSet<String>,
-    config: &[u8],
-) -> Result<String> {
+fn compatibility() -> Result<Compatibility> {
+    Ok(serde_json::from_str(COMPATIBILITY_JSON)?)
+}
+
+pub fn audit_guidance(
+    source: Option<&Path>,
+    konnect_binary: &Path,
+    home: &Path,
+) -> Result<OperationReport> {
+    validate_executable(konnect_binary, "Konnect")?;
+    let compatibility = compatibility()?;
+    let assets = discover_assets(source, home)?;
+    let guidance = guidance_fingerprint(&assets)?;
+    let hook = hook_fingerprint(konnect_binary)?;
+    let version = command_version(konnect_binary)?;
+    let expected_version = format!("konnect {}", compatibility.konnect_version);
+
+    if version != expected_version
+        || guidance != compatibility.guidance_sha256
+        || hook != compatibility.hook_sha256
+    {
+        bail!(
+            "Konnect guidance drift detected.\n  version: {version} (expected {expected_version})\n  guidance: {guidance} (expected {})\n  hook: {hook} (expected {})\nReview the upstream changes before publishing a matching konnect-codex release.",
+            compatibility.guidance_sha256,
+            compatibility.hook_sha256
+        );
+    }
+
+    let mut report = OperationReport::default();
+    report.push(format!("Konnect version: {version}"));
+    report.push(format!("Reviewed commit: {}", compatibility.konnect_commit));
+    report.push(format!("Guidance fingerprint: {guidance}"));
+    report.push(format!("Hook fingerprint: {hook}"));
+    report.push("Compatibility audit: PASS");
+    Ok(report)
+}
+
+fn verify_guidance_source(
+    source: &Path,
+    konnect_binary: &Path,
+    compatibility: &Compatibility,
+) -> Result<()> {
+    let assets = discover_assets(Some(source), Path::new("."))?;
+    let guidance = guidance_fingerprint(&assets)?;
+    let hook = hook_fingerprint(konnect_binary)?;
+    if guidance != compatibility.guidance_sha256 || hook != compatibility.hook_sha256 {
+        bail!(
+            "the requested source does not match reviewed Konnect v{}; run `konnect-codex audit --source {}` for details",
+            compatibility.konnect_version,
+            source.display()
+        );
+    }
+    Ok(())
+}
+
+fn command_version(konnect_binary: &Path) -> Result<String> {
+    let output = Command::new(konnect_binary).arg("--version").output()?;
+    if !output.status.success() {
+        bail!(
+            "Konnect --version failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    Ok(String::from_utf8(output.stdout)?.trim().to_string())
+}
+
+fn hook_fingerprint(konnect_binary: &Path) -> Result<String> {
+    let output = Command::new(konnect_binary)
+        .args(["skill", "pre-pcb-ipc"])
+        .output()?;
+    if !output.status.success() {
+        bail!(
+            "Konnect could not provide pre-pcb-ipc guidance: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    Ok(sha256_bytes(&normalize_newlines(&output.stdout)))
+}
+
+fn guidance_fingerprint(assets: &SourceAssets) -> Result<String> {
     let mut hasher = Sha256::new();
     for (name, dir) in &assets.skills {
         hasher.update(name.as_bytes());
         for (relative, path) in walk_files(dir)? {
-            hasher.update(relative.to_string_lossy().as_bytes());
-            hasher.update(fs::read(path)?);
+            let relative = relative.to_string_lossy().replace('\\', "/");
+            hasher.update(relative.as_bytes());
+            hasher.update(normalize_newlines(&fs::read(path)?));
         }
     }
     for path in &assets.agents {
         hasher.update(path.file_name().unwrap().to_string_lossy().as_bytes());
-        hasher.update(fs::read(path)?);
+        hasher.update(normalize_newlines(&fs::read(path)?));
     }
-    for hook in source_hooks {
-        hasher.update(hook.name.as_bytes());
-        hasher.update(hook.event.as_bytes());
-        hasher.update(hook.matcher.as_deref().unwrap_or("").as_bytes());
-        hasher.update(hook.context.as_bytes());
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn reviewed_fingerprint(native_skills: &BTreeSet<String>, config: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    for (path, content) in REVIEWED_SKILL_FILES {
+        hasher.update(path.as_bytes());
+        hasher.update(normalize_newlines(content));
+    }
+    for (path, content) in REVIEWED_AGENT_FILES {
+        hasher.update(path.as_bytes());
+        hasher.update(normalize_newlines(content));
     }
     for name in native_skills {
         hasher.update(b"native-skill\0");
         hasher.update(name.as_bytes());
     }
-    hasher.update(config);
-    hasher.update(OVERLAY_SKILL.as_bytes());
-    Ok(format!("{:x}", hasher.finalize()))
+    hasher.update(normalize_newlines(config));
+    format!("{:x}", hasher.finalize())
+}
+
+fn reviewed_skill_names() -> BTreeSet<String> {
+    REVIEWED_SKILL_FILES
+        .iter()
+        .filter_map(|(path, _)| Path::new(path).components().next())
+        .map(|component| component.as_os_str().to_string_lossy().into_owned())
+        .collect()
+}
+
+fn reviewed_domain_skill_count() -> usize {
+    reviewed_skill_names()
+        .into_iter()
+        .filter(|name| name != PLUGIN_NAME)
+        .count()
 }
 
 fn walk_files(root: &Path) -> Result<Vec<(PathBuf, PathBuf)>> {
@@ -1361,6 +1287,21 @@ fn sha256_bytes(content: &[u8]) -> String {
     format!("{:x}", Sha256::digest(content))
 }
 
+fn normalize_newlines(content: &[u8]) -> Vec<u8> {
+    let mut normalized = Vec::with_capacity(content.len());
+    let mut index = 0;
+    while index < content.len() {
+        if content[index] == b'\r' && content.get(index + 1) == Some(&b'\n') {
+            normalized.push(b'\n');
+            index += 2;
+        } else {
+            normalized.push(content[index]);
+            index += 1;
+        }
+    }
+    normalized
+}
+
 fn hash_file(path: &Path) -> Result<String> {
     Ok(sha256_bytes(&fs::read(path)?))
 }
@@ -1408,36 +1349,72 @@ mod tests {
     use tempfile::TempDir;
 
     #[test]
-    fn skill_conversion_is_client_neutral() {
-        let converted = transform_skill(
-            "---\nname: test\nargument-hint: \"[task]\"\n---\nThis skill guides Claude through PCB work.\n",
+    fn release_versions_are_synchronized() {
+        let compatibility = compatibility().unwrap();
+        assert_eq!(compatibility.konnect_version, env!("CARGO_PKG_VERSION"));
+
+        let manifest: JsonValue = serde_json::from_str(PLUGIN_MANIFEST_TEMPLATE).unwrap();
+        assert_eq!(
+            manifest.get("version").and_then(JsonValue::as_str),
+            Some(env!("CARGO_PKG_VERSION"))
         );
-        assert!(converted.contains("This skill guides Codex through PCB work."));
-        assert!(!converted.contains("argument-hint"));
+        assert_eq!(compatibility.guidance_sha256.len(), 64);
+        assert_eq!(compatibility.hook_sha256.len(), 64);
     }
 
     #[test]
-    fn agent_conversion_removes_claude_only_fields() {
-        let source = r#"---
-name: kicad-schematic-build-agent
-description: "Builds circuits."
-model: sonnet
-tools:
-  - mcp__konnect__*
-maxTurns: 40
----
+    fn compatibility_fingerprints_ignore_platform_newlines() {
+        assert_eq!(normalize_newlines(b"one\r\ntwo\r\n"), b"one\ntwo\n");
+        assert_eq!(normalize_newlines(b"one\ntwo\n"), b"one\ntwo\n");
+    }
 
-## Instructions
+    #[test]
+    fn reviewed_skills_are_codex_native_and_complete() {
+        let names = reviewed_skill_names();
+        assert_eq!(names.len(), NATIVE_SKILLS.len() + 1);
+        assert!(names.contains(PLUGIN_NAME));
+        for name in NATIVE_SKILLS {
+            assert!(names.contains(*name));
+        }
 
-Load the required toolsets immediately:
-`load_toolset("sch_components")`
-"#;
-        let (name, converted) = convert_agent(source).unwrap();
-        assert_eq!(name, "konnect_schematic_builder.toml");
-        assert!(converted.contains("name = \"konnect_schematic_builder\""));
-        assert!(converted.contains("eagerly exposes all Konnect toolsets"));
-        assert!(!converted.contains("sonnet"));
-        assert!(!converted.contains("maxTurns"));
+        for (path, content) in REVIEWED_SKILL_FILES {
+            let raw = std::str::from_utf8(content).unwrap();
+            if path.ends_with("SKILL.md") {
+                assert!(raw.starts_with("---"), "{path} is missing frontmatter");
+                assert!(raw.contains("\nname:"), "{path} is missing name");
+                assert!(
+                    raw.contains("\ndescription:"),
+                    "{path} is missing description"
+                );
+                assert!(
+                    !raw.contains("argument-hint:"),
+                    "{path} has Claude-only frontmatter"
+                );
+                assert!(!raw.contains("Claude"), "{path} contains Claude wording");
+            }
+        }
+    }
+
+    #[test]
+    fn reviewed_agents_are_valid_codex_toml() {
+        assert_eq!(REVIEWED_AGENT_FILES.len(), 2);
+        for (path, content) in REVIEWED_AGENT_FILES {
+            let raw = std::str::from_utf8(content).unwrap();
+            let value: toml::Value = toml::from_str(raw).unwrap();
+            assert!(
+                value.get("name").and_then(toml::Value::as_str).is_some(),
+                "{path}"
+            );
+            assert!(
+                value
+                    .get("developer_instructions")
+                    .and_then(toml::Value::as_str)
+                    .is_some(),
+                "{path}"
+            );
+            assert!(!raw.contains("sonnet"), "{path} pins a Claude model");
+            assert!(!raw.contains("maxTurns"), "{path} has Claude-only limits");
+        }
     }
 
     #[test]
@@ -1488,21 +1465,6 @@ Load the required toolsets immediately:
     fn sync_and_uninstall_are_reversible_without_touching_native_skills() {
         let temp = TempDir::new().unwrap();
         let home = temp.path().join("home");
-        let source = temp.path().join("source");
-        let skill_dir = source.join("skills").join("konnect");
-        let agent_dir = source.join("agents");
-        fs::create_dir_all(&skill_dir).unwrap();
-        fs::create_dir_all(&agent_dir).unwrap();
-        fs::write(
-            skill_dir.join("SKILL.md"),
-            "---\nname: konnect\ndescription: Test.\n---\nThis skill guides Claude through KiCad work.\n",
-        )
-        .unwrap();
-        fs::write(
-            agent_dir.join("kicad-schematic-build-agent.md"),
-            "---\nname: kicad-schematic-build-agent\ndescription: \"Build test circuits.\"\nmodel: sonnet\ntools:\n  - mcp__konnect__*\n---\n\n## Instructions\nBuild the requested circuit.\n",
-        )
-        .unwrap();
         let native_skill = home
             .join(".agents")
             .join("skills")
@@ -1524,12 +1486,13 @@ Load the required toolsets immediately:
 
         sync(SyncOptions {
             paths: paths.clone(),
-            source: Some(source),
+            source: None,
             konnect_binary: fake_konnect,
             config_source: Some(config),
             adapter_binary: adapter,
             activate: false,
             dry_run: false,
+            prefer_native_skills: false,
         })
         .unwrap();
 
@@ -1566,7 +1529,7 @@ Load the required toolsets immediately:
 
         sync(SyncOptions {
             paths: paths.clone(),
-            source: Some(temp.path().join("source")),
+            source: None,
             konnect_binary: temp.path().join(if cfg!(windows) {
                 "konnect.exe"
             } else {
@@ -1576,6 +1539,7 @@ Load the required toolsets immediately:
             adapter_binary: std::env::current_exe().unwrap(),
             activate: false,
             dry_run: false,
+            prefer_native_skills: true,
         })
         .unwrap();
 

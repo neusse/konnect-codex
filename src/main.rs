@@ -1,7 +1,7 @@
 use anyhow::{bail, Context, Result};
 use konnect_codex::{
-    disable, doctor, enable, native_status, run_hook, run_mcp, sync, uninstall, CompanionPaths,
-    OperationReport, SyncOptions,
+    audit_guidance, disable, doctor, enable, native_status, run_hook, run_mcp, sync, uninstall,
+    CompanionPaths, OperationReport, SyncOptions,
 };
 use std::env;
 use std::path::PathBuf;
@@ -22,8 +22,18 @@ fn main() -> Result<()> {
                 adapter_binary: env::current_exe()?,
                 activate: !parsed.no_activate,
                 dry_run: parsed.dry_run,
+                prefer_native_skills: parsed.prefer_native_skills,
             })?;
             print_report(report);
+        }
+        "audit" => {
+            let parsed = parse_audit_args(&args[1..])?;
+            let konnect = parsed.konnect.unwrap_or(locate_konnect()?);
+            print_report(audit_guidance(
+                parsed.source.as_deref(),
+                &konnect,
+                &paths.home,
+            )?);
         }
         "disable" => print_report(disable(&paths)?),
         "enable" => print_report(enable(&paths)?),
@@ -56,6 +66,7 @@ struct ParsedSyncArgs {
     config: Option<PathBuf>,
     no_activate: bool,
     dry_run: bool,
+    prefer_native_skills: bool,
 }
 
 fn parse_sync_args(args: &[String]) -> Result<ParsedSyncArgs> {
@@ -83,7 +94,36 @@ fn parse_sync_args(args: &[String]) -> Result<ParsedSyncArgs> {
                 parsed.dry_run = true;
                 index += 1;
             }
+            "--prefer-native-skills" => {
+                parsed.prefer_native_skills = true;
+                index += 1;
+            }
             other => bail!("unknown sync option '{other}'"),
+        }
+    }
+    Ok(parsed)
+}
+
+#[derive(Default)]
+struct ParsedAuditArgs {
+    source: Option<PathBuf>,
+    konnect: Option<PathBuf>,
+}
+
+fn parse_audit_args(args: &[String]) -> Result<ParsedAuditArgs> {
+    let mut parsed = ParsedAuditArgs::default();
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--source" => {
+                parsed.source = Some(required_path(args, index, "--source")?);
+                index += 2;
+            }
+            "--konnect" => {
+                parsed.konnect = Some(required_path(args, index, "--konnect")?);
+                index += 2;
+            }
+            other => bail!("unknown audit option '{other}'"),
         }
     }
     Ok(parsed)
@@ -165,7 +205,8 @@ fn print_help() {
     println!("Reversible, capability-complete Codex integration for Konnect.\n");
     println!("USAGE:");
     println!("  konnect-codex sync [--source <path>] [--konnect <path>] [--config <path>]");
-    println!("                       [--no-activate] [--dry-run]");
+    println!("                       [--prefer-native-skills] [--no-activate] [--dry-run]");
+    println!("  konnect-codex audit [--source <path>] [--konnect <path>]");
     println!("  konnect-codex doctor");
     println!("  konnect-codex native-status");
     println!("  konnect-codex disable");
