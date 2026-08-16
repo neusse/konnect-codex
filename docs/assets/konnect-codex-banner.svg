@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
-  <title id="title">Konnect Codex Companion</title>
+  <title id="title">Konnect Codex Plugin</title>
   <desc id="desc">A circuit-inspired bridge between KiCad, Konnect MCP, and Codex.</desc>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
@@ -61,7 +61,7 @@
     <g font-family="Inter, Segoe UI, Arial, sans-serif">
       <text x="420" y="119" fill="#8ba3b8" font-size="18" font-weight="700" letter-spacing="5">KICAD • MCP • CODEX</text>
       <text x="418" y="180" fill="#f3f8fc" font-size="54" font-weight="800" letter-spacing="-1">KONNECT</text>
-      <text x="418" y="232" fill="url(#signal)" font-size="47" font-weight="800" letter-spacing="-1">CODEX COMPANION</text>
+      <text x="418" y="232" fill="url(#signal)" font-size="47" font-weight="800" letter-spacing="-1">CODEX PLUGIN</text>
       <text x="420" y="274" fill="#afc1d0" font-size="20" font-weight="500">Full workflows today. Clean rollback when native support arrives.</text>
     </g>
 

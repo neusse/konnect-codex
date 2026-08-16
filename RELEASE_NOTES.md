@@ -1,4 +1,4 @@
-# konnect-codex v0.5.1
+# konnect-codex plugin v0.5.1
 
 This release is reviewed for
 [Konnect v0.5.1](https://github.com/mixelpixx/Konnect) at commit
@@ -19,5 +19,5 @@ place `konnect-codex` on `PATH`, run `konnect-codex sync`, and start a new Codex
 task.
 
 Konnect and its original hardware workflows are created and maintained by
-[mixelpixx](https://github.com/mixelpixx). This companion is an independent
-Codex integration.
+[mixelpixx](https://github.com/mixelpixx). This plugin is an independent Codex
+integration.
