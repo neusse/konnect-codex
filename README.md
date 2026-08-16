@@ -36,6 +36,8 @@ The plugin supplies:
 - a private Konnect configuration with `eager_toolsets = true` so clients that
   cache the first MCP tool list can see the complete tool catalogue;
 - ownership, health checks, disable/enable, and exact uninstall support.
+- a machine-enforced [guidance change policy](docs/CHANGE_POLICY.md) with
+  per-file upstream provenance, named Codex enhancements, and retirement rules.
 
 The reviewed plugin skills are authoritative by default. Do not run
 `konnect init --client codex`; that installs another set of skills with the same
@@ -153,13 +155,15 @@ Konnect's client-scoped uninstall command if you previously installed them.
 
 ## Release review process
 
-Every Konnect release is handled as a compatibility review:
+Every Konnect release is handled as a compatibility review under the
+[guidance change policy](docs/CHANGE_POLICY.md):
 
-1. Compare upstream skills, references, agents, hooks, tool names, and required
-   arguments with the previous reviewed release.
-2. Adapt client-specific wording and execution assumptions for Codex.
+1. Compare the new per-file upstream baseline with the previous release and
+   account for every changed skill, reference, agent, hook, and tool contract.
+2. Review every entry in [`policy/enhancements.json`](policy/enhancements.json):
+   port it, adapt it, or retire it only after its recorded condition is met.
 3. Run `konnect-codex audit --source <Konnect checkout>` against the pinned
-   version, commit, guidance fingerprint, and hook fingerprint.
-4. Validate skill frontmatter, agent TOML, lifecycle safety, tests, clippy, and
-   packaging on Windows, Linux, and macOS.
-5. Publish the matching tag and downloadable archives.
+   version, commit, per-file baseline, aggregate guidance, and hook fingerprint.
+4. Validate enhancement assertions, skill frontmatter, agent TOML, lifecycle
+   safety, tests, Clippy, and packaging on Windows, Linux, and macOS.
+5. Run the end-to-end KiCad benchmark before publishing matching artifacts.

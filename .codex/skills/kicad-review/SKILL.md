@@ -47,7 +47,9 @@ find_orphan_items()
 ```
 
 Finds floating wires, labels, and symbols not connected to anything.
-These are almost always bugs (leftover from edits or incomplete wiring).
+Treat these as candidates, not established bugs. Correlate pin-end labels and
+stub endpoints with ERC and exported connectivity because valid connections may
+be reported as orphaned.
 
 ### Level 2: Critical Net Issues
 
@@ -183,6 +185,21 @@ diagnostics and unevaluated coverage, and do not describe the design as ready,
 passing, clean, or looking good. Findings gathered before the coverage gap are
 still valid and should still be reported.
 
+### Contradiction gate
+
+Aggregate verdicts are summaries, not higher-authority evidence. A passing
+`run_design_review` or `validate_for_manufacturing` result cannot override:
+
+- ERC or DRC errors;
+- unrouted connections;
+- schematic shorts or conflicting exported connectivity;
+- transfer inventory mismatches;
+- implausible coverage such as zero pads on a populated board; or
+- missing or empty requested artifacts.
+
+When checks disagree, report the contradiction, use the stronger direct check
+as the readiness gate, and return `NOT READY` or `INCOMPLETE` until reconciled.
+
 Equivalent to running:
 1. find_orphan_items
 2. find_shorted_nets
@@ -313,3 +330,5 @@ Present findings grouped by severity with actionable fix suggestions:
 9. **Re-run after fixes** — always verify fixes resolved the issue and created no new ones
 10. **Document waivers** — if user explicitly waives a warning, note it in the report
 11. **Never soften `INCOMPLETE`** — partial or failed coverage is not a passing review
+12. **Apply the contradiction gate** — direct ERC, DRC, connectivity, inventory,
+    and artifact evidence outranks an inconsistent aggregate verdict

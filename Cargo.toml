@@ -9,7 +9,7 @@ description = "Installer and lifecycle manager for the Konnect Codex plugin"
 readme = "README.md"
 repository = "https://github.com/neusse/konnect-codex"
 homepage = "https://github.com/neusse/konnect-codex"
-include = [".codex/**", "src/**", "template/**", "docs/assets/**", "build.rs", "compatibility.json", "Cargo.toml", "Cargo.lock", "README.md", "RELEASE_NOTES.md", "LICENSE"]
+include = [".codex/**", "src/**", "template/**", "docs/**", "policy/**", "build.rs", "compatibility.json", "Cargo.toml", "Cargo.lock", "README.md", "RELEASE_NOTES.md", "LICENSE"]
 
 [dependencies]
 anyhow = "1"

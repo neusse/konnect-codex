@@ -58,6 +58,10 @@ validate_for_manufacturing()
 - Checks drill sizes are within fabrication limits
 - Checks silkscreen does not overlap pads
 
+This aggregate result cannot override DRC errors, unrouted connections,
+implausible board inventory, transfer mismatches, or missing artifacts. Any such
+contradiction blocks manufacturing readiness.
+
 ### 3. Verify Footprints Assigned
 
 Every schematic symbol must have a footprint assigned. Check for:
@@ -84,6 +88,13 @@ Generates all manufacturing files in one call:
 - BOM (CSV)
 - Pick-and-place / component position file (CPL)
 - Job file (optional, fab-house specific)
+
+After export, inspect the output directory rather than trusting the success
+status alone. Verify every requested file exists and is non-empty, the Gerber
+set contains only the intended production layers, drill counts are plausible,
+and assembly CSV files state or unambiguously use the intended units and origin.
+Exclude mounting holes, fiducials, and other non-placeable footprints from the
+CPL unless the assembly contract explicitly requires them.
 
 ### Manual Export (When You Need Control)
 
@@ -231,3 +242,7 @@ Visual checks:
 6. **Load toolsets first** — check `get_active_toolsets()` and load what you need
 7. **Use one-shot export when possible** — `export_manufacturing_package` ensures consistency
 8. **Double-check fab house requirements** — each house has slightly different file format expectations
+9. **Verify artifacts directly** — success is incomplete until every requested
+   output exists, is non-empty, and has plausible units, origin, layers, and rows
+10. **Fail closed on contradictions** — package or validation success cannot
+    override DRC errors, unrouted work, transfer corruption, or missing artifacts

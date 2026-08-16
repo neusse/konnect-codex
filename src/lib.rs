@@ -27,6 +27,8 @@ const PLUGIN_MANIFEST_TEMPLATE: &str =
 const MCP_TEMPLATE: &str = include_str!("../template/konnect-codex/.mcp.json");
 const HOOKS_TEMPLATE: &str = include_str!("../template/konnect-codex/hooks/hooks.json");
 const COMPATIBILITY_JSON: &str = include_str!("../compatibility.json");
+const ENHANCEMENT_POLICY_JSON: &str = include_str!("../policy/enhancements.json");
+const UPSTREAM_BASELINE_JSON: &str = include_str!("../policy/upstream-baseline.json");
 
 include!(concat!(env!("OUT_DIR"), "/reviewed_assets.rs"));
 
@@ -156,9 +158,46 @@ struct SourceAssets {
 #[derive(Clone, Debug, Deserialize)]
 struct Compatibility {
     konnect_version: String,
+    companion_revision: u32,
     konnect_commit: String,
     guidance_sha256: String,
     hook_sha256: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct EnhancementPolicy {
+    schema_version: u32,
+    supported_konnect_version: String,
+    companion_revision: u32,
+    enhancements: Vec<Enhancement>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct Enhancement {
+    id: String,
+    status: String,
+    #[serde(default)]
+    assertions: Vec<EnhancementAssertion>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct EnhancementAssertion {
+    target: String,
+    contains: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct UpstreamBaseline {
+    schema_version: u32,
+    konnect_version: String,
+    konnect_commit: String,
+    files: Vec<UpstreamBaselineFile>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct UpstreamBaselineFile {
+    path: String,
+    sha256: String,
 }
 
 pub fn sync(options: SyncOptions) -> Result<OperationReport> {
@@ -170,6 +209,7 @@ where
     F: FnOnce(&Path) -> Result<String>,
 {
     let compatibility = compatibility()?;
+    validate_enhancement_policy(&compatibility)?;
     validate_executable(&options.konnect_binary, "Konnect")?;
     let installed_version = version_probe(&options.konnect_binary)
         .context("could not determine the installed Konnect version")?;
@@ -466,6 +506,7 @@ pub fn uninstall(paths: &CompanionPaths, force: bool) -> Result<OperationReport>
 
 pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
     let manifest = load_manifest(&paths.manifest_path)?;
+    let compatibility = compatibility()?;
     let mut report = OperationReport::default();
     report.push(format!("State: {:?}", manifest.state).to_ascii_lowercase());
     report.push(format!("Source: {}", manifest.source_root.display()));
@@ -474,12 +515,25 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
         "Supported Konnect: {}",
         manifest.supported_konnect_version
     ));
+    let active_enhancement_count = validate_enhancement_policy(&compatibility)?;
+    let policy = enhancement_policy()?;
+    report.push(format!("Companion revision: {}", policy.companion_revision));
+    report.push(format!(
+        "Codex enhancements: {} active",
+        active_enhancement_count
+    ));
     report.push(format!(
         "Source fingerprint: {}",
         manifest.source_fingerprint
     ));
 
     let mut healthy_count = 0usize;
+    let mut healthy_plugin_agents = 0usize;
+    let plugin_agent_count = manifest
+        .files
+        .iter()
+        .filter(|file| file.role == ManagedRole::Agent)
+        .count();
     let mut unhealthy = Vec::new();
     for file in &manifest.files {
         let check_path =
@@ -491,7 +545,12 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
                 file.path.clone()
             };
         match hash_file(&check_path) {
-            Ok(hash) if hash == file.sha256 => healthy_count += 1,
+            Ok(hash) if hash == file.sha256 => {
+                healthy_count += 1;
+                if file.role == ManagedRole::Agent {
+                    healthy_plugin_agents += 1;
+                }
+            }
             Ok(_) => unhealthy.push(format!("modified: {}", check_path.display())),
             Err(_) => unhealthy.push(format!("missing: {}", check_path.display())),
         }
@@ -499,6 +558,9 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
     report.push(format!(
         "Owned files: {healthy_count}/{} healthy",
         manifest.files.len()
+    ));
+    report.push(format!(
+        "Plugin agents: {healthy_plugin_agents}/{plugin_agent_count} installed and healthy"
     ));
     report.messages.extend(unhealthy);
 
@@ -520,7 +582,7 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
             )
         })?;
     let installed_version = String::from_utf8_lossy(&version.stdout).trim().to_string();
-    let expected_version = format!("konnect {}", compatibility()?.konnect_version);
+    let expected_version = format!("konnect {}", compatibility.konnect_version);
     let compatible_version = installed_version == expected_version;
     report.push(format!("Konnect: {installed_version}"));
     report.push(format!("Version compatibility: {compatible_version}"));
@@ -563,7 +625,7 @@ pub fn native_status(paths: &CompanionPaths) -> Result<OperationReport> {
     };
     let marker = paths.home.join(".konnect").join(".installed-codex");
     report.push(format!(
-        "Native Konnect coverage: {skill_count}/{} skills, {native_agent_count} recognizable agents, installer marker {}",
+        "Upstream-native Konnect coverage: {skill_count}/{} skills, {native_agent_count} agents, installer marker {}",
         NATIVE_SKILLS.len(),
         marker.exists()
     ));
@@ -661,7 +723,7 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
     .iter()
     .any(|term| lower.contains(term));
     relevant.then(|| {
-        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. For complete schematic construction or comprehensive review, use the Konnect custom agent when delegation is available."
+        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand a complete schematic build to konnect_schematic_builder and a comprehensive final review to konnect_design_reviewer; run those handoffs sequentially."
             .to_string()
     })
 }
@@ -851,6 +913,75 @@ fn compatibility() -> Result<Compatibility> {
     Ok(serde_json::from_str(COMPATIBILITY_JSON)?)
 }
 
+fn enhancement_policy() -> Result<EnhancementPolicy> {
+    Ok(serde_json::from_str(ENHANCEMENT_POLICY_JSON)?)
+}
+
+fn upstream_baseline() -> Result<UpstreamBaseline> {
+    Ok(serde_json::from_str(UPSTREAM_BASELINE_JSON)?)
+}
+
+fn reviewed_asset_content(target: &str) -> Option<&'static [u8]> {
+    if let Some(path) = target.strip_prefix("skills/") {
+        REVIEWED_SKILL_FILES
+            .iter()
+            .find(|(candidate, _)| *candidate == path)
+            .map(|(_, content)| *content)
+    } else if let Some(path) = target.strip_prefix("agents/") {
+        REVIEWED_AGENT_FILES
+            .iter()
+            .find(|(candidate, _)| *candidate == path)
+            .map(|(_, content)| *content)
+    } else {
+        None
+    }
+}
+
+fn validate_enhancement_policy(compatibility: &Compatibility) -> Result<usize> {
+    let policy = enhancement_policy()?;
+    if policy.schema_version != 1
+        || policy.supported_konnect_version != compatibility.konnect_version
+        || policy.companion_revision != compatibility.companion_revision
+    {
+        bail!("Codex enhancement policy metadata does not match compatibility.json");
+    }
+
+    let mut ids = BTreeSet::new();
+    let mut active_count = 0usize;
+    for enhancement in policy.enhancements {
+        if enhancement.id.trim().is_empty() || !ids.insert(enhancement.id.clone()) {
+            bail!("Codex enhancement policy contains a missing or duplicate id");
+        }
+        if enhancement.status == "active" {
+            active_count += 1;
+        } else if enhancement.status != "retired" {
+            bail!(
+                "Codex enhancement {} has unsupported status {}",
+                enhancement.id,
+                enhancement.status
+            );
+        }
+        for assertion in enhancement.assertions {
+            let content = reviewed_asset_content(&assertion.target).with_context(|| {
+                format!(
+                    "Codex enhancement {} targets missing asset {}",
+                    enhancement.id, assertion.target
+                )
+            })?;
+            let raw = std::str::from_utf8(content)?;
+            if !raw.contains(&assertion.contains) {
+                bail!(
+                    "Codex enhancement {} lost assertion {:?} in {}",
+                    enhancement.id,
+                    assertion.contains,
+                    assertion.target
+                );
+            }
+        }
+    }
+    Ok(active_count)
+}
+
 pub fn audit_guidance(
     source: Option<&Path>,
     konnect_binary: &Path,
@@ -859,6 +990,7 @@ pub fn audit_guidance(
     validate_executable(konnect_binary, "Konnect")?;
     let compatibility = compatibility()?;
     let assets = discover_assets(source, home)?;
+    verify_upstream_baseline(&assets, &compatibility)?;
     let guidance = guidance_fingerprint(&assets)?;
     let hook = hook_fingerprint(konnect_binary)?;
     let version = command_version(konnect_binary)?;
@@ -878,6 +1010,10 @@ pub fn audit_guidance(
     let mut report = OperationReport::default();
     report.push(format!("Konnect version: {version}"));
     report.push(format!("Reviewed commit: {}", compatibility.konnect_commit));
+    report.push(format!(
+        "Upstream baseline: {} files verified",
+        upstream_baseline()?.files.len()
+    ));
     report.push(format!("Guidance fingerprint: {guidance}"));
     report.push(format!("Hook fingerprint: {hook}"));
     report.push("Compatibility audit: PASS");
@@ -890,6 +1026,7 @@ fn verify_guidance_source(
     compatibility: &Compatibility,
 ) -> Result<()> {
     let assets = discover_assets(Some(source), Path::new("."))?;
+    verify_upstream_baseline(&assets, compatibility)?;
     let guidance = guidance_fingerprint(&assets)?;
     let hook = hook_fingerprint(konnect_binary)?;
     if guidance != compatibility.guidance_sha256 || hook != compatibility.hook_sha256 {
@@ -956,6 +1093,67 @@ fn guidance_fingerprint(assets: &SourceAssets) -> Result<String> {
         hasher.update(normalize_newlines(&fs::read(path)?));
     }
     Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn upstream_file_hashes(assets: &SourceAssets) -> Result<BTreeMap<String, String>> {
+    let mut files = BTreeMap::new();
+    for (name, dir) in &assets.skills {
+        for (relative, path) in walk_files(dir)? {
+            let relative = relative.to_string_lossy().replace('\\', "/");
+            files.insert(
+                format!("skills/{name}/{relative}"),
+                sha256_bytes(&normalize_newlines(&fs::read(path)?)),
+            );
+        }
+    }
+    for path in &assets.agents {
+        files.insert(
+            format!("agents/{}", path.file_name().unwrap().to_string_lossy()),
+            sha256_bytes(&normalize_newlines(&fs::read(path)?)),
+        );
+    }
+    Ok(files)
+}
+
+fn verify_upstream_baseline(assets: &SourceAssets, compatibility: &Compatibility) -> Result<()> {
+    let baseline = upstream_baseline()?;
+    if baseline.schema_version != 1
+        || baseline.konnect_version != compatibility.konnect_version
+        || baseline.konnect_commit != compatibility.konnect_commit
+    {
+        bail!("upstream baseline metadata does not match compatibility.json");
+    }
+
+    let expected: BTreeMap<_, _> = baseline
+        .files
+        .into_iter()
+        .map(|file| (file.path, file.sha256))
+        .collect();
+    let actual = upstream_file_hashes(assets)?;
+    let mut differences = Vec::new();
+
+    for (path, expected_hash) in &expected {
+        match actual.get(path) {
+            None => differences.push(format!("removed: {path}")),
+            Some(actual_hash) if actual_hash != expected_hash => {
+                differences.push(format!("modified: {path}"));
+            }
+            Some(_) => {}
+        }
+    }
+    for path in actual.keys() {
+        if !expected.contains_key(path) {
+            differences.push(format!("added: {path}"));
+        }
+    }
+
+    if !differences.is_empty() {
+        bail!(
+            "Konnect upstream baseline drift detected:\n  {}\nReview every changed asset and update the baseline plus active enhancement decisions before release.",
+            differences.join("\n  ")
+        );
+    }
+    Ok(())
 }
 
 fn reviewed_fingerprint(native_skills: &BTreeSet<String>, config: &[u8]) -> String {
@@ -1377,7 +1575,18 @@ mod tests {
     #[test]
     fn release_versions_are_synchronized() {
         let compatibility = compatibility().unwrap();
+        let policy = enhancement_policy().unwrap();
+        let baseline = upstream_baseline().unwrap();
         assert_eq!(compatibility.konnect_version, env!("CARGO_PKG_VERSION"));
+        assert_eq!(compatibility.companion_revision, policy.companion_revision);
+        assert_eq!(policy.schema_version, 1);
+        assert_eq!(
+            policy.supported_konnect_version,
+            compatibility.konnect_version
+        );
+        assert_eq!(baseline.schema_version, 1);
+        assert_eq!(baseline.konnect_version, compatibility.konnect_version);
+        assert_eq!(baseline.konnect_commit, compatibility.konnect_commit);
 
         let manifest: JsonValue = serde_json::from_str(PLUGIN_MANIFEST_TEMPLATE).unwrap();
         assert_eq!(
@@ -1386,6 +1595,77 @@ mod tests {
         );
         assert_eq!(compatibility.guidance_sha256.len(), 64);
         assert_eq!(compatibility.hook_sha256.len(), 64);
+    }
+
+    #[test]
+    fn active_enhancements_are_present_in_reviewed_assets() {
+        let policy = enhancement_policy().unwrap();
+        let active: Vec<_> = policy
+            .enhancements
+            .iter()
+            .filter(|enhancement| enhancement.status == "active")
+            .collect();
+        assert_eq!(active.len(), 6);
+
+        let expected_ids = BTreeSet::from([
+            "agent-delegation",
+            "schematic-evidence-and-collision-gate",
+            "pcb-transfer-integrity",
+            "contradictory-verifier-gate",
+            "requirements-based-review-defaults",
+            "doctor-agent-reporting",
+        ]);
+        let actual_ids: BTreeSet<_> = active
+            .iter()
+            .map(|enhancement| enhancement.id.as_str())
+            .collect();
+        assert_eq!(actual_ids, expected_ids);
+
+        for enhancement in active {
+            for assertion in &enhancement.assertions {
+                let content = reviewed_asset_content(&assertion.target)
+                    .unwrap_or_else(|| panic!("missing enhancement target {}", assertion.target));
+                let raw = std::str::from_utf8(content).unwrap();
+                assert!(
+                    raw.contains(&assertion.contains),
+                    "enhancement {} lost assertion {:?} in {}",
+                    enhancement.id,
+                    assertion.contains,
+                    assertion.target
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn upstream_baseline_has_unique_normalized_hashes_for_every_asset() {
+        let baseline = upstream_baseline().unwrap();
+        assert_eq!(baseline.files.len(), 17);
+        let mut paths = BTreeSet::new();
+        for file in baseline.files {
+            assert!(paths.insert(file.path));
+            assert_eq!(file.sha256.len(), 64);
+            assert!(file
+                .sha256
+                .chars()
+                .all(|character| character.is_ascii_hexdigit()));
+        }
+    }
+
+    #[test]
+    fn native_status_distinguishes_upstream_agents_from_plugin_agents() {
+        let temp = TempDir::new().unwrap();
+        let paths = CompanionPaths::for_home(temp.path().join("home"));
+        fs::create_dir_all(&paths.agents_dir).unwrap();
+        fs::write(
+            paths.agents_dir.join("konnect_design_reviewer.toml"),
+            "managed plugin agent",
+        )
+        .unwrap();
+        let report = native_status(&paths).unwrap().messages.join("\n");
+        assert!(report.contains("Upstream-native Konnect coverage"));
+        assert!(report.contains("0 agents"));
+        assert!(!report.contains("recognizable agents"));
     }
 
     #[test]

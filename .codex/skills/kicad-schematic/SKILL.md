@@ -128,6 +128,15 @@ connect_to_net(schematic, reference, pin_number, net)
 - Placing a label by hand with `add_schematic_net_label` instead? Take its
   rotation from `orientation_degrees` in `get_schematic_pin_locations`, or the
   text reads back across the symbol's pin names.
+- Before creating stubs for nearby pins, inspect their endpoints and choose
+  directions that cannot meet or cross. Adjacent vertical passive pins can
+  otherwise produce coincident stub endpoints and merge different nets.
+- Run `find_shorted_nets` immediately after each related stub group. A clean
+  result is the completion criterion for that wiring step.
+- A label placed directly on a pin endpoint is electrically valid. Do not rewire
+  an electrically valid direct label solely to clear an orphan finding. Confirm
+  it with ERC, exported connectivity or netlist evidence, and the short detector;
+  record a contradictory orphan result as a verifier limitation.
 
 ### add_power_symbol
 
@@ -219,6 +228,9 @@ Verifies that components have the expected connections. Reports:
 
 ### find_orphan_items
 Finds floating wires, labels, and symbols that are not connected to anything.
+Treat its output as a candidate list. Pin-end labels and the pin end of a valid
+stub may be false positives, so correlate each finding with ERC and exported
+connectivity before changing geometry.
 
 ### Verification Workflow
 
@@ -227,9 +239,11 @@ Finds floating wires, labels, and symbols that are not connected to anything.
 3. Run `annotate_schematic`
 4. Run `validate_wire_connections`
 5. Run `validate_component_connections`
-6. Run `find_orphan_items`
-7. Fix any reported issues
-8. Save with `save_project`
+6. Run `find_shorted_nets`
+7. Run `find_orphan_items` and reconcile it with ERC/connectivity evidence
+8. Fix confirmed issues; preserve electrically valid geometry reported only by
+   a contradictory orphan check
+9. Save with `save_project`
 
 ---
 
@@ -245,3 +259,7 @@ Finds floating wires, labels, and symbols that are not connected to anything.
 8. **Save frequently** — call `save_project` after major operations
 9. **Load toolsets first** — check `get_active_toolsets()` and load what you need before starting
 10. **Batch for bulk** — use batch toolset for 3+ repetitive operations
+11. **Gate automatic stubs** — inspect nearby pin geometry and run
+    `find_shorted_nets` immediately after placement
+12. **Reconcile verifiers** — never change a known-good net solely to satisfy a
+    contradictory orphan result
