@@ -20,7 +20,7 @@ performing the work.
 
 ## Codex execution profile
 
-The companion starts Konnect with `eager_toolsets = true`, so the first MCP tool
+The plugin starts Konnect with `eager_toolsets = true`, so the first MCP tool
 list contains the complete catalogue. Call the visible domain tools directly.
 Router calls such as `load_toolset` remain useful only when this skill is used
 against a different, lazy Konnect server.

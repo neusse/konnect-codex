@@ -26,7 +26,7 @@ If asked to directly edit any of these:
 
 ### Channel 1: Konnect MCP (for ALL modifications)
 
-All writes go through MCP tools. The companion exposes the complete catalogue
+All writes go through MCP tools. The plugin exposes the complete catalogue
 eagerly, so call visible domain tools directly. Use `list_toolboxes` and
 `get_active_toolsets` to diagnose availability. If MCP tools are unavailable,
 stop and tell the user rather than falling back to file editing.
@@ -75,7 +75,7 @@ Only to answer questions not available through exports (sheet hierarchy, title b
 
 ## Discovery — Finding Available Tools
 
-Konnect groups tools into toolsets. The companion configures eager discovery so
+Konnect groups tools into toolsets. The plugin configures eager discovery so
 Codex receives the complete catalogue at startup. Call visible domain tools
 directly. Use the router calls below only for diagnosis or when this skill is
 running against a lazy Konnect server. Call `list_toolboxes` for the current

@@ -12,7 +12,7 @@ ALL checks are performed through MCP tools — never parse .kicad_sch or .kicad_
 
 ## Tool availability
 
-The companion exposes the complete Konnect catalogue eagerly. Call visible
+The plugin exposes the complete Konnect catalogue eagerly. Call visible
 review tools directly. When running against a lazy Konnect server and the tools
 are absent, load these toolsets:
 

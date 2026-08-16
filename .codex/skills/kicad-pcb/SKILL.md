@@ -30,7 +30,7 @@ If connection fails:
 
 ## Tool availability
 
-The companion exposes the complete Konnect catalogue eagerly. Call visible PCB
+The plugin exposes the complete Konnect catalogue eagerly. Call visible PCB
 tools directly. When running against a lazy Konnect server and the tools are
 absent, load these toolsets:
 

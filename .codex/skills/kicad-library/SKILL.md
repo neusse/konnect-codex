@@ -13,7 +13,7 @@ using Konnect MCP tools. ALL modifications go through MCP tools — never edit
 
 ## Tool availability
 
-The companion exposes the complete Konnect catalogue eagerly. Call visible
+The plugin exposes the complete Konnect catalogue eagerly. Call visible
 library tools directly. When running against a lazy Konnect server and the
 library tools are absent, load this toolset:
 
@@ -132,7 +132,8 @@ Each pad may also set:
 
 ```text
 create_footprint(
-  ...,
+  output: "MyLibrary.pretty/MyFootprint.kicad_mod",
+  name: "MyFootprint",
   pads=[{
     number: "1",
     type: "smd",

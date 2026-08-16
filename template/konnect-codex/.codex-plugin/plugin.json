@@ -1,9 +1,9 @@
 {
   "name": "konnect-codex",
-  "version": "0.5.1",
-  "description": "Reviewed Codex-native skills, agents, hooks, and eager MCP access for Konnect v0.5.1",
+  "version": "0.6.0",
+  "description": "Reviewed Codex-native skills, agents, hooks, and eager MCP access for Konnect v0.6.0",
   "author": {
-    "name": "Konnect Codex Companion"
+    "name": "Konnect Codex Plugin"
   },
   "license": "AGPL-3.0-only",
   "keywords": ["kicad", "hardware", "schematic", "pcb", "mcp"],
@@ -11,8 +11,8 @@
   "interface": {
     "displayName": "Konnect Codex",
     "shortDescription": "Design and review KiCad projects through Konnect.",
-    "longDescription": "Adds reviewed Konnect v0.5.1 KiCad workflows, eager MCP tools, Codex agents, and lifecycle guidance.",
-    "developerName": "Konnect Codex Companion",
+    "longDescription": "Adds reviewed Konnect v0.6.0 KiCad workflows, eager MCP tools, Codex agents, and lifecycle guidance.",
+    "developerName": "Konnect Codex Plugin",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
     "defaultPrompt": "Use Konnect to help me build or review this KiCad project."

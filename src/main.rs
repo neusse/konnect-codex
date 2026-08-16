@@ -166,9 +166,12 @@ fn locate_konnect() -> Result<PathBuf> {
             .join("debug")
             .join(exe_name("konnect")),
     ];
-    candidates.into_iter().find(|path| path.is_file()).context(
-        "could not find the Konnect executable; pass `--konnect <path>` or set KONNECT_BINARY",
-    )
+    candidates.into_iter().find(|path| path.is_file()).with_context(|| {
+        format!(
+            "could not find Konnect v{}; install the matching Konnect release, pass `--konnect <path>`, or set KONNECT_BINARY",
+            env!("CARGO_PKG_VERSION")
+        )
+    })
 }
 
 fn find_on_path(name: &str) -> Option<PathBuf> {
@@ -201,7 +204,7 @@ fn print_report(report: OperationReport) {
 }
 
 fn print_help() {
-    println!("Konnect Codex Companion v{}", env!("CARGO_PKG_VERSION"));
+    println!("Konnect Codex Plugin v{}", env!("CARGO_PKG_VERSION"));
     println!("Reversible, capability-complete Codex integration for Konnect.\n");
     println!("USAGE:");
     println!("  konnect-codex sync [--source <path>] [--konnect <path>] [--config <path>]");

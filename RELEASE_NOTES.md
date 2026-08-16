@@ -1,8 +1,8 @@
-# konnect-codex plugin v0.5.1
+# konnect-codex plugin v0.6.0
 
 This release is reviewed for
-[Konnect v0.5.1](https://github.com/mixelpixx/Konnect) at commit
-`df6f2b0cb8ee5f266a17ae00cd7dcf95fb057150`.
+[Konnect v0.6.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.6.0) at
+commit `2e5bbc2f0a2b16baa9aab89b94cceec7e472a1d6`.
 
 ## Included
 
@@ -11,6 +11,8 @@ This release is reviewed for
 - Codex-native hooks and eager discovery of the complete Konnect MCP catalogue.
 - Reversible sync, disable, enable, doctor, and uninstall operations.
 - A compatibility audit that detects upstream guidance or hook drift.
+- A pre-install gate that requires Konnect to be present and exactly v0.6.0
+  before any plugin file is created or replaced.
 - Downloadable Windows, Linux, and macOS archives with SHA-256 checksums.
 
 For the easiest setup, open the README's

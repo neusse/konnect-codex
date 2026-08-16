@@ -162,10 +162,20 @@ struct Compatibility {
 }
 
 pub fn sync(options: SyncOptions) -> Result<OperationReport> {
+    sync_with_version_probe(options, command_version)
+}
+
+fn sync_with_version_probe<F>(options: SyncOptions, version_probe: F) -> Result<OperationReport>
+where
+    F: FnOnce(&Path) -> Result<String>,
+{
+    let compatibility = compatibility()?;
     validate_executable(&options.konnect_binary, "Konnect")?;
+    let installed_version = version_probe(&options.konnect_binary)
+        .context("could not determine the installed Konnect version")?;
+    ensure_compatible_konnect_version(&installed_version, &compatibility)?;
     validate_executable(&options.adapter_binary, "konnect-codex")?;
 
-    let compatibility = compatibility()?;
     if let Some(source) = options.source.as_deref() {
         verify_guidance_source(source, &options.konnect_binary, &compatibility)?;
     }
@@ -192,8 +202,9 @@ pub fn sync(options: SyncOptions) -> Result<OperationReport> {
         "Reviewed for Konnect v{} ({})",
         compatibility.konnect_version, compatibility.konnect_commit
     ));
+    report.push(format!("Konnect: {installed_version} (compatible)"));
     report.push(format!(
-        "Skills: {} native, {} reviewed companion copies",
+        "Skills: {} native, {} reviewed plugin copies",
         native_skills.len(),
         reviewed_domain_skill_count().saturating_sub(native_skills.len())
     ));
@@ -323,7 +334,7 @@ pub fn disable(paths: &CompanionPaths) -> Result<OperationReport> {
     let mut manifest = load_manifest(&paths.manifest_path)?;
     let mut report = OperationReport::default();
     if manifest.state == InstallState::Disabled {
-        report.push("Konnect Codex companion is already disabled.");
+        report.push("Konnect Codex plugin is already disabled.");
         return Ok(report);
     }
 
@@ -356,7 +367,7 @@ pub fn enable(paths: &CompanionPaths) -> Result<OperationReport> {
     let mut manifest = load_manifest(&paths.manifest_path)?;
     let mut report = OperationReport::default();
     if manifest.state == InstallState::Enabled {
-        report.push("Konnect Codex companion is already enabled.");
+        report.push("Konnect Codex plugin is already enabled.");
         return Ok(report);
     }
 
@@ -448,7 +459,7 @@ pub fn uninstall(paths: &CompanionPaths, force: bool) -> Result<OperationReport>
     }
     remove_dir_if_empty(&paths.agents_dir)?;
 
-    report.push("Removed every companion-owned file and marketplace entry.");
+    report.push("Removed every plugin-owned file and marketplace entry.");
     report.push("Native Konnect skills and all Claude files were left untouched.");
     Ok(report)
 }
@@ -558,10 +569,10 @@ pub fn native_status(paths: &CompanionPaths) -> Result<OperationReport> {
     ));
     if skill_count > 0 {
         report.push(
-            "Native skills are installed. The companion uses its reviewed skills by default; uninstall native Codex guidance to avoid duplicate names, or sync with --prefer-native-skills.",
+            "Native skills are installed. The plugin uses its reviewed skills by default; uninstall native Codex guidance to avoid duplicate names, or sync with --prefer-native-skills.",
         );
     } else {
-        report.push("The reviewed companion skills are the active Codex guidance.");
+        report.push("The reviewed plugin skills are the active Codex guidance.");
     }
     Ok(report)
 }
@@ -569,7 +580,7 @@ pub fn native_status(paths: &CompanionPaths) -> Result<OperationReport> {
 pub fn run_mcp(paths: &CompanionPaths) -> Result<i32> {
     let manifest = load_manifest(&paths.manifest_path)?;
     if manifest.state != InstallState::Enabled {
-        bail!("Konnect Codex companion is disabled; run `konnect-codex enable`");
+        bail!("Konnect Codex plugin is disabled; run `konnect-codex enable`");
     }
     let status = Command::new(&manifest.konnect_binary)
         .arg("--client")
@@ -902,6 +913,21 @@ fn command_version(konnect_binary: &Path) -> Result<String> {
     Ok(String::from_utf8(output.stdout)?.trim().to_string())
 }
 
+fn ensure_compatible_konnect_version(
+    installed_version: &str,
+    compatibility: &Compatibility,
+) -> Result<()> {
+    let expected_version = format!("konnect {}", compatibility.konnect_version);
+    if installed_version != expected_version {
+        bail!(
+            "Konnect version mismatch: found `{installed_version}`, but konnect-codex v{} requires `{expected_version}`. Install Konnect v{} and run sync again; no plugin files were changed.",
+            env!("CARGO_PKG_VERSION"),
+            compatibility.konnect_version
+        );
+    }
+    Ok(())
+}
+
 fn hook_fingerprint(konnect_binary: &Path) -> Result<String> {
     let output = Command::new(konnect_binary)
         .args(["skill", "pre-pcb-ipc"])
@@ -1160,7 +1186,7 @@ fn verify_marketplace_entry(path: &Path, force: bool) -> Result<()> {
         return Ok(());
     }
     bail!(
-        "the '{PLUGIN_NAME}' marketplace entry was removed or modified; use --force only if the companion entry may be discarded"
+        "the '{PLUGIN_NAME}' marketplace entry was removed or modified; use --force only if the plugin entry may be discarded"
     )
 }
 
@@ -1219,14 +1245,14 @@ fn load_manifest_if_present(path: &Path) -> Result<Option<InstallManifest>> {
 fn load_manifest(path: &Path) -> Result<InstallManifest> {
     let raw = fs::read_to_string(path).with_context(|| {
         format!(
-            "Konnect Codex companion is not installed (missing {})",
+            "Konnect Codex plugin is not installed (missing {})",
             path.display()
         )
     })?;
     let manifest: InstallManifest = serde_json::from_str(&raw)?;
     if manifest.schema_version != 1 {
         bail!(
-            "unsupported companion manifest schema {}",
+            "unsupported plugin manifest schema {}",
             manifest.schema_version
         );
     }
@@ -1369,6 +1395,74 @@ mod tests {
     }
 
     #[test]
+    fn sync_rejects_a_missing_konnect_before_writing_files() {
+        let temp = TempDir::new().unwrap();
+        let paths = CompanionPaths::for_home(temp.path().join("home"));
+        let error = sync_with_version_probe(
+            SyncOptions {
+                paths: paths.clone(),
+                source: None,
+                konnect_binary: temp.path().join(exe_name_for_test("missing-konnect")),
+                config_source: None,
+                adapter_binary: std::env::current_exe().unwrap(),
+                activate: false,
+                dry_run: false,
+                prefer_native_skills: false,
+            },
+            |_| panic!("the version probe must not run for a missing executable"),
+        )
+        .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("Konnect executable was not found"));
+        assert!(!paths.plugin_dir.exists());
+        assert!(!paths.data_dir.exists());
+    }
+
+    #[test]
+    fn sync_rejects_a_mismatched_konnect_before_writing_files() {
+        let temp = TempDir::new().unwrap();
+        let paths = CompanionPaths::for_home(temp.path().join("home"));
+        let fake_konnect = temp.path().join(exe_name_for_test("konnect"));
+        fs::write(&fake_konnect, "fake").unwrap();
+        let existing_plugin = paths.plugin_dir.join("existing-plugin.txt");
+        let existing_state = paths.data_dir.join("existing-state.txt");
+        fs::create_dir_all(existing_plugin.parent().unwrap()).unwrap();
+        fs::create_dir_all(existing_state.parent().unwrap()).unwrap();
+        fs::write(&existing_plugin, "keep plugin").unwrap();
+        fs::write(&existing_state, "keep state").unwrap();
+
+        let error = sync_with_version_probe(
+            SyncOptions {
+                paths: paths.clone(),
+                source: None,
+                konnect_binary: fake_konnect,
+                config_source: None,
+                adapter_binary: std::env::current_exe().unwrap(),
+                activate: false,
+                dry_run: false,
+                prefer_native_skills: false,
+            },
+            |_| Ok("konnect 0.0.0".to_string()),
+        )
+        .unwrap_err();
+
+        assert!(error.to_string().contains("Konnect version mismatch"));
+        assert!(error.to_string().contains("no plugin files were changed"));
+        assert_eq!(fs::read_to_string(existing_plugin).unwrap(), "keep plugin");
+        assert_eq!(fs::read_to_string(existing_state).unwrap(), "keep state");
+    }
+
+    fn exe_name_for_test(stem: &str) -> String {
+        if cfg!(windows) {
+            format!("{stem}.exe")
+        } else {
+            stem.to_string()
+        }
+    }
+
+    #[test]
     fn reviewed_skills_are_codex_native_and_complete() {
         let names = reviewed_skill_names();
         assert_eq!(names.len(), NATIVE_SKILLS.len() + 1);
@@ -1484,16 +1578,19 @@ mod tests {
         let paths = CompanionPaths::for_home(home);
         let adapter = std::env::current_exe().unwrap();
 
-        sync(SyncOptions {
-            paths: paths.clone(),
-            source: None,
-            konnect_binary: fake_konnect,
-            config_source: Some(config),
-            adapter_binary: adapter,
-            activate: false,
-            dry_run: false,
-            prefer_native_skills: false,
-        })
+        sync_with_version_probe(
+            SyncOptions {
+                paths: paths.clone(),
+                source: None,
+                konnect_binary: fake_konnect,
+                config_source: Some(config),
+                adapter_binary: adapter,
+                activate: false,
+                dry_run: false,
+                prefer_native_skills: false,
+            },
+            |_| Ok(format!("konnect {}", env!("CARGO_PKG_VERSION"))),
+        )
         .unwrap();
 
         assert!(paths
@@ -1523,24 +1620,27 @@ mod tests {
         fs::create_dir_all(paths.home.join(".konnect")).unwrap();
         fs::write(
             paths.home.join(".konnect").join(".installed-codex"),
-            "0.5.1",
+            env!("CARGO_PKG_VERSION"),
         )
         .unwrap();
 
-        sync(SyncOptions {
-            paths: paths.clone(),
-            source: None,
-            konnect_binary: temp.path().join(if cfg!(windows) {
-                "konnect.exe"
-            } else {
-                "konnect"
-            }),
-            config_source: Some(temp.path().join("konnect.toml")),
-            adapter_binary: std::env::current_exe().unwrap(),
-            activate: false,
-            dry_run: false,
-            prefer_native_skills: true,
-        })
+        sync_with_version_probe(
+            SyncOptions {
+                paths: paths.clone(),
+                source: None,
+                konnect_binary: temp.path().join(if cfg!(windows) {
+                    "konnect.exe"
+                } else {
+                    "konnect"
+                }),
+                config_source: Some(temp.path().join("konnect.toml")),
+                adapter_binary: std::env::current_exe().unwrap(),
+                activate: false,
+                dry_run: false,
+                prefer_native_skills: true,
+            },
+            |_| Ok(format!("konnect {}", env!("CARGO_PKG_VERSION"))),
+        )
         .unwrap();
 
         assert!(!paths

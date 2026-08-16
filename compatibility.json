@@ -1,6 +1,6 @@
 {
-  "konnect_version": "0.5.1",
-  "konnect_commit": "df6f2b0cb8ee5f266a17ae00cd7dcf95fb057150",
+  "konnect_version": "0.6.0",
+  "konnect_commit": "2e5bbc2f0a2b16baa9aab89b94cceec7e472a1d6",
   "guidance_sha256": "d811f30b7ca73efc0e4cd8c89e767fbf40ce169725325d5ae06987d609e81e83",
   "hook_sha256": "d612cf89564eeb0e966483831bdc7bcff1ae67697fac4c0773c1161c50fac8a4"
 }

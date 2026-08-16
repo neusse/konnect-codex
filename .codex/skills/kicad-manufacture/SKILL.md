@@ -12,7 +12,7 @@ ALL modifications go through MCP tools — never edit project files directly.
 
 ## Tool availability
 
-The companion exposes the complete Konnect catalogue eagerly. Call visible
+The plugin exposes the complete Konnect catalogue eagerly. Call visible
 manufacturing tools directly. When running against a lazy Konnect server and
 the tools are absent, load these toolsets:
 
