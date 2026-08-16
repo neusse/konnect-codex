@@ -1,4 +1,18 @@
-# Konnect Codex Companion
+<p align="center">
+  <img src="docs/assets/konnect-codex-banner.svg" alt="Konnect Codex Companion — KiCad workflows adapted for Codex" width="100%">
+</p>
+
+<h1 align="center">Konnect Codex Companion</h1>
+
+<p align="center"><strong>Turn Konnect's Claude integration into a reversible, capability-complete Codex plugin.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/neusse/konnect-codex/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/neusse/konnect-codex/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/neusse/konnect-codex/blob/main/LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-7c3aed.svg"></a>
+  <img alt="Rust 1.85 or newer" src="https://img.shields.io/badge/Rust-1.85%2B-f97316.svg">
+  <img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-10a37f.svg">
+  <a href="https://github.com/mixelpixx/Konnect"><img alt="Konnect 0.5 or newer" src="https://img.shields.io/badge/Konnect-0.5%2B-22d3ee.svg"></a>
+</p>
 
 `konnect-codex` converts the guidance installed for Claude by Konnect into a
 Codex-native, reversible integration. It is deliberately separate from the
@@ -24,9 +38,17 @@ or upstream-installed Codex skills.
 
 ## Build and install
 
+Install directly from GitHub:
+
 ```powershell
-cargo install --path tools/konnect-codex
-konnect-codex sync --konnect .\target\release\konnect.exe --config .\konnect.toml
+cargo install --git https://github.com/neusse/konnect-codex
+```
+
+Or install from a local checkout:
+
+```powershell
+cargo install --path .
+konnect-codex sync --konnect C:\path\to\konnect.exe --config C:\path\to\konnect.toml
 konnect-codex doctor
 ```
 

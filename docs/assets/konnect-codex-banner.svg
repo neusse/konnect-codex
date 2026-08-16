@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Konnect Codex Companion</title>
+  <desc id="desc">A circuit-inspired bridge between KiCad, Konnect MCP, and Codex.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.52" stop-color="#0b1d30"/>
+      <stop offset="1" stop-color="#11132b"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="0.52" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft-glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#8aa4bd" stroke-opacity="0.07" stroke-width="1"/>
+    </pattern>
+    <clipPath id="rounded"><rect width="1200" height="360" rx="28"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#rounded)">
+    <rect width="1200" height="360" fill="url(#background)"/>
+    <rect width="1200" height="360" fill="url(#grid)"/>
+    <circle cx="590" cy="178" r="260" fill="url(#glow)"/>
+    <circle cx="1090" cy="40" r="190" fill="#8b5cf6" opacity="0.08"/>
+
+    <g fill="none" stroke="#22d3ee" stroke-opacity="0.34" stroke-width="2">
+      <path d="M0 82h112l24 24h110"/>
+      <path d="M0 278h146l28-28h76"/>
+      <path d="M950 72h108l24 24h118"/>
+      <path d="M940 288h96l30-30h134"/>
+    </g>
+    <g fill="#22d3ee">
+      <circle cx="136" cy="106" r="4"/><circle cx="174" cy="250" r="4"/>
+      <circle cx="1082" cy="96" r="4"/><circle cx="1066" cy="258" r="4"/>
+    </g>
+
+    <g transform="translate(178 78)">
+      <rect x="0" y="0" width="196" height="196" rx="28" fill="#0d2235" stroke="#22d3ee" stroke-opacity="0.55" stroke-width="2"/>
+      <g fill="none" stroke="url(#signal)" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M42 52h38v30h38v-18h34" stroke-width="5"/>
+        <path d="M42 144h30v-34h46v30h34" stroke-width="5"/>
+        <path d="M80 82v62M118 82v28" stroke-width="4"/>
+      </g>
+      <g fill="#07111f" stroke="#22d3ee" stroke-width="4">
+        <circle cx="42" cy="52" r="8"/><circle cx="152" cy="64" r="8"/>
+        <circle cx="42" cy="144" r="8"/><circle cx="152" cy="140" r="8"/>
+      </g>
+      <rect x="72" y="76" width="54" height="54" rx="10" fill="#10b981" fill-opacity="0.18" stroke="#10b981" stroke-width="3"/>
+      <path d="M82 92h34M82 104h22M82 116h29" stroke="#d7fff4" stroke-width="4" stroke-linecap="round"/>
+    </g>
+
+    <g font-family="Inter, Segoe UI, Arial, sans-serif">
+      <text x="420" y="119" fill="#8ba3b8" font-size="18" font-weight="700" letter-spacing="5">KICAD • MCP • CODEX</text>
+      <text x="418" y="180" fill="#f3f8fc" font-size="54" font-weight="800" letter-spacing="-1">KONNECT</text>
+      <text x="418" y="232" fill="url(#signal)" font-size="47" font-weight="800" letter-spacing="-1">CODEX COMPANION</text>
+      <text x="420" y="274" fill="#afc1d0" font-size="20" font-weight="500">Full workflows today. Clean rollback when native support arrives.</text>
+    </g>
+
+    <g transform="translate(1058 180)" filter="url(#soft-glow)">
+      <circle r="23" fill="#8b5cf6" fill-opacity="0.18" stroke="#a78bfa" stroke-width="3"/>
+      <circle r="7" fill="#a78bfa"/>
+      <path d="M-50 0h27M23 0h50" stroke="url(#signal)" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </g>
+  <rect x="1" y="1" width="1198" height="358" rx="27" fill="none" stroke="#7dd3fc" stroke-opacity="0.2" stroke-width="2"/>
+</svg>
