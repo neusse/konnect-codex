@@ -13,10 +13,11 @@ This release is reviewed for
 - A compatibility audit that detects upstream guidance or hook drift.
 - Downloadable Windows, Linux, and macOS archives with SHA-256 checksums.
 
-Install the matching Konnect v0.5.1 server normally, without running
-`konnect init --client codex`. Download the archive for your operating system,
-place `konnect-codex` on `PATH`, run `konnect-codex sync`, and start a new Codex
-task.
+For the easiest setup, open the README's
+[Install with Codex](https://github.com/neusse/konnect-codex#install-with-codex)
+section and paste its installation request into a Codex task. Codex will select
+the platform archive, verify its checksum, install the plugin, and run the
+health check. Manual installation remains documented immediately below it.
 
 Konnect and its original hardware workflows are created and maintained by
 [mixelpixx](https://github.com/mixelpixx). This plugin is an independent Codex
