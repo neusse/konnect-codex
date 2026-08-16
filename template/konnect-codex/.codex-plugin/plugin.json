@@ -1,0 +1,21 @@
+{
+  "name": "konnect-codex",
+  "version": "0.1.0",
+  "description": "Codex-native skills, agents, hooks, and eager MCP access for Konnect",
+  "author": {
+    "name": "Konnect Codex Companion"
+  },
+  "license": "AGPL-3.0-only",
+  "keywords": ["kicad", "hardware", "schematic", "pcb", "mcp"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Konnect Codex",
+    "shortDescription": "Design and review KiCad projects through Konnect.",
+    "longDescription": "Adds Konnect's KiCad workflows, eager MCP tools, Codex agents, and lifecycle guidance.",
+    "developerName": "Konnect Codex Companion",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": "Use Konnect to help me build or review this KiCad project."
+  },
+  "mcpServers": "./.mcp.json"
+}

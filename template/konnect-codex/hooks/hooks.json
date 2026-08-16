@@ -1,0 +1,30 @@
+{
+  "description": "Contextual KiCad workflow and IPC readiness guidance for Konnect.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "konnect-codex hook user-prompt",
+            "timeout": 5,
+            "statusMessage": "Checking for a Konnect workflow"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^mcp__konnect__(place_component|move_component|rotate_component|route_trace|add_via|route_differential_pair|route_pad_to_pad|refill_zones)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "konnect-codex hook pre-pcb-ipc",
+            "timeout": 5,
+            "statusMessage": "Checking KiCad IPC prerequisites"
+          }
+        ]
+      }
+    ]
+  }
+}
