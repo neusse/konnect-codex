@@ -25,14 +25,22 @@ list contains the complete catalogue. Call the visible domain tools directly.
 Router calls such as `load_toolset` remain useful only when this skill is used
 against a different, lazy Konnect server.
 
-For a complete schematic build or a comprehensive pre-fabrication review, use
-the installed `konnect_schematic_builder` or `konnect_design_reviewer` custom
-agent when agent delegation is available and appropriate. Otherwise execute the
-same workflow in the current task.
+When agent delegation is available, make these handoffs deterministic:
+
+- Delegate a complete schematic build to `konnect_schematic_builder`.
+- Delegate a comprehensive final or pre-fabrication review to
+  `konnect_design_reviewer` after all design mutations are complete.
+- Run the agents sequentially. Give one agent ownership of the KiCad project at
+  a time; multiple agents must not mutate the same project or live IPC session.
+
+If delegation is unavailable, execute the matching workflow in the current task
+and state that no custom agent ran.
 
 ## Capability discipline
 
-- Treat Konnect tool results as the source of truth for the design state.
+- Treat Konnect tool results as evidence about design state, not as permission
+  to ignore contradictory ERC, DRC, connectivity, inventory, or artifact
+  evidence. Reconcile contradictions explicitly and fail closed.
 - Prefer batch tools for cohesive edits, then inspect and validate the result.
 - Keep unsupported operations explicit. Report the missing server capability
   and the smallest safe manual step instead of editing KiCad serialization.
@@ -41,3 +49,6 @@ same workflow in the current task.
   component data.
 - A workflow is complete only when requested artifacts exist and the available
   checks have been run or a concrete blocker is reported.
+- A passing aggregate review or manufacturing verdict cannot override DRC
+  errors, unrouted connections, corrupted transfer counts, implausible coverage,
+  or missing requested artifacts.

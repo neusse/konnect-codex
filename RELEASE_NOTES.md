@@ -11,6 +11,15 @@ commit `2e5bbc2f0a2b16baa9aab89b94cceec7e472a1d6`.
 - Codex-native hooks and eager discovery of the complete Konnect MCP catalogue.
 - Reversible sync, disable, enable, doctor, and uninstall operations.
 - A compatibility audit that detects upstream guidance or hook drift.
+- A machine-enforced guidance change policy with per-file upstream provenance,
+  named Codex enhancements, evidence, and retirement criteria.
+- Deterministic sequential delegation for full schematic builds and final
+  design reviews.
+- Schematic collision/evidence gates, PCB transfer invariants, contradictory
+  verifier handling, and direct manufacturing artifact verification derived
+  from the safe-parts benchmark.
+- Health output that reports plugin-managed and upstream-native agents
+  separately.
 - A pre-install gate that requires Konnect to be present and exactly v0.6.0
   before any plugin file is created or replaced.
 - Downloadable Windows, Linux, and macOS archives with SHA-256 checksums.

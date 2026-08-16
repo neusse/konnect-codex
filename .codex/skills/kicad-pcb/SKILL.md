@@ -59,18 +59,29 @@ Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 Follow this sequence for a clean PCB workflow:
 
 1. **Board outline** — `set_board_size` or draw Edge.Cuts geometry
-2. **Update from schematic** — call `update_pcb_from_schematic` first with
+2. **PCB transfer integrity gate** — before transfer, inventory every selected
+   footprint's reference, expected pad count, supported graphic layers, graphic
+   count, and model associations with the available library/footprint queries.
+   Reject or replace a footprint whose child items use an undefined or currently
+   unsupported layer. Preserve this inventory as the post-apply invariant.
+3. **Update from schematic** — call `update_pcb_from_schematic` first with
    `dry_run: true`. Review `status`, `coverage`, `diagnostics`, and staged positions.
    Apply only with `dry_run: false` and the exact returned
    `expected_plan_revision` value. The saved schematic hierarchy must be closed in the
    schematic editor, and the target board must be open in KiCad. A conflict is
    non-mutating; resolve it and rerun the dry run. A successful apply is one KiCad
-   undo entry, so Ctrl-Z reverses the whole update.
-3. **Place components** — position all footprints
-4. **Route traces** — connect all nets
-5. **Copper pour** — add ground/power zones last
-6. **DRC** — run design rule check
-7. **Save** — `save_project`
+   undo entry, so Ctrl-Z reverses the whole update. Treat the dry run as necessary
+   but not sufficient: diagnostics must also agree with the inventory.
+4. **Verify transfer invariants** — before placement or routing, re-query the
+   board and compare footprint references, pad counts, graphic counts, layers,
+   and models with the inventory. Phantom unnamed pads, missing graphics, changed
+   pad counts, undefined layers, or missing models are transfer corruption. Stop,
+   roll back the single update, and report the exact mismatch.
+5. **Place components** — position all footprints
+6. **Route traces** — connect all nets
+7. **Copper pour** — add ground/power zones last
+8. **DRC** — run design rule check
+9. **Save** — `save_project`
 
 Do NOT add copper pours before routing is complete — they interfere with interactive routing.
 
@@ -280,3 +291,8 @@ Common DRC errors and fixes:
 8. **Save frequently** — call `save_project` after major operations
 9. **Load toolsets first** — check `get_active_toolsets()` and load what you need
 10. **Copper pour last** — add zones only after routing is substantially complete
+11. **Preserve transfer invariants** — no placement or routing begins until
+    footprint, pad, graphic, layer, and model counts match the pre-transfer inventory
+12. **Fail closed on implausible queries** — zero pads on a populated board or a
+    successful transfer with changed child-item counts is a tool contradiction,
+    not proof that the board is clean

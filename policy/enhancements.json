@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "supported_konnect_version": "0.6.0",
+  "companion_revision": 1,
+  "enhancements": [
+    {
+      "id": "agent-delegation",
+      "status": "active",
+      "reason": "Complete builds and final reviews need deterministic use of the installed Codex agents.",
+      "evidence": ["Konnect safe-parts benchmark, Discussion #239"],
+      "introduced_for": "0.6.0",
+      "retire_when": "Konnect supplies equivalent Codex-native delegation policy.",
+      "assertions": [
+        {
+          "target": "skills/konnect-codex/SKILL.md",
+          "contains": "Delegate a complete schematic build"
+        }
+      ]
+    },
+    {
+      "id": "schematic-evidence-and-collision-gate",
+      "status": "active",
+      "reason": "Valid direct labels can be reported as orphaned, while adjacent automatic stubs can collide and short distinct nets.",
+      "evidence": ["Konnect safe-parts benchmark, Discussion #239"],
+      "introduced_for": "0.6.0",
+      "retire_when": "The orphan checker recognizes valid pin-end labels and automatic stub placement prevents collisions.",
+      "assertions": [
+        {
+          "target": "skills/kicad-schematic/SKILL.md",
+          "contains": "solely to clear an orphan finding"
+        },
+        {
+          "target": "agents/konnect_schematic_builder.toml",
+          "contains": "a clean result completes that wiring step"
+        }
+      ]
+    },
+    {
+      "id": "pcb-transfer-integrity",
+      "status": "active",
+      "reason": "A successful schematic-to-PCB transfer converted footprint graphics into phantom pads without reporting failure.",
+      "evidence": ["Konnect safe-parts benchmark, Discussion #239", "Konnect issue referencing PR #232"],
+      "introduced_for": "0.6.0",
+      "retire_when": "Konnect validates every transferred child layer and preserves footprint pad, graphic, and model counts.",
+      "assertions": [
+        {
+          "target": "skills/kicad-pcb/SKILL.md",
+          "contains": "PCB transfer integrity gate"
+        }
+      ]
+    },
+    {
+      "id": "contradictory-verifier-gate",
+      "status": "active",
+      "reason": "Aggregate review and manufacturing tools reported success despite DRC errors, unrouted work, and implausible zero-pad coverage.",
+      "evidence": ["Konnect safe-parts benchmark, Discussion #239"],
+      "introduced_for": "0.6.0",
+      "retire_when": "Aggregate verdicts fail closed and expose complete, internally consistent coverage.",
+      "assertions": [
+        {
+          "target": "skills/kicad-review/SKILL.md",
+          "contains": "Contradiction gate"
+        },
+        {
+          "target": "skills/kicad-manufacture/SKILL.md",
+          "contains": "cannot override DRC errors"
+        },
+        {
+          "target": "agents/konnect_design_reviewer.toml",
+          "contains": "A passing aggregate verdict cannot override"
+        }
+      ]
+    },
+    {
+      "id": "requirements-based-review-defaults",
+      "status": "active",
+      "reason": "Universal ESD, bulk-capacitance, fiducial, and per-pin decoupling requirements can misclassify designs without requirements or datasheet evidence.",
+      "evidence": ["Review of the Konnect 0.6.0 design-review agent"],
+      "introduced_for": "0.6.0",
+      "retire_when": "Upstream review guidance distinguishes hard requirements from context-dependent engineering defaults.",
+      "assertions": [
+        {
+          "target": "agents/konnect_design_reviewer.toml",
+          "contains": "Classify a finding as CRITICAL only when"
+        }
+      ]
+    },
+    {
+      "id": "doctor-agent-reporting",
+      "status": "active",
+      "reason": "The health report said zero recognizable agents while two plugin-managed agents were installed.",
+      "evidence": ["konnect-codex doctor output on 2026-08-16"],
+      "introduced_for": "0.6.0",
+      "retire_when": "Plugin-owned and upstream-native agent counts remain separately visible.",
+      "assertions": []
+    }
+  ]
+}
