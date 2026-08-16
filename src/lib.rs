@@ -160,12 +160,19 @@ pub fn sync(options: SyncOptions) -> Result<OperationReport> {
 
     let assets = discover_assets(options.source.as_deref(), &options.paths.home)?;
     let source_hooks = discover_source_hooks(&assets.root, &options.konnect_binary)?;
+    let native_skills = discover_native_skills(&assets, &options.paths);
     let old_manifest = load_manifest_if_present(&options.paths.manifest_path)?;
     let generated_config = render_config(options.config_source.as_deref())?;
-    let fingerprint = source_fingerprint(&assets, &source_hooks, generated_config.as_bytes())?;
+    let fingerprint = source_fingerprint(
+        &assets,
+        &source_hooks,
+        &native_skills,
+        generated_config.as_bytes(),
+    )?;
     let generated = generate_files(
         &assets,
         &source_hooks,
+        &native_skills,
         &options.paths,
         &options.adapter_binary,
         &fingerprint,
@@ -180,6 +187,11 @@ pub fn sync(options: SyncOptions) -> Result<OperationReport> {
         assets.root.display(),
         assets.skills.len(),
         assets.agents.len()
+    ));
+    report.push(format!(
+        "Skills: {} native, {} companion copies",
+        native_skills.len(),
+        assets.skills.len().saturating_sub(native_skills.len())
     ));
     report.push("Codex profile: complete eager MCP catalogue".to_string());
     report.push(format!(
@@ -752,6 +764,7 @@ fn discover_source_hooks(root: &Path, konnect_binary: &Path) -> Result<Vec<Sourc
 fn generate_files(
     assets: &SourceAssets,
     source_hooks: &[SourceHook],
+    native_skills: &BTreeSet<String>,
     paths: &CompanionPaths,
     adapter_binary: &Path,
     fingerprint: &str,
@@ -843,6 +856,9 @@ fn generate_files(
     });
 
     for (name, skill_dir) in &assets.skills {
+        if native_skills.contains(name) {
+            continue;
+        }
         for (relative_path, source_path) in walk_files(skill_dir)? {
             let content = fs::read(&source_path)?;
             let content = if relative_path == Path::new("SKILL.md") {
@@ -884,6 +900,21 @@ fn generate_files(
         role: ManagedRole::Config,
     });
     Ok(files)
+}
+
+fn discover_native_skills(assets: &SourceAssets, paths: &CompanionPaths) -> BTreeSet<String> {
+    let marker = paths.home.join(".konnect").join(".installed-codex");
+    if !marker.is_file() {
+        return BTreeSet::new();
+    }
+
+    let skills_dir = paths.home.join(".agents").join("skills");
+    assets
+        .skills
+        .iter()
+        .filter(|(name, _)| skills_dir.join(name).join("SKILL.md").is_file())
+        .map(|(name, _)| name.clone())
+        .collect()
 }
 
 fn transform_skill(raw: &str) -> String {
@@ -978,6 +1009,7 @@ fn render_config(source: Option<&Path>) -> Result<String> {
 fn source_fingerprint(
     assets: &SourceAssets,
     source_hooks: &[SourceHook],
+    native_skills: &BTreeSet<String>,
     config: &[u8],
 ) -> Result<String> {
     let mut hasher = Sha256::new();
@@ -997,6 +1029,10 @@ fn source_fingerprint(
         hasher.update(hook.event.as_bytes());
         hasher.update(hook.matcher.as_deref().unwrap_or("").as_bytes());
         hasher.update(hook.context.as_bytes());
+    }
+    for name in native_skills {
+        hasher.update(b"native-skill\0");
+        hasher.update(name.as_bytes());
     }
     hasher.update(config);
     hasher.update(OVERLAY_SKILL.as_bytes());
@@ -1512,6 +1548,47 @@ Load the required toolsets immediately:
             .join("konnect_schematic_builder.toml")
             .exists());
         assert!(marketplace_has_owned_entry(&paths.marketplace_path).unwrap());
+
+        let native_konnect_skill = paths
+            .home
+            .join(".agents")
+            .join("skills")
+            .join("konnect")
+            .join("SKILL.md");
+        fs::create_dir_all(native_konnect_skill.parent().unwrap()).unwrap();
+        fs::write(&native_konnect_skill, "native Konnect skill").unwrap();
+        fs::create_dir_all(paths.home.join(".konnect")).unwrap();
+        fs::write(
+            paths.home.join(".konnect").join(".installed-codex"),
+            "0.5.1",
+        )
+        .unwrap();
+
+        sync(SyncOptions {
+            paths: paths.clone(),
+            source: Some(temp.path().join("source")),
+            konnect_binary: temp.path().join(if cfg!(windows) {
+                "konnect.exe"
+            } else {
+                "konnect"
+            }),
+            config_source: Some(temp.path().join("konnect.toml")),
+            adapter_binary: std::env::current_exe().unwrap(),
+            activate: false,
+            dry_run: false,
+        })
+        .unwrap();
+
+        assert!(!paths
+            .plugin_dir
+            .join("skills")
+            .join("konnect")
+            .join("SKILL.md")
+            .exists());
+        assert_eq!(
+            fs::read_to_string(&native_konnect_skill).unwrap(),
+            "native Konnect skill"
+        );
 
         uninstall(&paths, false).unwrap();
         assert!(!paths.plugin_dir.exists());

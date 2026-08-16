@@ -14,15 +14,17 @@
   <a href="https://github.com/mixelpixx/Konnect"><img alt="Konnect 0.5 or newer" src="https://img.shields.io/badge/Konnect-0.5%2B-22d3ee.svg"></a>
 </p>
 
-`konnect-codex` converts the guidance installed for Claude by Konnect into a
-Codex-native, reversible integration. It is deliberately separate from the
-Konnect server so it can be removed when upstream Codex support reaches feature
-parity.
+`konnect-codex` complements Konnect's native Codex skill installation with a
+reversible plugin, converted agents, and hooks. It is deliberately separate
+from the Konnect server so it can be removed when upstream Codex support reaches
+feature parity.
 
-It supplies the pieces that Konnect v0.5.0 does not yet install for Codex:
+Konnect v0.5.1 installs its six shared skills natively with
+`konnect init --client codex`. The companion detects that client-scoped install
+and reuses those skills instead of registering duplicate copies. It supplies the
+pieces that v0.5.1 does not yet install for Codex:
 
-- a personal Codex plugin containing client-neutral copies of every installed
-  Konnect skill;
+- a personal Codex plugin containing the MCP and hook integration;
 - a Codex execution-router skill that makes the eager-tool profile and safe
   KiCad workflow explicit;
 - Codex TOML versions of every Konnect-supplied Claude agent, without a
@@ -34,14 +36,19 @@ It supplies the pieces that Konnect v0.5.0 does not yet install for Codex:
 - ownership, health checks, disable/enable, and exact uninstall support.
 
 The companion does not modify the normal Konnect configuration, Claude files,
-or upstream-installed Codex skills.
+or upstream-installed Codex skills. If native skills are not installed, it
+retains its compatibility fallback and creates client-neutral skill copies in
+the plugin.
 
 ## Build and install
 
 Install directly from GitHub:
 
 ```powershell
+konnect init --client codex
 cargo install --git https://github.com/neusse/konnect-codex
+konnect-codex sync
+konnect-codex doctor
 ```
 
 Or install from a local checkout:
