@@ -70,8 +70,8 @@ release for the current operating system, verify it, install the plugin, and
 run its health check for you:
 
 ```text
-Install the konnect-codex v0.6.1 plugin from
-https://github.com/neusse/konnect-codex/releases/tag/v0.6.1 for this operating
+Install the konnect-codex v0.6.1 companion revision 2 plugin from
+https://github.com/neusse/konnect-codex/releases/tag/v0.6.1-codex.2 for this operating
 system. First locate the Konnect executable and run `konnect --version`. Stop
 without changing anything if Konnect is missing or is not exactly v0.6.1.
 Download SHA256SUMS.txt and verify the plugin archive before extracting it.
@@ -107,7 +107,7 @@ konnect-codex doctor
 You can also install the version-matched source release with Cargo:
 
 ```powershell
-cargo install --git https://github.com/neusse/konnect-codex --tag v0.6.1
+cargo install --git https://github.com/neusse/konnect-codex --tag v0.6.1-codex.2
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -141,6 +141,13 @@ konnect-codex uninstall     # remove only plugin-owned files and marketplace ent
 `uninstall` verifies hashes before removing anything. If a managed file was
 edited after installation, it stops and preserves the file. `--force` is
 available only for intentionally discarding those plugin-owned edits.
+
+While reviewed mode is enabled, the plugin maintains a reversible
+`~/.konnect/.installed-codex` suppression marker. Konnect 0.6.1 otherwise
+silently reinstalls its six native Codex skills on every MCP start after an
+uninstall. The companion repairs the marker before launching Konnect and
+restores its prior state when disabled or uninstalled; it does not claim or
+delete native skill files.
 
 ## Generated locations
 
