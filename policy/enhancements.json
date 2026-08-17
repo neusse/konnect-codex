@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.6.0",
+  "supported_konnect_version": "0.6.1",
   "companion_revision": 1,
   "enhancements": [
     {

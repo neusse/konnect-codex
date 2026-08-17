@@ -1,8 +1,13 @@
-# konnect-codex plugin v0.6.0
+# konnect-codex plugin v0.6.1
 
 This release is reviewed for
-[Konnect v0.6.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.6.0) at
-commit `2e5bbc2f0a2b16baa9aab89b94cceec7e472a1d6`.
+[Konnect v0.6.1](https://github.com/mixelpixx/Konnect/releases/tag/v0.6.1) at
+commit `506abe094204c6d4acd77415892e9e0e8fdb35fb`.
+
+Konnect 0.6.1 fixes the KiCad crash caused by footprint graphics on
+`Dwgs.User` and makes `konnect init --help` non-destructive. Its bundled
+skills, references, agents, and hook are byte-for-byte unchanged from 0.6.0,
+so the companion's six active Codex enhancements remain applicable.
 
 ## Included
 
@@ -20,7 +25,7 @@ commit `2e5bbc2f0a2b16baa9aab89b94cceec7e472a1d6`.
   from the safe-parts benchmark.
 - Health output that reports plugin-managed and upstream-native agents
   separately.
-- A pre-install gate that requires Konnect to be present and exactly v0.6.0
+- A pre-install gate that requires Konnect to be present and exactly v0.6.1
   before any plugin file is created or replaced.
 - Downloadable Windows, Linux, and macOS archives with SHA-256 checksums.
 

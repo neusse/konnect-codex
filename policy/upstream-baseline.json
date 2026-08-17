@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "konnect_version": "0.6.0",
-  "konnect_commit": "2e5bbc2f0a2b16baa9aab89b94cceec7e472a1d6",
+  "konnect_version": "0.6.1",
+  "konnect_commit": "506abe094204c6d4acd77415892e9e0e8fdb35fb",
   "files": [
     { "path": "agents/kicad-design-review-agent.md", "sha256": "6fb278234b799174b782f6c677815f200dff168c2e894cf85e558636873b2944" },
     { "path": "agents/kicad-schematic-build-agent.md", "sha256": "b2ddeba2b210801ee93e8084c923340a47b4bcb126e5095396a55c59e54b854e" },
