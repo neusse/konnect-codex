@@ -42,6 +42,7 @@ pub struct CompanionPaths {
     pub manifest_path: PathBuf,
     pub generated_config_path: PathBuf,
     pub disabled_agents_dir: PathBuf,
+    pub native_install_guard_path: PathBuf,
 }
 
 impl CompanionPaths {
@@ -62,6 +63,7 @@ impl CompanionPaths {
             manifest_path: data_dir.join("manifest.json"),
             generated_config_path: data_dir.join("konnect.toml"),
             disabled_agents_dir: data_dir.join("disabled-agents"),
+            native_install_guard_path: data_dir.join("native-install-guard.json"),
             home,
             data_dir,
         }
@@ -142,6 +144,12 @@ struct InstallManifest {
     files: Vec<ManagedFile>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct NativeInstallGuard {
+    schema_version: u32,
+    marker_preexisting: bool,
+}
+
 #[derive(Clone, Debug)]
 struct GeneratedFile {
     path: PathBuf,
@@ -198,6 +206,62 @@ struct UpstreamBaseline {
 struct UpstreamBaselineFile {
     path: String,
     sha256: String,
+}
+
+fn native_codex_install_marker(paths: &CompanionPaths) -> PathBuf {
+    paths.home.join(".konnect").join(".installed-codex")
+}
+
+fn acquire_native_install_guard(paths: &CompanionPaths) -> Result<()> {
+    let marker = native_codex_install_marker(paths);
+    if paths.native_install_guard_path.exists() {
+        let guard: NativeInstallGuard =
+            serde_json::from_slice(&fs::read(&paths.native_install_guard_path)?)?;
+        if guard.schema_version != 1 {
+            bail!(
+                "unsupported native install guard schema {}",
+                guard.schema_version
+            );
+        }
+        if !marker.exists() {
+            write_atomic(&marker, env!("CARGO_PKG_VERSION").as_bytes())?;
+        }
+        return Ok(());
+    }
+
+    let guard = NativeInstallGuard {
+        schema_version: 1,
+        marker_preexisting: marker.exists(),
+    };
+    if !guard.marker_preexisting {
+        write_atomic(&marker, env!("CARGO_PKG_VERSION").as_bytes())?;
+    }
+    write_atomic(
+        &paths.native_install_guard_path,
+        &serde_json::to_vec_pretty(&guard)?,
+    )
+}
+
+fn release_native_install_guard(paths: &CompanionPaths) -> Result<()> {
+    if !paths.native_install_guard_path.exists() {
+        return Ok(());
+    }
+    let guard: NativeInstallGuard =
+        serde_json::from_slice(&fs::read(&paths.native_install_guard_path)?)?;
+    if guard.schema_version != 1 {
+        bail!(
+            "unsupported native install guard schema {}",
+            guard.schema_version
+        );
+    }
+    if !guard.marker_preexisting {
+        let marker = native_codex_install_marker(paths);
+        if marker.exists() {
+            fs::remove_file(marker)?;
+        }
+    }
+    fs::remove_file(&paths.native_install_guard_path)?;
+    Ok(())
 }
 
 pub fn sync(options: SyncOptions) -> Result<OperationReport> {
@@ -351,6 +415,10 @@ where
 
     if options.activate {
         activate_plugin()?;
+        if let Err(error) = acquire_native_install_guard(&options.paths) {
+            let _ = remove_plugin_registration();
+            return Err(error).context("could not arm native guidance suppression");
+        }
         manifest.state = InstallState::Enabled;
         write_manifest(&options.paths.manifest_path, &manifest)?;
         report.push(format!("Enabled: {PLUGIN_NAME}@{MARKETPLACE_NAME}"));
@@ -374,6 +442,7 @@ pub fn disable(paths: &CompanionPaths) -> Result<OperationReport> {
     let mut manifest = load_manifest(&paths.manifest_path)?;
     let mut report = OperationReport::default();
     if manifest.state == InstallState::Disabled {
+        release_native_install_guard(paths)?;
         report.push("Konnect Codex plugin is already disabled.");
         return Ok(report);
     }
@@ -398,6 +467,7 @@ pub fn disable(paths: &CompanionPaths) -> Result<OperationReport> {
     }
     manifest.state = InstallState::Disabled;
     write_manifest(&paths.manifest_path, &manifest)?;
+    release_native_install_guard(paths)?;
     report.push("Disabled plugin hooks, MCP server, skills, and custom agents.");
     report.push("Generated plugin and source manifest were retained for re-enable.");
     Ok(report)
@@ -407,6 +477,7 @@ pub fn enable(paths: &CompanionPaths) -> Result<OperationReport> {
     let mut manifest = load_manifest(&paths.manifest_path)?;
     let mut report = OperationReport::default();
     if manifest.state == InstallState::Enabled {
+        acquire_native_install_guard(paths)?;
         report.push("Konnect Codex plugin is already enabled.");
         return Ok(report);
     }
@@ -439,6 +510,10 @@ pub fn enable(paths: &CompanionPaths) -> Result<OperationReport> {
     }
 
     activate_plugin()?;
+    if let Err(error) = acquire_native_install_guard(paths) {
+        let _ = remove_plugin_registration();
+        return Err(error).context("could not arm native guidance suppression");
+    }
     for file in manifest
         .files
         .iter()
@@ -487,6 +562,8 @@ pub fn uninstall(paths: &CompanionPaths, force: bool) -> Result<OperationReport>
             }
         }
     }
+
+    release_native_install_guard(paths)?;
 
     remove_tree_if_empty(&paths.plugin_dir)?;
     remove_dir_if_empty(&paths.disabled_agents_dir)?;
@@ -589,6 +666,11 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
 
     let marketplace_ok = marketplace_has_owned_entry(&paths.marketplace_path)?;
     report.push(format!("Marketplace entry: {marketplace_ok}"));
+    let native_install_suppressed =
+        paths.native_install_guard_path.exists() && native_codex_install_marker(paths).exists();
+    report.push(format!(
+        "Native guidance auto-install suppressed: {native_install_suppressed}"
+    ));
     report.push(format!(
         "Relevant-prompt hook: {}",
         user_prompt_context("Please review this KiCad PCB").is_some()
@@ -596,7 +678,12 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
 
     report.messages.extend(native_status(paths)?.messages);
     report.push(
-        if healthy_count == manifest.files.len() && eager && marketplace_ok && compatible_version {
+        if healthy_count == manifest.files.len()
+            && eager
+            && marketplace_ok
+            && compatible_version
+            && (manifest.state == InstallState::Disabled || native_install_suppressed)
+        {
             "Health: PASS".to_string()
         } else {
             "Health: FAIL".to_string()
@@ -625,9 +712,10 @@ pub fn native_status(paths: &CompanionPaths) -> Result<OperationReport> {
     };
     let marker = paths.home.join(".konnect").join(".installed-codex");
     report.push(format!(
-        "Upstream-native Konnect coverage: {skill_count}/{} skills, {native_agent_count} agents, installer marker {}",
+        "Upstream-native Konnect coverage: {skill_count}/{} skills, {native_agent_count} agents, installer marker {}, plugin suppression {}",
         NATIVE_SKILLS.len(),
-        marker.exists()
+        marker.exists(),
+        paths.native_install_guard_path.exists()
     ));
     if skill_count > 0 {
         report.push(
@@ -644,6 +732,8 @@ pub fn run_mcp(paths: &CompanionPaths) -> Result<i32> {
     if manifest.state != InstallState::Enabled {
         bail!("Konnect Codex plugin is disabled; run `konnect-codex enable`");
     }
+    acquire_native_install_guard(paths)
+        .context("could not suppress Konnect's native guidance auto-installer")?;
     let status = Command::new(&manifest.konnect_binary)
         .arg("--client")
         .arg("codex")
@@ -787,7 +877,13 @@ fn generate_files(
     generated_config: String,
 ) -> Result<Vec<GeneratedFile>> {
     let mut files = Vec::new();
-    let plugin_version = format!("{}+codex.{}", env!("CARGO_PKG_VERSION"), &fingerprint[..12]);
+    let companion_revision = enhancement_policy()?.companion_revision;
+    let plugin_version = format!(
+        "{}+codex.{}.{}",
+        env!("CARGO_PKG_VERSION"),
+        companion_revision,
+        &fingerprint[..12]
+    );
 
     let mut manifest: JsonValue = serde_json::from_str(PLUGIN_MANIFEST_TEMPLATE)?;
     manifest["version"] = json!(plugin_version);
@@ -1605,7 +1701,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 6);
+        assert_eq!(active.len(), 7);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -1614,6 +1710,7 @@ mod tests {
             "contradictory-verifier-gate",
             "requirements-based-review-defaults",
             "doctor-agent-reporting",
+            "native-auto-install-suppression",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -1666,6 +1763,58 @@ mod tests {
         assert!(report.contains("Upstream-native Konnect coverage"));
         assert!(report.contains("0 agents"));
         assert!(!report.contains("recognizable agents"));
+    }
+
+    #[test]
+    fn native_install_guard_restores_an_absent_marker_after_plugin_use() {
+        let temp = TempDir::new().unwrap();
+        let paths = CompanionPaths::for_home(temp.path().join("home"));
+
+        acquire_native_install_guard(&paths).unwrap();
+
+        assert_eq!(
+            fs::read_to_string(native_codex_install_marker(&paths)).unwrap(),
+            env!("CARGO_PKG_VERSION")
+        );
+        assert!(paths.native_install_guard_path.exists());
+
+        release_native_install_guard(&paths).unwrap();
+
+        assert!(!native_codex_install_marker(&paths).exists());
+        assert!(!paths.native_install_guard_path.exists());
+    }
+
+    #[test]
+    fn mcp_launch_repairs_the_native_install_guard_before_starting_konnect() {
+        let temp = TempDir::new().unwrap();
+        let paths = CompanionPaths::for_home(temp.path().join("home"));
+        let executable = std::env::current_exe().unwrap();
+
+        sync_with_version_probe(
+            SyncOptions {
+                paths: paths.clone(),
+                source: None,
+                konnect_binary: executable.clone(),
+                config_source: None,
+                adapter_binary: executable,
+                activate: false,
+                dry_run: false,
+                prefer_native_skills: false,
+            },
+            |_| Ok(format!("konnect {}", env!("CARGO_PKG_VERSION"))),
+        )
+        .unwrap();
+        let mut manifest = load_manifest(&paths.manifest_path).unwrap();
+        manifest.state = InstallState::Enabled;
+        write_manifest(&paths.manifest_path, &manifest).unwrap();
+
+        assert!(!native_codex_install_marker(&paths).exists());
+        assert!(!paths.native_install_guard_path.exists());
+
+        let _ = run_mcp(&paths).unwrap();
+
+        assert!(native_codex_install_marker(&paths).exists());
+        assert!(paths.native_install_guard_path.exists());
     }
 
     #[test]
@@ -1934,11 +2083,15 @@ mod tests {
             "native Konnect skill"
         );
 
+        acquire_native_install_guard(&paths).unwrap();
+        assert!(paths.native_install_guard_path.exists());
+
         uninstall(&paths, false).unwrap();
         assert!(!paths.plugin_dir.exists());
         assert!(!paths.data_dir.exists());
         assert!(!paths.marketplace_path.exists());
         assert_eq!(fs::read_to_string(native_skill).unwrap(), "keep me");
+        assert!(native_codex_install_marker(&paths).exists());
     }
 
     #[cfg(windows)]
