@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "supported_konnect_version": "0.6.1",
-  "companion_revision": 2,
+  "companion_revision": 3,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -102,6 +102,24 @@
       "introduced_for": "0.6.1",
       "retire_when": "Konnect MCP startup is non-mutating or supports a tested no-guidance-install option.",
       "assertions": []
+    },
+    {
+      "id": "pcb-builder-delegation",
+      "status": "active",
+      "reason": "The benchmark concentrated transfer, placement, routing, and zone work in the primary agent, leaving no deterministic specialist handoff between schematic construction and independent review.",
+      "evidence": ["Konnect safe-parts benchmark, Discussion #239", "Saved skills-enhancments.md recommendation from 2026-08-16"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect supplies an equivalent Codex-native PCB construction agent and deterministic schematic-to-PCB-to-review routing policy.",
+      "assertions": [
+        {
+          "target": "skills/konnect-codex/SKILL.md",
+          "contains": "Delegate complete schematic-to-PCB transfer"
+        },
+        {
+          "target": "agents/konnect_pcb_builder.toml",
+          "contains": "transfer inventory and comparison"
+        }
+      ]
     }
   ]
 }

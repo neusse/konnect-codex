@@ -28,10 +28,14 @@ against a different, lazy Konnect server.
 When agent delegation is available, make these handoffs deterministic:
 
 - Delegate a complete schematic build to `konnect_schematic_builder`.
+- Delegate complete schematic-to-PCB transfer, board setup, placement, routing,
+  and zone work to `konnect_pcb_builder` after the schematic is saved and
+  validated. Use it directly for substantial layout work on an existing board.
 - Delegate a comprehensive final or pre-fabrication review to
   `konnect_design_reviewer` after all design mutations are complete.
-- Run the agents sequentially. Give one agent ownership of the KiCad project at
-  a time; multiple agents must not mutate the same project or live IPC session.
+- Run the agents sequentially in schematic -> PCB -> review order when all three
+  phases apply. Give one agent ownership of the KiCad project at a time; multiple
+  agents must not mutate the same project or live IPC session.
 
 If delegation is unavailable, execute the matching workflow in the current task
 and state that no custom agent ran.

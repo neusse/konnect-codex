@@ -1,4 +1,4 @@
-# konnect-codex plugin v0.6.1 — companion revision 2
+# konnect-codex plugin v0.6.1 — companion revision 3
 
 This release is reviewed for
 [Konnect v0.6.1](https://github.com/mixelpixx/Konnect/releases/tag/v0.6.1) at
@@ -7,10 +7,15 @@ commit `506abe094204c6d4acd77415892e9e0e8fdb35fb`.
 Konnect 0.6.1 fixes the KiCad crash caused by footprint graphics on
 `Dwgs.User` and makes `konnect init --help` non-destructive. Its bundled
 skills, references, agents, and hook are byte-for-byte unchanged from 0.6.0,
-so the companion's six preexisting Codex enhancements remain applicable; this
-revision adds a seventh lifecycle enhancement.
+so the companion's existing Codex enhancements remain applicable.
 
-Companion revision 2 makes reviewed-mode installation durable across MCP
+Companion revision 3 adds `konnect_pcb_builder`, a dedicated PCB construction
+agent for transfer integrity, board setup, placement, routing, zones, and direct
+layout verification. The router and prompt hook now use a deterministic
+schematic -> PCB -> independent review sequence, with one agent owning the live
+KiCad project at a time.
+
+The revision retains revision 2's durable reviewed-mode installation across MCP
 restarts. Konnect 0.6.1 silently reinstalls its native Codex skills whenever
 the `.installed-codex` marker is absent, reversing an explicit uninstall. The
 plugin now owns a reversible suppression guard while enabled, repairs it before
@@ -21,14 +26,15 @@ state on disable or uninstall. The upstream behavior is tracked in
 ## Included
 
 - Six reviewed Codex-native KiCad workflow skills and one execution router.
-- Two Codex agents for complete schematic construction and design review.
+- Three Codex agents for complete schematic construction, PCB layout, and
+  independent design review.
 - Codex-native hooks and eager discovery of the complete Konnect MCP catalogue.
 - Reversible sync, disable, enable, doctor, and uninstall operations.
 - A compatibility audit that detects upstream guidance or hook drift.
 - A machine-enforced guidance change policy with per-file upstream provenance,
   named Codex enhancements, evidence, and retirement criteria.
-- Deterministic sequential delegation for full schematic builds and final
-  design reviews.
+- Deterministic sequential delegation for full schematic builds, PCB transfer
+  and layout, and final design reviews.
 - Schematic collision/evidence gates, PCB transfer invariants, contradictory
   verifier handling, and direct manufacturing artifact verification derived
   from the safe-parts benchmark.

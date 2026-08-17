@@ -813,7 +813,7 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
     .iter()
     .any(|term| lower.contains(term));
     relevant.then(|| {
-        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand a complete schematic build to konnect_schematic_builder and a comprehensive final review to konnect_design_reviewer; run those handoffs sequentially."
+        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, and a comprehensive final review to konnect_design_reviewer; run those handoffs sequentially in schematic -> PCB -> review order when all phases apply."
             .to_string()
     })
 }
@@ -1701,7 +1701,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 7);
+        assert_eq!(active.len(), 8);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -1711,6 +1711,7 @@ mod tests {
             "requirements-based-review-defaults",
             "doctor-agent-reporting",
             "native-auto-install-suppression",
+            "pcb-builder-delegation",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -1920,7 +1921,16 @@ mod tests {
 
     #[test]
     fn reviewed_agents_are_valid_codex_toml() {
-        assert_eq!(REVIEWED_AGENT_FILES.len(), 2);
+        assert_eq!(REVIEWED_AGENT_FILES.len(), 3);
+        let names: BTreeSet<_> = REVIEWED_AGENT_FILES.iter().map(|(path, _)| *path).collect();
+        assert_eq!(
+            names,
+            BTreeSet::from([
+                "konnect_design_reviewer.toml",
+                "konnect_pcb_builder.toml",
+                "konnect_schematic_builder.toml",
+            ])
+        );
         for (path, content) in REVIEWED_AGENT_FILES {
             let raw = std::str::from_utf8(content).unwrap();
             let value: toml::Value = toml::from_str(raw).unwrap();
@@ -1957,7 +1967,11 @@ mod tests {
 
     #[test]
     fn prompt_hook_only_adds_context_for_relevant_work() {
-        assert!(user_prompt_context("Review this KiCad schematic").is_some());
+        let context = user_prompt_context("Build this KiCad schematic and PCB").unwrap();
+        assert!(context.contains("konnect_schematic_builder"));
+        assert!(context.contains("konnect_pcb_builder"));
+        assert!(context.contains("konnect_design_reviewer"));
+        assert!(context.contains("schematic -> PCB -> review"));
         assert!(user_prompt_context("Refactor my web API").is_none());
     }
 
@@ -2032,10 +2046,15 @@ mod tests {
             .disabled_agents_dir
             .join("konnect_schematic_builder.toml")
             .exists());
+        assert!(paths
+            .disabled_agents_dir
+            .join("konnect_pcb_builder.toml")
+            .exists());
         assert!(!paths
             .agents_dir
             .join("konnect_schematic_builder.toml")
             .exists());
+        assert!(!paths.agents_dir.join("konnect_pcb_builder.toml").exists());
         assert!(marketplace_has_owned_entry(&paths.marketplace_path).unwrap());
 
         let native_konnect_skill = paths
