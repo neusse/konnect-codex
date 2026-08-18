@@ -1,4 +1,4 @@
-# konnect-codex plugin v0.6.1 — companion revision 3
+# konnect-codex plugin v0.6.1 — companion revision 4
 
 This release is reviewed for
 [Konnect v0.6.1](https://github.com/mixelpixx/Konnect/releases/tag/v0.6.1) at
@@ -9,11 +9,17 @@ Konnect 0.6.1 fixes the KiCad crash caused by footprint graphics on
 skills, references, agents, and hook are byte-for-byte unchanged from 0.6.0,
 so the companion's existing Codex enhancements remain applicable.
 
-Companion revision 3 adds `konnect_pcb_builder`, a dedicated PCB construction
-agent for transfer integrity, board setup, placement, routing, zones, and direct
-layout verification. The router and prompt hook now use a deterministic
-schematic -> PCB -> independent review sequence, with one agent owning the live
-KiCad project at a time.
+Companion revision 4 makes Freerouting the default whole-board routing strategy
+for the PCB skill and `konnect_pcb_builder`. It adds a documented KiCad
+ActionPlugin/Konnect bridge decision, a clean-placement gate before routing,
+route-import inventory and DRC acceptance, stale trace-query detection, and a
+hard stop when a live IPC phase falls back to closed-file mutation.
+
+Revision 3 added `konnect_pcb_builder`, a dedicated PCB construction agent for
+transfer integrity, board setup, placement, routing, zones, and direct layout
+verification. The router and prompt hook use a deterministic schematic -> PCB
+-> independent review sequence, with one agent owning the live KiCad project at
+a time.
 
 The revision retains revision 2's durable reviewed-mode installation across MCP
 restarts. Konnect 0.6.1 silently reinstalls its native Codex skills whenever
@@ -35,6 +41,8 @@ state on disable or uninstall. The upstream behavior is tracked in
   named Codex enhancements, evidence, and retirement criteria.
 - Deterministic sequential delegation for full schematic builds, PCB transfer
   and layout, and final design reviews.
+- Freerouting-first whole-board routing with explicit DSN/SES bridge selection,
+  placement readiness, route-import acceptance, and local-repair boundaries.
 - Schematic collision/evidence gates, PCB transfer invariants, contradictory
   verifier handling, and direct manufacturing artifact verification derived
   from the safe-parts benchmark.

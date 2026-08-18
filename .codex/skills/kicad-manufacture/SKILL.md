@@ -46,6 +46,9 @@ get_drc_violations()
 - All errors must be resolved. Warnings should be reviewed but may be waived.
 - Common blockers: unrouted nets, clearance violations, minimum width violations.
 - Do NOT proceed to export if any DRC errors remain.
+- After Freerouting or any SES import, save and verify unchanged component/pad
+  inventory, plausible traces by net and layer, and a fresh direct DRC. Imported
+  routing is not manufacturing evidence until this gate passes.
 
 ### 2. Manufacturing Validation
 

@@ -1,6 +1,6 @@
 ---
 name: kicad-pcb
-description: "Lay out and route KiCad PCBs through Konnect MCP tools. Use for board setup and outlines, footprint placement, traces, vias, differential pairs, zones, stackups, design rules, and silkscreen."
+description: "Lay out and route KiCad PCBs through Konnect MCP tools. Use for board setup, footprint placement, Freerouting or autoroute, traces, vias, differential pairs, zones, stackups, design rules, and silkscreen."
 ---
 
 # KiCAD PCB Layout Workflow
@@ -21,10 +21,12 @@ fallback. It preserves pads, graphics, attributes, and models, and rejects dupli
 references. If KiCAD is reachable but rejects the request, the fallback stays disabled
 to avoid racing a live editor.
 
-If connection fails:
-- Tell the user to open KiCAD and load the project
-- The board (.kicad_pcb) must be open in the PCB editor
-- KiCAD's IPC API must be enabled (default in KiCAD 8+)
+If connection fails, open the target `.kicad_pcb` in one PCB Editor and retry
+the readiness query once. After a live PCB phase begins, an IPC failure or an
+unexpected `source: file`/fallback result closes the phase: stop mutations,
+reopen the board, confirm its active path and inventory, and resume from the
+last saved gate. Never mix live IPC and closed-file fallback in one placement
+or routing sequence.
 
 ---
 
@@ -39,6 +41,7 @@ load_toolset('pcb_board')        # board outline, layers, setup, stackup
 load_toolset('pcb_components')   # place, move, rotate, align footprints
 load_toolset('pcb_routing')      # traces, vias, differential pairs
 load_toolset('sch_export')       # update PCB from the saved schematic hierarchy
+load_toolset('integration')      # check_freerouting, autoroute capability
 ```
 
 Zones (`pcb_board`: add_zone; `pcb_routing`: add_copper_pour), component/net queries (`pcb_components`: find_component, get_component_list; `pcb_board`: get_board_info), and bulk placement (`pcb_components`: place_component_array, align_components, duplicate_component) are already covered by the toolsets loaded above.
@@ -78,10 +81,16 @@ Follow this sequence for a clean PCB workflow:
    pad counts, undefined layers, or missing models are transfer corruption. Stop,
    roll back the single update, and report the exact mismatch.
 5. **Place components** — position all footprints
-6. **Route traces** — connect all nets
-7. **Copper pour** — add ground/power zones last
-8. **DRC** — run design rule check
-9. **Save** — `save_project`
+6. **Placement gate** — save; verify pad, hole, courtyard, edge, connector, and
+   mounting clearances; record component positions, pad inventory, trace count,
+   unrouted count, and direct DRC baseline
+7. **Select the router** — use Freerouting by default for a complete board or
+   interacting nets; read [references/freerouting-workflow.md](references/freerouting-workflow.md)
+8. **Route acceptance gate** — verify unchanged placement/inventory, plausible
+   traces, no shorts, clean direct DRC, and no required unrouted connection
+9. **Copper pour** — add ground/power zones after route acceptance
+10. **Final DRC** — refill zones, run direct DRC, and reconcile live queries
+11. **Save** — `save_project`, then re-query final state
 
 Do NOT add copper pours before routing is complete — they interfere with interactive routing.
 
@@ -113,17 +122,31 @@ Do NOT add copper pours before routing is complete — they interfere with inter
 - Use mm coordinates (KiCAD default for PCB)
 - Standard grid: 0.5mm for placement, 0.25mm for fine adjustment
 - Check component courtyard overlaps after placement
+- Check pad-to-pad and hole clearances before routing; a visually separated body
+  can still have overlapping pads
 - Reference designator text: F.SilkS layer, 1mm height default
 
 ---
 
 ## Routing
 
+### Default route policy
+
+Use Freerouting for whole-board routing. It provides global obstacle avoidance,
+rip-up and retry, and congestion management that independent L-bends do not.
+Run the placement gate first, then follow
+[references/freerouting-workflow.md](references/freerouting-workflow.md).
+
+Use the segment tools below for deliberate local work: a trivial isolated net,
+a controlled power connection, a differential segment, or a small repair after
+the imported route passes its acceptance gate. They are not a fallback
+whole-board autorouter.
+
 ### Routing Tools
 
 | Tool                      | Use Case                                    |
 |---------------------------|---------------------------------------------|
-| `route_pad_to_pad`        | Direct connection, auto L-bend routing      |
+| `route_pad_to_pad`        | One unobstructed local L-bend or small repair |
 | `route_trace`             | Manual segment-by-segment routing           |
 | `route_differential_pair` | Matched-length USB/LVDS/Ethernet pairs      |
 | `add_via`                 | Layer transition                            |
@@ -131,8 +154,8 @@ Do NOT add copper pours before routing is complete — they interfere with inter
 
 ### route_pad_to_pad
 
-The primary routing tool. Looks up both pad positions on the board and lays an
-L-shaped trace between them.
+A narrow local routing tool. It looks up both pad positions and lays an
+L-shaped trace between them without global obstacle or congestion planning.
 
 ```
 route_pad_to_pad(board, net_name, ref1, pad1, ref2, pad2, layer?, width?)
@@ -153,7 +176,7 @@ the path yourself.
 route_trace(board, net_name, layer, x1, y1, x2, y2, width?)
 ```
 
-- Use when auto-routing creates suboptimal paths
+- Use for controlled local repairs after inspecting nearby copper and pads
 - There is no waypoint list: call it once per segment to build a polyline
 - Coordinates are board-space mm
 
@@ -276,6 +299,11 @@ Common DRC errors and fixes:
 - **Courtyard overlap**: increase spacing between components
 - **Zone fill error**: run `refill_zones`
 
+If a live trace query and direct DRC disagree, treat the board state as stale.
+Reopen the target board once, re-query, and use the direct item-level DRC as the
+acceptance gate. A successful tool response does not override contradictory
+shorts, unrouted work, or implausible inventory.
+
 ---
 
 ## Rules
@@ -286,8 +314,8 @@ Common DRC errors and fixes:
 4. **Refill zones after changes** — stale zone fills cause phantom DRC errors
 5. **Check DRC before finishing** — run `run_drc()` and resolve all errors
 6. **Use netclasses for consistency** — define track widths per net type, not per trace
-7. **KiCAD normally must be running** — only `place_component` has a safe
-   IPC-unreachable file fallback; other PCB edits still require the live IPC connection
+7. **Keep one live owner** — once placement or routing begins through IPC, stop
+   on editor loss or file fallback and reconnect before any further mutation
 8. **Save frequently** — call `save_project` after major operations
 9. **Load toolsets first** — check `get_active_toolsets()` and load what you need
 10. **Copper pour last** — add zones only after routing is substantially complete
@@ -296,3 +324,7 @@ Common DRC errors and fixes:
 12. **Fail closed on implausible queries** — zero pads on a populated board or a
     successful transfer with changed child-item counts is a tool contradiction,
     not proof that the board is clean
+13. **Freerouting first for complete boards** — reserve segment tools for
+    intentional local work and verified repairs
+14. **Gate routing on placement** — no autoroute begins with pad shorts,
+    blocking courtyard conflicts, stale zones, or unresolved mechanical overlap

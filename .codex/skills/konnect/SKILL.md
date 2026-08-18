@@ -48,6 +48,13 @@ Only to answer questions not available through exports (sheet hierarchy, title b
 5. **Execute** — use Konnect MCP tools only
 6. **Verify** — re-query the design to confirm the change landed correctly
 
+For a live PCB phase, record the active board path and plausible component/pad
+inventory before the first mutation. One PCB Editor owns the board. If KiCad
+closes, IPC refuses, or a mutator reports file fallback after live work begins,
+stop the phase and reopen/re-query before any further mutation. Mixing live IPC
+and closed-file fallback creates stale-state ambiguity and is never a valid
+continuation.
+
 ## Decision Tree
 
 | User Request | Channel | Tool / Action |

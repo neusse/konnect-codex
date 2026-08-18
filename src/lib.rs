@@ -758,7 +758,7 @@ pub fn run_hook(name: &str, argument: Option<&str>, paths: &CompanionPaths) -> R
     let input: JsonValue = serde_json::from_str(&raw).unwrap_or_else(|_| json!({}));
     let context = match name {
         "pre-pcb-ipc" => Some(
-            "This Konnect PCB operation requires KiCad to be running with the target board open. If IPC is unavailable, ask the user to open the .kicad_pcb file in KiCad and retry once. Preserve the error after that retry rather than looping."
+            "This Konnect PCB operation requires exactly one responsive KiCad PCB Editor with the target board open. Confirm the active board path and plausible component/pad inventory before mutation. If IPC is unavailable, the editor closes, or a mutator reports file fallback after live work began, stop the PCB phase, reopen the board, and retry the readiness query once. Never mix live IPC and closed-file fallback in one placement or routing sequence."
                 .to_string(),
         ),
         "user-prompt" => input
@@ -809,11 +809,13 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
         "design rule",
         "erc",
         "drc",
+        "freerouting",
+        "autoroute",
     ]
     .iter()
     .any(|term| lower.contains(term));
     relevant.then(|| {
-        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, and a comprehensive final review to konnect_design_reviewer; run those handoffs sequentially in schematic -> PCB -> review order when all phases apply."
+        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, and a comprehensive final review to konnect_design_reviewer; run those handoffs sequentially in schematic -> PCB -> review order when all phases apply. The PCB builder must close the placement gate before routing and use Freerouting by default for a complete board, with route-import inventory and direct DRC acceptance before zones or manufacturing."
             .to_string()
     })
 }
@@ -1701,7 +1703,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 8);
+        assert_eq!(active.len(), 10);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -1712,6 +1714,8 @@ mod tests {
             "doctor-agent-reporting",
             "native-auto-install-suppression",
             "pcb-builder-delegation",
+            "freerouting-first-routing",
+            "pcb-live-state-and-placement-gates",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -1972,7 +1976,25 @@ mod tests {
         assert!(context.contains("konnect_pcb_builder"));
         assert!(context.contains("konnect_design_reviewer"));
         assert!(context.contains("schematic -> PCB -> review"));
+        assert!(context.contains("Freerouting"));
+        assert!(context.contains("placement gate"));
+        assert!(user_prompt_context("Use Freerouting for this board").is_some());
         assert!(user_prompt_context("Refactor my web API").is_none());
+    }
+
+    #[test]
+    fn pcb_hook_covers_whole_board_routing_and_state_changes() {
+        let hooks: JsonValue = serde_json::from_str(HOOKS_TEMPLATE).unwrap();
+        let matcher = hooks["hooks"]["PreToolUse"][0]["matcher"].as_str().unwrap();
+        for tool in [
+            "autoroute",
+            "update_pcb_from_schematic",
+            "delete_trace",
+            "add_zone",
+            "refill_zones",
+        ] {
+            assert!(matcher.contains(tool), "PCB hook misses {tool}");
+        }
     }
 
     #[test]

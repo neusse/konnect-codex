@@ -110,6 +110,12 @@ Checks PCB-level rules:
 
 **Every DRC error must be resolved or explicitly justified before manufacturing.**
 
+For a routed board, also query traces by net and layer and record the unrouted
+count. A zero trace result on a visibly routed board, no-net copper, a large
+unexplained segment increase, changed placement after route import, or a live
+query that disagrees with item-level DRC is a stale-state contradiction. Reopen
+the target board once and repeat the direct checks before reaching a verdict.
+
 ---
 
 ## Design Audits
@@ -195,6 +201,8 @@ Aggregate verdicts are summaries, not higher-authority evidence. A passing
 - schematic shorts or conflicting exported connectivity;
 - transfer inventory mismatches;
 - implausible coverage such as zero pads on a populated board; or
+- implausible routing coverage such as zero traces on a routed board or an
+  unexplained segment explosion;
 - missing or empty requested artifacts.
 
 When checks disagree, report the contradiction, use the stronger direct check
@@ -332,3 +340,5 @@ Present findings grouped by severity with actionable fix suggestions:
 11. **Never soften `INCOMPLETE`** — partial or failed coverage is not a passing review
 12. **Apply the contradiction gate** — direct ERC, DRC, connectivity, inventory,
     and artifact evidence outranks an inconsistent aggregate verdict
+13. **Verify route provenance** — after Freerouting or SES import, confirm
+    unchanged placement/inventory, plausible traces, and direct DRC before review

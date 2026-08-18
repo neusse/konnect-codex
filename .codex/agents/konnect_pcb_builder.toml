@@ -14,9 +14,12 @@ the parent task instead of hiding them with board-only workarounds.
 
 ## Build workflow
 
-1. Confirm the target board, live KiCad editor state, board dimensions,
-   layer count, fabrication limits, mechanical constraints, current requirements,
-   net classes, and required manufacturing outputs.
+1. Confirm the target board, exactly one responsive KiCad PCB Editor, live IPC
+   path and plausible board inventory, board dimensions, layer count,
+   fabrication limits, mechanical constraints, current requirements, net
+   classes, and required manufacturing outputs. Save a checkpoint. If IPC is
+   lost or a mutator reports file fallback after this point, stop and restore a
+   single live owner before continuing.
 2. Before schematic-to-PCB transfer, inventory every selected footprint's
    reference, expected pad count, supported graphic layers, graphic count, and
    model associations. Replace or report footprints with unsupported child
@@ -31,12 +34,27 @@ the parent task instead of hiding them with board-only workarounds.
 5. Place by functional block. Put connectors and controls at usable edges,
    respect courtyards and mechanical clearances, keep decoupling at the intended
    device pins, separate noisy and sensitive regions, and verify every move.
-6. Route power, critical signals, differential pairs, then remaining signals.
-   Use explicit vias for layer changes. Treat straight parallel differential
-   segments as geometry, not proof of end-to-end impedance or length matching.
-7. Add zones after routing, refill them after every relevant change, and verify
+   Before routing, save and resolve pad-to-pad shorts, hole/copper overlap,
+   blocking courtyard conflicts, edge violations, connector interference, and
+   mounting interference. Record component positions, pad inventory, trace
+   count, unrouted count, and direct DRC as the route checkpoint.
+6. For a complete board or interacting nets, make Freerouting the default.
+   Call `check_freerouting`; use a working Konnect `autoroute` DSN/SES bridge
+   when available, otherwise use the KiCad Freerouting ActionPlugin through an
+   available desktop-control capability. If neither bridge is available, pause
+   for the smallest manual ActionPlugin step. A standalone JAR without DSN
+   export and SES import is incomplete. Never replace a missing bridge with
+   repeated `route_pad_to_pad` calls or unconstrained generated segments.
+7. After SES import, save and compare placement, inventory, traces by net and
+   layer, and unrouted count with the checkpoint. Run direct DRC and short
+   detection. Zero traces on a visibly routed board, a large unexplained
+   segment increase, no-net copper, changed footprint inventory, or a live
+   query that disagrees with DRC is stale or rejected route state. Reopen once
+   and re-query; reject the import if the contradiction remains. Use segment
+   tools only for a small understood set of local repairs.
+8. Add zones after routing is accepted, refill them after every relevant change, and verify
    their nets, clearances, thermal behavior, and board-edge relationship.
-8. Run direct DRC, unrouted, clearance, footprint/pad inventory, outline, zone,
+9. Run direct DRC, unrouted, clearance, footprint/pad inventory, outline, zone,
    and available 3D/model checks. Reconcile aggregate results with these direct
    checks, fix confirmed defects, save through Konnect, and re-query the final
    board state.
@@ -49,6 +67,9 @@ the parent task instead of hiding them with board-only workarounds.
   survives transfer and final placement.
 - Placement is complete, mechanically usable, and consistent with electrical,
   thermal, and signal-integrity constraints.
+- The accepted route has plausible trace inventory, preserves the placement
+  checkpoint, and records whether Konnect or the KiCad ActionPlugin supplied
+  the DSN/SES bridge.
 - No unwaived DRC error or unrouted required connection remains, and all zones
   are current.
 - Contradictory or incomplete checks are reported explicitly; they are not
@@ -56,9 +77,10 @@ the parent task instead of hiding them with board-only workarounds.
 
 ## Report
 
-Summarize the board setup, transfer inventory and comparison, placement and
-routing decisions, zones, checks run, direct results, waivers, contradictions,
-and remaining blockers. Name exact references, pads, nets, layers, coordinates,
-and rule violations for every unresolved item. Hand the stable saved board back
-for an independent `konnect_design_reviewer` pass.
+Summarize the board setup, transfer inventory and comparison, placement gate,
+routing bridge and checkpoint comparison, zones, checks run, direct results,
+waivers, contradictions, and remaining blockers. Name exact references, pads,
+nets, layers, coordinates, trace counts, and rule violations for every
+unresolved item. Hand the stable saved board back for an independent
+`konnect_design_reviewer` pass.
 """

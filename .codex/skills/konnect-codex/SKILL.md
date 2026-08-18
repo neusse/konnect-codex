@@ -1,6 +1,6 @@
 ---
 name: konnect-codex
-description: "Route KiCad schematic, PCB, library, manufacturing, and design-review work through Konnect in Codex. Use whenever a task mentions KiCad, a .kicad_* file, circuit design, footprints, routing, ERC, DRC, Gerbers, or board fabrication."
+description: "Route KiCad schematic, PCB, library, manufacturing, and design-review work through Konnect in Codex. Use whenever a task mentions KiCad, a .kicad_* file, circuit design, footprints, Freerouting, routing, ERC, DRC, Gerbers, or board fabrication."
 ---
 
 # Konnect for Codex
@@ -30,7 +30,8 @@ When agent delegation is available, make these handoffs deterministic:
 - Delegate a complete schematic build to `konnect_schematic_builder`.
 - Delegate complete schematic-to-PCB transfer, board setup, placement, routing,
   and zone work to `konnect_pcb_builder` after the schematic is saved and
-  validated. Use it directly for substantial layout work on an existing board.
+  validated. Use it directly for substantial layout work on an existing board;
+  it applies the placement gate and Freerouting-first whole-board policy.
 - Delegate a comprehensive final or pre-fabrication review to
   `konnect_design_reviewer` after all design mutations are complete.
 - Run the agents sequentially in schematic -> PCB -> review order when all three

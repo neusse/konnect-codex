@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "supported_konnect_version": "0.6.1",
-  "companion_revision": 3,
+  "companion_revision": 4,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -118,6 +118,50 @@
         {
           "target": "agents/konnect_pcb_builder.toml",
           "contains": "transfer inventory and comparison"
+        }
+      ]
+    },
+    {
+      "id": "freerouting-first-routing",
+      "status": "active",
+      "reason": "Konnect's local L-bend and segment tools do not provide global obstacle avoidance, rip-up and retry, or congestion management; using them as a whole-board fallback generated an unusable 1,332-segment route.",
+      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18", "Konnect issue #253", "Konnect integration autoroute capability response"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect supplies and documents an end-to-end KiCad DSN/SES bridge or an equivalent verified global router, and its native PCB guidance selects it before local segment tools.",
+      "assertions": [
+        {
+          "target": "skills/kicad-pcb/SKILL.md",
+          "contains": "Freerouting for whole-board routing"
+        },
+        {
+          "target": "skills/kicad-pcb/references/freerouting-workflow.md",
+          "contains": "Import acceptance gate"
+        },
+        {
+          "target": "agents/konnect_pcb_builder.toml",
+          "contains": "make Freerouting the default"
+        }
+      ]
+    },
+    {
+      "id": "pcb-live-state-and-placement-gates",
+      "status": "active",
+      "reason": "A crashed PCB Editor produced stale trace queries and later mutations fell back to closed-file edits; routing also began while pads, test points, controls, and power components still overlapped.",
+      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect binds every PCB mutation to an explicit live-board identity, refuses mixed IPC/file phases, and exposes a placement readiness gate that blocks routing on mechanical and copper overlap.",
+      "assertions": [
+        {
+          "target": "skills/kicad-pcb/SKILL.md",
+          "contains": "Never mix live IPC and closed-file fallback"
+        },
+        {
+          "target": "agents/konnect_pcb_builder.toml",
+          "contains": "Record component positions, pad inventory, trace"
+        },
+        {
+          "target": "agents/konnect_design_reviewer.toml",
+          "contains": "stale-state contradiction"
         }
       ]
     }
