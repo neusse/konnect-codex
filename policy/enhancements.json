@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "supported_konnect_version": "0.6.1",
-  "companion_revision": 4,
+  "companion_revision": 5,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -157,12 +157,95 @@
         },
         {
           "target": "agents/konnect_pcb_builder.toml",
-          "contains": "Record component positions, pad inventory, trace"
+          "contains": "component positions, pad"
         },
         {
           "target": "agents/konnect_design_reviewer.toml",
           "contains": "stale-state contradiction"
         }
+      ]
+    },
+    {
+      "id": "custom-part-physical-pin-acceptance",
+      "status": "active",
+      "reason": "The DR2000 benchmark produced a visually plausible symbol and footprint with mirrored physical pins, which would make the assembled display nonfunctional.",
+      "evidence": ["DR2000 datasheet bottom-view correction on 2026-08-18"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect supplies a datasheet-view-aware symbol-to-pad acceptance workflow with independent physical pin-map evidence.",
+      "assertions": [
+        {"target": "skills/kicad-library/references/custom-part-acceptance.md", "contains": "Physical order and view"},
+        {"target": "agents/konnect_library_builder.toml", "contains": "physical clockwise/counter-clockwise order"}
+      ]
+    },
+    {
+      "id": "visual-placement-checkpoint",
+      "status": "active",
+      "reason": "The DR2000 clock reached routing with overlapping test points and components that numeric placement output did not make sufficiently visible.",
+      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect exposes a placement-readiness result with rendered copper/courtyard evidence and blocks routing on unresolved overlap.",
+      "assertions": [
+        {"target": "skills/kicad-pcb/references/placement-acceptance.md", "contains": "2D board render"},
+        {"target": "agents/konnect_pcb_builder.toml", "contains": "visible checkpoint is accepted"}
+      ]
+    },
+    {
+      "id": "offline-freerouting-bridge",
+      "status": "active",
+      "reason": "Konnect detects Freerouting but does not bridge KiCad DSN export and SES import; the companion can use KiCad 10's bundled pcbnew Python API without racing the editor.",
+      "evidence": ["KiCad 10.0.5 pcbnew ExportSpecctraDSN/ImportSpecctraSES API", "Installed Freerouting ActionPlugin 2.3.0"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect supplies a verified non-destructive DSN/SES bridge with route acceptance evidence.",
+      "assertions": [
+        {"target": "skills/kicad-pcb/SKILL.md", "contains": "companion Freerouting bridge"},
+        {"target": "agents/konnect_pcb_builder.toml", "contains": "non-overwriting offline `route` bridge"}
+      ]
+    },
+    {
+      "id": "pcb-ownership-preflight",
+      "status": "active",
+      "reason": "Duplicate editors, wrong-board state, and IPC loss can redirect or stale PCB mutations; Codex's documented hook output does not currently provide a verified hard-denial contract.",
+      "evidence": ["Duplicate-open warning and IPC crash sessions on 2026-08-18", "Codex official documentation search on 2026-08-18"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect binds each mutation to an explicit board identity and Codex exposes a documented hard pre-tool denial contract or equivalent server-side guard.",
+      "assertions": [
+        {"target": "skills/kicad-pcb/SKILL.md", "contains": "pcb-preflight"}
+      ]
+    },
+    {
+      "id": "eco-and-power-layout-branches",
+      "status": "active",
+      "reason": "A universal new-board flow does not preserve accepted routing during engineering changes or prove current, voltage-drop, thermal, and noisy-return requirements for motor and converter boards.",
+      "evidence": ["24 V motor-distribution board requirements", "DR2000 clock iterative layout experience"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect provides explicit ECO preservation and requirements-based power/thermal layout workflows.",
+      "assertions": [
+        {"target": "skills/kicad-pcb/references/eco-workflow.md", "contains": "affected nets"},
+        {"target": "skills/kicad-pcb/references/power-layout.md", "contains": "allowed voltage drop"}
+      ]
+    },
+    {
+      "id": "firmware-bringup-handoff",
+      "status": "active",
+      "reason": "Manufacturing readiness alone does not preserve GPIO ownership, safe startup states, programming access, rail checks, and proof-of-life evidence for controller boards.",
+      "evidence": ["ESP32 DR2000 clock requirements", "Controller-board workflow review on 2026-08-18"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect supplies an equivalent Codex-native read-only firmware and controlled bring-up handoff.",
+      "assertions": [
+        {"target": "skills/kicad-bringup/SKILL.md", "contains": "reset/pull state"},
+        {"target": "agents/konnect_bringup_planner.toml", "contains": "READY FOR CONTROLLED BRING-UP"}
+      ]
+    },
+    {
+      "id": "legacy-sourcing-and-review-evidence",
+      "status": "active",
+      "reason": "Legacy through-hole builds and benchmark reports need lifecycle/socket/assembly checks plus repeatable raw review artifacts, not only aggregate prose verdicts.",
+      "evidence": ["DR2000 and LA5041R-11B legacy component research", "Konnect benchmark discussion reporting"],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect supplies lifecycle-aware manual-assembly guidance and a revisioned raw evidence package workflow.",
+      "assertions": [
+        {"target": "skills/kicad-manufacture/references/legacy-through-hole.md", "contains": "Socket part number"},
+        {"target": "skills/kicad-review/references/evidence-package.md", "contains": "raw ERC"}
       ]
     }
   ]

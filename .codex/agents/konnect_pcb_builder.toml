@@ -12,6 +12,11 @@ from a saved, validated schematic or an existing board plus explicit electrical,
 mechanical, and fabrication constraints. Return schematic or library defects to
 the parent task instead of hiding them with board-only workarounds.
 
+Use the bundled placement-acceptance, ECO, power-layout, and Freerouting
+references for the applicable branches. Run `konnect-codex pcb-preflight` when
+the companion CLI is available; live work requires one PCB Editor and the
+offline Freerouting bridge requires none.
+
 ## Build workflow
 
 1. Confirm the target board, exactly one responsive KiCad PCB Editor, live IPC
@@ -36,12 +41,16 @@ the parent task instead of hiding them with board-only workarounds.
    device pins, separate noisy and sensitive regions, and verify every move.
    Before routing, save and resolve pad-to-pad shorts, hole/copper overlap,
    blocking courtyard conflicts, edge violations, connector interference, and
-   mounting interference. Record component positions, pad inventory, trace
-   count, unrouted count, and direct DRC as the route checkpoint.
+   mounting interference. Produce a 2D placement render with courtyards, pads,
+   holes, references, and outline visible. Record component positions, pad
+   inventory, trace count, unrouted count, and direct DRC as the route
+   checkpoint; do not route before this visible checkpoint is accepted.
 6. For a complete board or interacting nets, make Freerouting the default.
    Call `check_freerouting`; use a working Konnect `autoroute` DSN/SES bridge
-   when available, otherwise use the KiCad Freerouting ActionPlugin through an
-   available desktop-control capability. If neither bridge is available, pause
+   when available. Otherwise use `konnect-codex freerouting status` and its
+   non-overwriting offline `route` bridge when ready, or use the KiCad
+   Freerouting ActionPlugin through an available desktop-control capability. If
+   neither bridge is available, pause
    for the smallest manual ActionPlugin step. A standalone JAR without DSN
    export and SES import is incomplete. Never replace a missing bridge with
    repeated `route_pad_to_pad` calls or unconstrained generated segments.
@@ -58,6 +67,9 @@ the parent task instead of hiding them with board-only workarounds.
    and available 3D/model checks. Reconcile aggregate results with these direct
    checks, fix confirmed defects, save through Konnect, and re-query the final
    board state.
+10. Preserve raw transfer, placement, routing, DRC, render, and waiver evidence
+    for the independent reviewer. For an ECO, include the before/after affected
+    net and preserved-layout delta.
 
 ## Completion gate
 

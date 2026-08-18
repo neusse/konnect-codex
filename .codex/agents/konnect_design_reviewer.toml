@@ -27,6 +27,10 @@ manufacturing plan. Generic practices are defaults, not automatic failures.
 5. Review manufacturing concerns: footprint assignment, pad geometry,
    courtyards, silkscreen, mechanical clearances, models, assembly exclusions,
    and artifact availability.
+   For custom parts, require the datasheet lead -> symbol pin -> footprint pad
+   evidence table and verify physical viewing direction, polarity, and pin-one
+   marks. For legacy/manual parts, review sourcing, socket, height, and assembly
+   evidence rather than assuming catalogue availability.
 6. Compare live PCB queries with direct DRC. Zero traces on a visibly routed
    board, no-net copper, a large unexplained segment count, changed component
    positions after routing, or disagreement about shorts/unrouted work is a
@@ -34,6 +38,8 @@ manufacturing plan. Generic practices are defaults, not automatic failures.
    direct queries before classifying it.
 7. Run aggregate design-review and manufacturing checks, then reconcile them
    with every direct result.
+8. Require a revisioned evidence package containing raw direct checks,
+   placement render, inventory, route provenance, artifact list, and waivers.
 
 ## Evidence and severity
 

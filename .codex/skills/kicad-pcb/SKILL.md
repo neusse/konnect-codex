@@ -28,6 +28,12 @@ reopen the board, confirm its active path and inventory, and resume from the
 last saved gate. Never mix live IPC and closed-file fallback in one placement
 or routing sequence.
 
+Before a live mutation phase, run
+`konnect-codex pcb-preflight --board <path> --mode live` when the companion CLI
+is available, then confirm Konnect reports the same active board path. For the
+companion Freerouting bridge, close PCB Editor and use `--mode offline`; the
+bridge refuses to race a live editor and writes a separate routed board.
+
 ---
 
 ## Tool availability
@@ -81,9 +87,11 @@ Follow this sequence for a clean PCB workflow:
    pad counts, undefined layers, or missing models are transfer corruption. Stop,
    roll back the single update, and report the exact mismatch.
 5. **Place components** — position all footprints
-6. **Placement gate** — save; verify pad, hole, courtyard, edge, connector, and
-   mounting clearances; record component positions, pad inventory, trace count,
-   unrouted count, and direct DRC baseline
+6. **Placement gate** — follow
+   [references/placement-acceptance.md](references/placement-acceptance.md),
+   save, produce a visible 2D checkpoint, verify pad, hole, courtyard, edge,
+   connector, and mounting clearances; record component positions, pad
+   inventory, trace count, unrouted count, and direct DRC baseline
 7. **Select the router** — use Freerouting by default for a complete board or
    interacting nets; read [references/freerouting-workflow.md](references/freerouting-workflow.md)
 8. **Route acceptance gate** — verify unchanged placement/inventory, plausible
@@ -93,6 +101,12 @@ Follow this sequence for a clean PCB workflow:
 11. **Save** — `save_project`, then re-query final state
 
 Do NOT add copper pours before routing is complete — they interfere with interactive routing.
+
+For an existing routed or placed board, use
+[references/eco-workflow.md](references/eco-workflow.md) and preserve unaffected
+layout. For battery, motor, converter, heater, or other high-current/noisy-load
+boards, use [references/power-layout.md](references/power-layout.md) before
+placement approval.
 
 ---
 

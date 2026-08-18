@@ -28,17 +28,18 @@ commit and guidance fingerprints are recorded in
 
 The plugin supplies:
 
-- six independently reviewed Codex skills plus the execution router;
+- seven independently reviewed Codex skills plus the execution router;
 - a Codex execution-router skill that makes the eager-tool profile and safe
   KiCad workflow explicit;
-- three reviewed Codex agents for schematic construction, PCB layout, and
-  independent design review, without a hard-coded model;
+- five reviewed Codex agents for custom libraries, schematic construction, PCB
+  layout, independent design review, and firmware/bring-up handoff, without a
+  hard-coded model;
 - a Freerouting-first PCB workflow with placement, IPC ownership, route-import,
   and direct DRC acceptance gates;
 - Codex-native hooks, relevant-prompt guidance, and a live-KiCad IPC fallback;
 - a private Konnect configuration with `eager_toolsets = true` so clients that
   cache the first MCP tool list can see the complete tool catalogue;
-- ownership, health checks, disable/enable, and exact uninstall support.
+- ownership, health checks, disable/enable, and exact uninstall support;
 - a machine-enforced [guidance change policy](docs/CHANGE_POLICY.md) with
   per-file upstream provenance, named Codex enhancements, and retirement rules.
 
@@ -73,8 +74,8 @@ release for the current operating system, verify it, install the plugin, and
 run its health check for you:
 
 ```text
-Install the konnect-codex v0.6.1 companion revision 4 plugin from
-https://github.com/neusse/konnect-codex/releases/tag/v0.6.1-codex.4 for this operating
+Install the konnect-codex v0.6.1 companion revision 5 plugin from
+https://github.com/neusse/konnect-codex/releases/tag/v0.6.1-codex.5 for this operating
 system. First locate the Konnect executable and run `konnect --version`. Stop
 without changing anything if Konnect is missing or is not exactly v0.6.1.
 Download SHA256SUMS.txt and verify the plugin archive before extracting it.
@@ -110,7 +111,7 @@ konnect-codex doctor
 You can also install the version-matched source release with Cargo:
 
 ```powershell
-cargo install --git https://github.com/neusse/konnect-codex --tag v0.6.1-codex.4
+cargo install --git https://github.com/neusse/konnect-codex --tag v0.6.1-codex.5
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -138,8 +139,17 @@ konnect-codex disable       # remove active plugin and agents, retain generated 
 konnect-codex enable        # reactivate the retained integration
 konnect-codex audit         # verify installed Claude-side assets still match this release
 konnect-codex native-status # compare native Konnect coverage with the plugin
+konnect-codex freerouting status # inspect KiCad Python, Java, and router bridge
+konnect-codex pcb-preflight --board C:\path\board.kicad_pcb --mode live
 konnect-codex uninstall     # remove only plugin-owned files and marketplace entry
 ```
+
+For a complete-board route, close PCB Editor and run
+`konnect-codex freerouting route --board C:\path\board.kicad_pcb`. The bridge
+uses KiCad's native DSN/SES Python API and the installed Freerouting engine, then
+writes `board.freerouted.kicad_pcb`; it never overwrites the source board. Open
+the generated board and pass the plugin's inventory, unrouted, short, and direct
+DRC acceptance gate before adopting it.
 
 `uninstall` verifies hashes before removing anything. If a managed file was
 edited after installation, it stops and preserves the file. `--force` is

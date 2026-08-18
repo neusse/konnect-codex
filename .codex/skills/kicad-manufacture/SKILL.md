@@ -72,6 +72,13 @@ Every schematic symbol must have a footprint assigned. Check for:
 - Mismatched footprints (wrong pad count for the symbol)
 - Non-existent footprint references (library not found)
 
+### 4. Legacy and hand-assembly branch
+
+When the design uses legacy, surplus, socketed, or manually assembled parts,
+follow [references/legacy-through-hole.md](references/legacy-through-hole.md).
+Record lifecycle uncertainty, exact suffix, socket/replaceability intent,
+height, orientation, hand-solder access, attrition, and alternate risk.
+
 ---
 
 ## Export Workflow
@@ -249,3 +256,5 @@ Visual checks:
    output exists, is non-empty, and has plausible units, origin, layers, and rows
 10. **Fail closed on contradictions** — package or validation success cannot
     override DRC errors, unrouted work, transfer corruption, or missing artifacts
+11. **Preserve review evidence** — include raw checks, route provenance, renders,
+    artifact inventory, and waivers using the kicad-review evidence-package format

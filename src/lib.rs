@@ -87,6 +87,30 @@ pub struct OperationReport {
     pub messages: Vec<String>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PcbPreflightMode {
+    Live,
+    Offline,
+}
+
+const FREEROUTING_EXPORT_SCRIPT: &str = r#"import pcbnew, sys
+board = pcbnew.LoadBoard(sys.argv[1])
+if board is None:
+    raise SystemExit("could not load board")
+if not pcbnew.ExportSpecctraDSN(board, sys.argv[2]):
+    raise SystemExit("KiCad DSN export failed")
+"#;
+
+const FREEROUTING_IMPORT_SCRIPT: &str = r#"import pcbnew, sys
+board = pcbnew.LoadBoard(sys.argv[1])
+if board is None:
+    raise SystemExit("could not load board")
+if not pcbnew.ImportSpecctraSES(board, sys.argv[2]):
+    raise SystemExit("KiCad SES import failed")
+if not pcbnew.SaveBoard(sys.argv[3], board):
+    raise SystemExit("KiCad board save failed")
+"#;
+
 impl OperationReport {
     fn push(&mut self, message: impl Into<String>) {
         self.messages.push(message.into());
@@ -752,15 +776,405 @@ pub fn run_mcp(paths: &CompanionPaths) -> Result<i32> {
     Ok(status.code().unwrap_or(1))
 }
 
+pub fn pcb_preflight(board: &Path, mode: PcbPreflightMode) -> Result<OperationReport> {
+    validate_board_path(board)?;
+    let editors = pcb_editor_process_count()?;
+    match mode {
+        PcbPreflightMode::Live if editors != 1 => bail!(
+            "live PCB mutation requires exactly one pcbnew process; found {editors}. Close duplicate PCB Editors or open the target board before continuing"
+        ),
+        PcbPreflightMode::Offline if editors != 0 => bail!(
+            "offline PCB mutation requires PCB Editor to be closed; found {editors} pcbnew process(es)"
+        ),
+        _ => {}
+    }
+    let mut report = OperationReport::default();
+    report.push(format!("PCB preflight: {:?} mode is ready", mode));
+    report.push(format!(
+        "Target board: {}",
+        canonical_or_original(board).display()
+    ));
+    report.push(format!("PCB Editor processes: {editors}"));
+    if mode == PcbPreflightMode::Live {
+        report.push(
+            "Process ownership is valid. Confirm Konnect's live active-board path matches this target before the first mutation.",
+        );
+    } else {
+        report.push("Offline ownership is exclusive; no live editor can race the file operation.");
+    }
+    Ok(report)
+}
+
+pub fn freerouting_status() -> Result<OperationReport> {
+    let python = locate_kicad_python();
+    let jar = locate_freerouting_jar();
+    let java = locate_program(if cfg!(windows) { "java.exe" } else { "java" });
+    let editors = pcb_editor_process_count()?;
+    let mut report = OperationReport::default();
+    match &python {
+        Some(path) if kicad_python_supports_specctra(path) => {
+            report.push(format!("KiCad DSN/SES bridge: ready ({})", path.display()))
+        }
+        Some(path) => report.push(format!(
+            "KiCad DSN/SES bridge: unavailable ({} cannot import the required pcbnew API)",
+            path.display()
+        )),
+        None => report
+            .push("KiCad DSN/SES bridge: unavailable (set KICAD_PYTHON to KiCad's bundled Python)"),
+    }
+    report.push(match &jar {
+        Some(path) => format!("Freerouting engine: ready ({})", path.display()),
+        None => "Freerouting engine: unavailable (set FREEROUTING_JAR or install the KiCad Freerouting plugin)".to_string(),
+    });
+    report.push(match &java {
+        Some(path) => format!("Java runtime: found ({})", path.display()),
+        None => "Java runtime: unavailable on PATH".to_string(),
+    });
+    report.push(format!("PCB Editor processes: {editors}"));
+    if python
+        .as_ref()
+        .is_some_and(|path| kicad_python_supports_specctra(path))
+        && jar.is_some()
+        && java.is_some()
+    {
+        report
+            .push("Offline route bridge: ready. Close PCB Editor before export, import, or route.");
+    }
+    Ok(report)
+}
+
+pub fn freerouting_export(board: &Path, dsn: &Path) -> Result<OperationReport> {
+    pcb_preflight(board, PcbPreflightMode::Offline)?;
+    refuse_existing_output(dsn)?;
+    ensure_parent_exists(dsn)?;
+    let python = require_kicad_python()?;
+    if let Err(error) = run_kicad_python(
+        &python,
+        FREEROUTING_EXPORT_SCRIPT,
+        &[board.as_os_str(), dsn.as_os_str()],
+        "DSN export",
+    ) {
+        let _ = fs::remove_file(dsn);
+        return Err(error);
+    }
+    if !dsn.is_file() || fs::metadata(dsn)?.len() == 0 {
+        bail!(
+            "KiCad reported DSN export success but {} is missing or empty",
+            dsn.display()
+        );
+    }
+    sanitize_freerouting_dsn(dsn)?;
+    let mut report = OperationReport::default();
+    report.push(format!("Exported Freerouting DSN: {}", dsn.display()));
+    report.push("Source board was not modified.");
+    Ok(report)
+}
+
+pub fn freerouting_import(
+    board: &Path,
+    ses: &Path,
+    output: Option<&Path>,
+) -> Result<OperationReport> {
+    pcb_preflight(board, PcbPreflightMode::Offline)?;
+    if !ses.is_file() {
+        bail!("Freerouting session file was not found: {}", ses.display());
+    }
+    let output = output
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| default_freerouted_board(board));
+    refuse_existing_output(&output)?;
+    ensure_parent_exists(&output)?;
+    let python = require_kicad_python()?;
+    if let Err(error) = run_kicad_python(
+        &python,
+        FREEROUTING_IMPORT_SCRIPT,
+        &[board.as_os_str(), ses.as_os_str(), output.as_os_str()],
+        "SES import",
+    ) {
+        let _ = fs::remove_file(&output);
+        return Err(error);
+    }
+    if !output.is_file() || fs::metadata(&output)?.len() == 0 {
+        bail!(
+            "KiCad reported SES import success but {} is missing or empty",
+            output.display()
+        );
+    }
+    let mut report = OperationReport::default();
+    report.push(format!(
+        "Imported Freerouting SES into: {}",
+        output.display()
+    ));
+    report.push(format!("Original board preserved: {}", board.display()));
+    report.push(
+        "Open the generated board in one PCB Editor, then run Konnect inventory, unrouted, short, and direct DRC acceptance checks before replacing the original.",
+    );
+    Ok(report)
+}
+
+pub fn freerouting_route(
+    board: &Path,
+    output: Option<&Path>,
+    passes: u32,
+) -> Result<OperationReport> {
+    pcb_preflight(board, PcbPreflightMode::Offline)?;
+    let output = output
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| default_freerouted_board(board));
+    refuse_existing_output(&output)?;
+    let jar = locate_freerouting_jar().context(
+        "Freerouting JAR not found; install the KiCad Freerouting plugin or set FREEROUTING_JAR",
+    )?;
+    let java = locate_program(if cfg!(windows) { "java.exe" } else { "java" })
+        .context("Java was not found on PATH")?;
+    let stamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
+    let work = std::env::temp_dir().join(format!("konnect-codex-freerouting-{stamp}"));
+    fs::create_dir_all(&work)?;
+    let dsn = work.join("board.dsn");
+    let ses = work.join("board.ses");
+    if let Err(error) = freerouting_export(board, &dsn) {
+        return Err(error).context(format!("routing workspace retained at {}", work.display()));
+    }
+    let status = Command::new(&java)
+        .arg("-jar")
+        .arg(&jar)
+        .arg("-de")
+        .arg(&dsn)
+        .arg("-do")
+        .arg(&ses)
+        .arg("-mp")
+        .arg(passes.to_string())
+        .status()
+        .with_context(|| format!("could not start Freerouting through {}", java.display()))?;
+    if !status.success() || !ses.is_file() || fs::metadata(&ses)?.len() == 0 {
+        bail!(
+            "Freerouting did not produce a session (status {status}); routing workspace retained at {}",
+            work.display()
+        );
+    }
+    let mut report = freerouting_import(board, &ses, Some(&output))
+        .with_context(|| format!("routing workspace retained at {}", work.display()))?;
+    fs::remove_dir_all(&work)?;
+    report.messages.insert(
+        0,
+        format!(
+            "Freerouting completed with a {passes}-pass limit via {}",
+            jar.display()
+        ),
+    );
+    Ok(report)
+}
+
+fn validate_board_path(board: &Path) -> Result<()> {
+    if !board.is_file() {
+        bail!("KiCad board was not found: {}", board.display());
+    }
+    let valid_extension = board
+        .extension()
+        .and_then(OsStr::to_str)
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("kicad_pcb"));
+    if !valid_extension {
+        bail!("expected a .kicad_pcb file: {}", board.display());
+    }
+    Ok(())
+}
+
+fn refuse_existing_output(output: &Path) -> Result<()> {
+    if output.exists() {
+        bail!(
+            "refusing to overwrite existing output: {}",
+            output.display()
+        );
+    }
+    Ok(())
+}
+
+fn ensure_parent_exists(output: &Path) -> Result<()> {
+    if let Some(parent) = output
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        if !parent.is_dir() {
+            bail!("output directory does not exist: {}", parent.display());
+        }
+    }
+    Ok(())
+}
+
+fn default_freerouted_board(board: &Path) -> PathBuf {
+    let stem = board.file_stem().and_then(OsStr::to_str).unwrap_or("board");
+    board.with_file_name(format!("{stem}.freerouted.kicad_pcb"))
+}
+
+fn require_kicad_python() -> Result<PathBuf> {
+    let python = locate_kicad_python()
+        .context("KiCad Python not found; set KICAD_PYTHON to KiCad's bundled Python executable")?;
+    if !kicad_python_supports_specctra(&python) {
+        bail!(
+            "{} does not expose pcbnew.ExportSpecctraDSN and pcbnew.ImportSpecctraSES",
+            python.display()
+        );
+    }
+    Ok(python)
+}
+
+fn run_kicad_python(python: &Path, script: &str, args: &[&OsStr], operation: &str) -> Result<()> {
+    let output = Command::new(python)
+        .arg("-c")
+        .arg(script)
+        .args(args)
+        .output()
+        .with_context(|| format!("could not run KiCad Python for {operation}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        bail!("KiCad {operation} failed: {stderr}");
+    }
+    Ok(())
+}
+
+fn sanitize_freerouting_dsn(dsn: &Path) -> Result<()> {
+    let raw = fs::read_to_string(dsn)?;
+    let sanitized = raw.replace(['Ω', 'µ', 'Φ'], "");
+    if sanitized != raw {
+        write_atomic(dsn, sanitized.as_bytes())?;
+    }
+    Ok(())
+}
+
+fn kicad_python_supports_specctra(python: &Path) -> bool {
+    Command::new(python)
+        .arg("-c")
+        .arg("import pcbnew; assert hasattr(pcbnew, 'ExportSpecctraDSN') and hasattr(pcbnew, 'ImportSpecctraSES')")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|status| status.success())
+}
+
+fn locate_kicad_python() -> Option<PathBuf> {
+    if let Some(path) = std::env::var_os("KICAD_PYTHON").map(PathBuf::from) {
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+    let mut candidates = Vec::new();
+    if cfg!(windows) {
+        if let Some(local) = dirs::data_local_dir() {
+            for version in ["10.0", "9.0"] {
+                candidates.push(
+                    local
+                        .join("Programs")
+                        .join("KiCad")
+                        .join(version)
+                        .join("bin")
+                        .join("python.exe"),
+                );
+            }
+        }
+    } else {
+        for name in ["python3", "python"] {
+            if let Some(path) = locate_program(name) {
+                candidates.push(path);
+            }
+        }
+    }
+    candidates.into_iter().find(|path| path.is_file())
+}
+
+fn locate_freerouting_jar() -> Option<PathBuf> {
+    if let Some(path) = std::env::var_os("FREEROUTING_JAR").map(PathBuf::from) {
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+    let documents = dirs::document_dir()?;
+    for version in ["10.0", "9.0"] {
+        let jar_dir = documents
+            .join("KiCad")
+            .join(version)
+            .join("3rdparty")
+            .join("plugins")
+            .join("app_freerouting_kicad-plugin")
+            .join("jar");
+        let Ok(entries) = fs::read_dir(jar_dir) else {
+            continue;
+        };
+        let mut jars: Vec<_> = entries
+            .filter_map(std::result::Result::ok)
+            .map(|entry| entry.path())
+            .filter(|path| {
+                path.file_name()
+                    .and_then(OsStr::to_str)
+                    .is_some_and(|name| name.starts_with("freerouting-") && name.ends_with(".jar"))
+            })
+            .collect();
+        jars.sort();
+        if let Some(path) = jars.pop() {
+            return Some(path);
+        }
+    }
+    None
+}
+
+fn locate_program(name: &str) -> Option<PathBuf> {
+    std::env::var_os("PATH")
+        .into_iter()
+        .flat_map(|value| std::env::split_paths(&value).collect::<Vec<_>>())
+        .map(|directory| directory.join(name))
+        .find(|path| path.is_file())
+}
+
+fn pcb_editor_process_count() -> Result<usize> {
+    if cfg!(windows) {
+        let output = Command::new("tasklist")
+            .args(["/FI", "IMAGENAME eq pcbnew.exe", "/FO", "CSV", "/NH"])
+            .output()
+            .context("could not query PCB Editor processes with tasklist")?;
+        if !output.status.success() {
+            bail!("tasklist failed while checking PCB Editor ownership");
+        }
+        let stdout = String::from_utf8_lossy(&output.stdout).to_ascii_lowercase();
+        return Ok(stdout
+            .lines()
+            .filter(|line| line.trim_start().starts_with("\"pcbnew.exe\""))
+            .count());
+    }
+    let output = Command::new("ps")
+        .args(["-A", "-o", "comm="])
+        .output()
+        .context("could not query PCB Editor processes with ps")?;
+    if !output.status.success() {
+        bail!("ps failed while checking PCB Editor ownership");
+    }
+    Ok(String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| {
+            Path::new(line.trim())
+                .file_name()
+                .and_then(OsStr::to_str)
+                .is_some_and(|name| name.eq_ignore_ascii_case("pcbnew"))
+        })
+        .count())
+}
+
 pub fn run_hook(name: &str, argument: Option<&str>, paths: &CompanionPaths) -> Result<()> {
     let mut raw = String::new();
     std::io::stdin().read_to_string(&mut raw)?;
     let input: JsonValue = serde_json::from_str(&raw).unwrap_or_else(|_| json!({}));
     let context = match name {
-        "pre-pcb-ipc" => Some(
-            "This Konnect PCB operation requires exactly one responsive KiCad PCB Editor with the target board open. Confirm the active board path and plausible component/pad inventory before mutation. If IPC is unavailable, the editor closes, or a mutator reports file fallback after live work began, stop the PCB phase, reopen the board, and retry the readiness query once. Never mix live IPC and closed-file fallback in one placement or routing sequence."
-                .to_string(),
-        ),
+        "pre-pcb-ipc" => {
+            let editors = pcb_editor_process_count().unwrap_or(usize::MAX);
+            let ownership = if editors == 1 {
+                "One PCB Editor process is present. Confirm Konnect's active-board path matches the target before mutation."
+            } else if editors == usize::MAX {
+                "PCB Editor process ownership could not be determined. Stop and run `konnect-codex pcb-preflight --board <path> --mode live`."
+            } else {
+                "PCB ownership is unsafe. Do not run this mutation; open exactly one PCB Editor with the target board and rerun preflight."
+            };
+            Some(format!(
+                "This Konnect PCB operation requires exactly one responsive KiCad PCB Editor with the target board open. Detected pcbnew process count: {editors}. {ownership} Confirm a plausible component/pad inventory before mutation. If IPC is unavailable, the editor closes, or a mutator reports file fallback after live work began, stop the PCB phase, reopen the board, and retry the readiness query once. Never mix live IPC and closed-file fallback in one placement or routing sequence."
+            ))
+        }
         "user-prompt" => input
             .get("prompt")
             .and_then(JsonValue::as_str)
@@ -815,7 +1229,7 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
     .iter()
     .any(|term| lower.contains(term));
     relevant.then(|| {
-        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, and a comprehensive final review to konnect_design_reviewer; run those handoffs sequentially in schematic -> PCB -> review order when all phases apply. The PCB builder must close the placement gate before routing and use Freerouting by default for a complete board, with route-import inventory and direct DRC acceptance before zones or manufacturing."
+        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable handoffs sequentially in library -> schematic -> PCB -> review -> bring-up order. The PCB builder must close the visible placement gate before routing and use Freerouting by default for a complete board, with route-import inventory and direct DRC acceptance before zones or manufacturing."
             .to_string()
     })
 }
@@ -1703,7 +2117,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 10);
+        assert_eq!(active.len(), 17);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -1716,6 +2130,13 @@ mod tests {
             "pcb-builder-delegation",
             "freerouting-first-routing",
             "pcb-live-state-and-placement-gates",
+            "custom-part-physical-pin-acceptance",
+            "visual-placement-checkpoint",
+            "offline-freerouting-bridge",
+            "pcb-ownership-preflight",
+            "eco-and-power-layout-branches",
+            "firmware-bringup-handoff",
+            "legacy-sourcing-and-review-evidence",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -1829,6 +2250,24 @@ mod tests {
     }
 
     #[test]
+    fn freerouting_outputs_never_replace_the_source_board_by_default() {
+        let board = Path::new("clock.kicad_pcb");
+        assert_eq!(
+            default_freerouted_board(board),
+            PathBuf::from("clock.freerouted.kicad_pcb")
+        );
+    }
+
+    #[test]
+    fn freerouting_dsn_sanitizer_removes_known_specctra_incompatible_characters() {
+        let temp = TempDir::new().unwrap();
+        let dsn = temp.path().join("board.dsn");
+        fs::write(&dsn, "(net \"5V_ΩµΦ\")\n").unwrap();
+        sanitize_freerouting_dsn(&dsn).unwrap();
+        assert_eq!(fs::read_to_string(dsn).unwrap(), "(net \"5V_\")\n");
+    }
+
+    #[test]
     fn sync_rejects_a_missing_konnect_before_writing_files() {
         let temp = TempDir::new().unwrap();
         let paths = CompanionPaths::for_home(temp.path().join("home"));
@@ -1899,8 +2338,9 @@ mod tests {
     #[test]
     fn reviewed_skills_are_codex_native_and_complete() {
         let names = reviewed_skill_names();
-        assert_eq!(names.len(), NATIVE_SKILLS.len() + 1);
+        assert_eq!(names.len(), NATIVE_SKILLS.len() + 2);
         assert!(names.contains(PLUGIN_NAME));
+        assert!(names.contains("kicad-bringup"));
         for name in NATIVE_SKILLS {
             assert!(names.contains(*name));
         }
@@ -1925,12 +2365,14 @@ mod tests {
 
     #[test]
     fn reviewed_agents_are_valid_codex_toml() {
-        assert_eq!(REVIEWED_AGENT_FILES.len(), 3);
+        assert_eq!(REVIEWED_AGENT_FILES.len(), 5);
         let names: BTreeSet<_> = REVIEWED_AGENT_FILES.iter().map(|(path, _)| *path).collect();
         assert_eq!(
             names,
             BTreeSet::from([
                 "konnect_design_reviewer.toml",
+                "konnect_bringup_planner.toml",
+                "konnect_library_builder.toml",
                 "konnect_pcb_builder.toml",
                 "konnect_schematic_builder.toml",
             ])
@@ -1973,9 +2415,11 @@ mod tests {
     fn prompt_hook_only_adds_context_for_relevant_work() {
         let context = user_prompt_context("Build this KiCad schematic and PCB").unwrap();
         assert!(context.contains("konnect_schematic_builder"));
+        assert!(context.contains("konnect_library_builder"));
         assert!(context.contains("konnect_pcb_builder"));
         assert!(context.contains("konnect_design_reviewer"));
-        assert!(context.contains("schematic -> PCB -> review"));
+        assert!(context.contains("konnect_bringup_planner"));
+        assert!(context.contains("library -> schematic -> PCB -> review -> bring-up"));
         assert!(context.contains("Freerouting"));
         assert!(context.contains("placement gate"));
         assert!(user_prompt_context("Use Freerouting for this board").is_some());

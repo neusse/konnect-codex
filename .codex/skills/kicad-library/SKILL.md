@@ -48,6 +48,13 @@ Only create a custom symbol/footprint when:
 - The existing symbol has wrong pin count/arrangement
 - You need a proprietary/unusual package
 
+For every custom part, read
+[references/custom-part-acceptance.md](references/custom-part-acceptance.md)
+before creation. Preserve the datasheet's top/bottom viewing direction and
+build the physical-lead -> symbol-pin -> footprint-pad evidence table. Delegate
+unusual displays, tubes, sockets, circular packages, or ambiguous pin drawings
+to `konnect_library_builder` when agent delegation is available.
+
 ---
 
 ## Symbol Creation
@@ -336,6 +343,8 @@ Dimension format: `LxW` in mm (body dimensions, not pad-to-pad).
 4. Assign existing footprint OR create custom footprint from datasheet
 5. Register library if new
 6. Set Footprint property on symbol to link them
+7. Query both objects back and close the custom-part acceptance gate before
+   placing the symbol in a production schematic
 
 ### Add LCSC Number to Existing Components
 
@@ -367,3 +376,5 @@ Dimension format: `LxW` in mm (body dimensions, not pad-to-pad).
 10. **Load toolsets first** — check `get_active_toolsets()` and load `library` before starting
 11. **Use layer-scoped graphic edits deliberately** — `replace` and `delete` affect every
     supported primitive on the selected layer
+12. **Prove physical pin mapping** — a symbol/footprint pair is incomplete until
+    every datasheet lead survives the viewing-direction acceptance walk

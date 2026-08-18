@@ -208,6 +208,11 @@ Aggregate verdicts are summaries, not higher-authority evidence. A passing
 When checks disagree, report the contradiction, use the stronger direct check
 as the readiness gate, and return `NOT READY` or `INCOMPLETE` until reconciled.
 
+Preserve the raw results, inventory, placement renders, route provenance,
+custom-part pin maps, artifact list, and waivers using
+[references/evidence-package.md](references/evidence-package.md). A prose
+summary alone is not repeatable review evidence.
+
 Equivalent to running:
 1. find_orphan_items
 2. find_shorted_nets
@@ -342,3 +347,5 @@ Present findings grouped by severity with actionable fix suggestions:
     and artifact evidence outranks an inconsistent aggregate verdict
 13. **Verify route provenance** — after Freerouting or SES import, confirm
     unchanged placement/inventory, plausible traces, and direct DRC before review
+14. **Preserve raw evidence** — store direct results and waivers in a revisioned
+    evidence package; do not omit failed or unevaluated coverage
