@@ -1220,6 +1220,11 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
         "footprint",
         "gerber",
         "jlcpcb",
+        "bill of materials",
+        "bom",
+        "mpn",
+        "datasheet",
+        "component sourcing",
         "design rule",
         "erc",
         "drc",
@@ -1229,7 +1234,7 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
     .iter()
     .any(|term| lower.contains(term));
     relevant.then(|| {
-        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable handoffs sequentially in library -> schematic -> PCB -> review -> bring-up order. The PCB builder must close the visible placement gate before routing and use Freerouting by default for a complete board, with route-import inventory and direct DRC acceptance before zones or manufacturing."
+        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Use kicad-bom for MPN, datasheet, lifecycle, sourcing, DNP, alternate, or assembly-BOM work. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable work sequentially in library -> schematic -> BOM -> PCB -> review -> bring-up order. The PCB builder must close the visible placement gate before routing and use Freerouting by default for a complete board, with route-import inventory and direct DRC acceptance before zones or manufacturing."
             .to_string()
     })
 }
@@ -2117,7 +2122,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 17);
+        assert_eq!(active.len(), 19);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -2137,6 +2142,8 @@ mod tests {
             "eco-and-power-layout-branches",
             "firmware-bringup-handoff",
             "legacy-sourcing-and-review-evidence",
+            "evidence-grounded-review-methodology",
+            "bom-lifecycle-workflow",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -2338,9 +2345,10 @@ mod tests {
     #[test]
     fn reviewed_skills_are_codex_native_and_complete() {
         let names = reviewed_skill_names();
-        assert_eq!(names.len(), NATIVE_SKILLS.len() + 2);
+        assert_eq!(names.len(), NATIVE_SKILLS.len() + 3);
         assert!(names.contains(PLUGIN_NAME));
         assert!(names.contains("kicad-bringup"));
+        assert!(names.contains("kicad-bom"));
         for name in NATIVE_SKILLS {
             assert!(names.contains(*name));
         }
@@ -2419,10 +2427,12 @@ mod tests {
         assert!(context.contains("konnect_pcb_builder"));
         assert!(context.contains("konnect_design_reviewer"));
         assert!(context.contains("konnect_bringup_planner"));
-        assert!(context.contains("library -> schematic -> PCB -> review -> bring-up"));
+        assert!(context.contains("kicad-bom"));
+        assert!(context.contains("library -> schematic -> BOM -> PCB -> review -> bring-up"));
         assert!(context.contains("Freerouting"));
         assert!(context.contains("placement gate"));
         assert!(user_prompt_context("Use Freerouting for this board").is_some());
+        assert!(user_prompt_context("Check MPN and BOM lifecycle risk").is_some());
         assert!(user_prompt_context("Refactor my web API").is_none());
     }
 

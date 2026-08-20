@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "supported_konnect_version": "0.6.1",
-  "companion_revision": 5,
+  "companion_revision": 6,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -246,6 +246,39 @@
       "assertions": [
         {"target": "skills/kicad-manufacture/references/legacy-through-hole.md", "contains": "Socket part number"},
         {"target": "skills/kicad-review/references/evidence-package.md", "contains": "raw ERC"}
+      ]
+    },
+    {
+      "id": "evidence-grounded-review-methodology",
+      "status": "active",
+      "reason": "Readiness decisions need explicit design context, evidence basis, confidence, datasheet trust, review-limit disclosure, and revision deltas so aggregate output or missing checks are not presented as verified engineering conclusions.",
+      "evidence": [
+        "Konnect contradiction and evidence-package benchmarks",
+        "MIT-licensed kicad-happy review guidance: https://github.com/neusse/kicad-happy/tree/main/skills/kicad/references"
+      ],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect supplies equivalent Codex-native evidence classification, design-context calibration, datasheet trust gates, review-limit disclosure, and re-review status tracking.",
+      "assertions": [
+        {"target": "skills/kicad-review/references/review-methodology.md", "contains": "Not performed / review limits"},
+        {"target": "skills/kicad-review/SKILL.md", "contains": "severity, confidence, and one evidence"},
+        {"target": "agents/konnect_design_reviewer.toml", "contains": "fixed/still-open/new/waived/unverifiable"}
+      ]
+    },
+    {
+      "id": "bom-lifecycle-workflow",
+      "status": "active",
+      "reason": "Manufacturing export guidance does not provide an end-to-end workflow for maintaining schematic BOM properties, qualifying MPNs and datasheets, evaluating alternates and lifecycle uncertainty, and verifying the resulting BOM export.",
+      "evidence": [
+        "Konnect 0.6.1 component-field, BOM-health, datasheet-enrichment, catalogue, and export tool contracts",
+        "MIT-licensed kicad-happy BOM guidance: https://github.com/neusse/kicad-happy/blob/main/skills/bom/SKILL.md"
+      ],
+      "introduced_for": "0.6.1",
+      "retire_when": "Konnect supplies an equivalent Codex-native BOM qualification and lifecycle skill with source-of-truth, datasheet, alternate, time-sensitive evidence, and export acceptance gates.",
+      "assertions": [
+        {"target": "skills/kicad-bom/SKILL.md", "contains": "Schematic source of truth"},
+        {"target": "skills/kicad-bom/SKILL.md", "contains": "Stock, price, lead time"},
+        {"target": "skills/kicad-bom/SKILL.md", "contains": "native DNP"},
+        {"target": "skills/konnect-codex/SKILL.md", "contains": "library -> schematic -> BOM -> PCB"}
       ]
     }
   ]

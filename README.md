@@ -28,7 +28,8 @@ commit and guidance fingerprints are recorded in
 
 The plugin supplies:
 
-- seven independently reviewed Codex skills plus the execution router;
+- eight independently reviewed Codex skills plus the execution router,
+  including dedicated BOM qualification and lifecycle guidance;
 - a Codex execution-router skill that makes the eager-tool profile and safe
   KiCad workflow explicit;
 - five reviewed Codex agents for custom libraries, schematic construction, PCB
@@ -74,8 +75,8 @@ release for the current operating system, verify it, install the plugin, and
 run its health check for you:
 
 ```text
-Install the konnect-codex v0.6.1 companion revision 5 plugin from
-https://github.com/neusse/konnect-codex/releases/tag/v0.6.1-codex.5 for this operating
+Install the konnect-codex v0.6.1 companion revision 6 plugin from
+https://github.com/neusse/konnect-codex/releases/tag/v0.6.1-codex.6 for this operating
 system. First locate the Konnect executable and run `konnect --version`. Stop
 without changing anything if Konnect is missing or is not exactly v0.6.1.
 Download SHA256SUMS.txt and verify the plugin archive before extracting it.
@@ -111,7 +112,7 @@ konnect-codex doctor
 You can also install the version-matched source release with Cargo:
 
 ```powershell
-cargo install --git https://github.com/neusse/konnect-codex --tag v0.6.1-codex.5
+cargo install --git https://github.com/neusse/konnect-codex --tag v0.6.1-codex.6
 konnect-codex sync
 konnect-codex doctor
 ```

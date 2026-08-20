@@ -1,4 +1,4 @@
-# konnect-codex plugin v0.6.1 — companion revision 5
+# konnect-codex plugin v0.6.1 — companion revision 6
 
 This release is reviewed for
 [Konnect v0.6.1](https://github.com/mixelpixx/Konnect/releases/tag/v0.6.1) at
@@ -8,6 +8,14 @@ Konnect 0.6.1 fixes the KiCad crash caused by footprint graphics on
 `Dwgs.User` and makes `konnect init --help` non-destructive. Its bundled
 skills, references, agents, and hook are byte-for-byte unchanged from 0.6.0,
 so the companion's existing Codex enhancements remain applicable.
+
+Companion revision 6 adds evidence-grounded review methodology and a dedicated
+KiCad BOM qualification skill. Comprehensive reviews now record confirmed
+design context, evidence basis, confidence, exact-part datasheet status,
+explicit review limits, false-positive dispositions, and revision-to-revision
+finding status. BOM work now maintains schematic properties as the source of
+truth, qualifies exact MPNs and alternates, distinguishes lifecycle evidence
+from time-sensitive stock, and directly verifies the exported BOM.
 
 Companion revision 5 closes the workflow gaps exposed by the DR2000 benchmark.
 It adds custom-part physical pin-map acceptance, a dedicated library builder,
@@ -43,7 +51,7 @@ state on disable or uninstall. The upstream behavior is tracked in
 
 ## Included
 
-- Seven reviewed Codex-native KiCad workflow skills and one execution router.
+- Eight reviewed Codex-native KiCad workflow skills and one execution router.
 - Five Codex agents for custom libraries, complete schematic construction, PCB
   layout, independent design review, and read-only firmware/bring-up handoff.
 - Codex-native hooks and eager discovery of the complete Konnect MCP catalogue.
