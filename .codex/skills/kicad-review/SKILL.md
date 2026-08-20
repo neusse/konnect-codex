@@ -8,6 +8,11 @@ description: "Review and validate KiCad designs through Konnect MCP tools. Use f
 This skill guides Codex through systematic design review of a KiCAD project using MCP tools.
 ALL checks are performed through MCP tools — never parse .kicad_sch or .kicad_pcb files directly.
 
+For a comprehensive review or readiness decision, read
+[references/review-methodology.md](references/review-methodology.md) before
+starting. It defines the required design context, evidence basis, confidence,
+datasheet trust gate, review-limit disclosure, and re-review delta.
+
 ---
 
 ## Tool availability
@@ -110,6 +115,12 @@ Checks PCB-level rules:
 
 **Every DRC error must be resolved or explicitly justified before manufacturing.**
 
+For a routed board, also query traces by net and layer and record the unrouted
+count. A zero trace result on a visibly routed board, no-net copper, a large
+unexplained segment increase, changed placement after route import, or a live
+query that disagrees with item-level DRC is a stale-state contradiction. Reopen
+the target board once and repeat the direct checks before reaching a verdict.
+
 ---
 
 ## Design Audits
@@ -123,10 +134,13 @@ audit_decoupling()
 ```
 
 Checks:
-- Every IC power pin has a bypass capacitor
+- IC power-pin bypass coverage
 - Capacitor is placed close to the pin (PCB proximity)
-- Appropriate capacitor values (100nF ceramic minimum)
-- Bulk capacitance present for high-current ICs
+- Capacitor values against device data and operating requirements
+- Bulk capacitance where the source impedance and load transient require it
+
+Treat generic audit thresholds as candidates. Device data, requirements, and
+the confirmed design context determine whether a result is a defect.
 
 ### Connection Audit
 
@@ -195,10 +209,21 @@ Aggregate verdicts are summaries, not higher-authority evidence. A passing
 - schematic shorts or conflicting exported connectivity;
 - transfer inventory mismatches;
 - implausible coverage such as zero pads on a populated board; or
+- implausible routing coverage such as zero traces on a routed board or an
+  unexplained segment explosion;
 - missing or empty requested artifacts.
 
 When checks disagree, report the contradiction, use the stronger direct check
 as the readiness gate, and return `NOT READY` or `INCOMPLETE` until reconciled.
+
+Preserve the raw results, inventory, placement renders, route provenance,
+custom-part pin maps, artifact list, and waivers using
+[references/evidence-package.md](references/evidence-package.md). A prose
+summary alone is not repeatable review evidence.
+
+For each substantive finding, record severity, confidence, and one evidence
+basis from the review methodology. Do not call an aggregate-only or
+inference-only claim verified.
 
 Equivalent to running:
 1. find_orphan_items
@@ -262,6 +287,7 @@ Present findings grouped by severity with actionable fix suggestions:
 
 1. **[Finding title]**
    - Location: [component reference or net name]
+   - Evidence: [basis, source, and confidence]
    - Issue: [what is wrong]
    - Fix: [specific action to take using MCP tools]
 
@@ -269,6 +295,7 @@ Present findings grouped by severity with actionable fix suggestions:
 
 1. **[Finding title]**
    - Location: [component reference or net name]
+   - Evidence: [basis, source, and confidence]
    - Issue: [what is wrong]
    - Fix: [specific action to take]
 
@@ -282,9 +309,15 @@ Present findings grouped by severity with actionable fix suggestions:
 - Critical: X (must resolve)
 - Warnings: X (recommended)
 - Suggestions: X (optional)
-- Verdict: [LOOKS GOOD / NEEDS ATTENTION / NOT READY / INCOMPLETE]
+- Verdict: [READY FOR FAB / NOT READY / INCOMPLETE]
 - Coverage status: [complete / partial / failed]
 - Coverage diagnostics: [none, or each unevaluated sheet/object/audit]
+
+## Not performed / review limits
+- [Applicable check not run or incomplete, reason, affected scope, and impact]
+
+## Previous review delta
+- [Fixed / still-open / new / waived / unverifiable findings, when prior evidence exists]
 ```
 
 ---
@@ -300,12 +333,15 @@ Present findings grouped by severity with actionable fix suggestions:
 
 ### Full Review (comprehensive)
 
-1. Load all review toolsets
-2. `run_design_review()` — full audit suite
-3. Check `status`, `coverage`, and `diagnostics`; never approve an incomplete review
-4. Classify all gathered findings by severity
-5. Present report with fix suggestions
-6. Offer to fix CRITICAL issues immediately
+1. Establish and record the confirmed design context
+2. Load all review toolsets
+3. `run_design_review()` — full audit suite
+4. Run and reconcile the direct checks required by the contradiction gate
+5. Apply the datasheet trust gate to production-critical components
+6. Check `status`, `coverage`, and `diagnostics`; never approve an incomplete review
+7. Classify findings by severity, confidence, and evidence basis
+8. Compare against the prior evidence package when one exists
+9. Present findings, false-positive dispositions, and review limits
 
 ### Pre-Manufacturing Review
 
@@ -332,3 +368,11 @@ Present findings grouped by severity with actionable fix suggestions:
 11. **Never soften `INCOMPLETE`** — partial or failed coverage is not a passing review
 12. **Apply the contradiction gate** — direct ERC, DRC, connectivity, inventory,
     and artifact evidence outranks an inconsistent aggregate verdict
+13. **Verify route provenance** — after Freerouting or SES import, confirm
+    unchanged placement/inventory, plausible traces, and direct DRC before review
+14. **Preserve raw evidence** — store direct results and waivers in a revisioned
+    evidence package; do not omit failed or unevaluated coverage
+15. **Calibrate to confirmed intent** — do not infer regulatory class or apply
+    fixed market thresholds without requirements or user confirmation
+16. **Label claim strength** — distinguish direct and datasheet evidence from
+    aggregate output, inference, and unverified checks

@@ -1,19 +1,24 @@
 # Pre-Fabrication Design Checklist
 
+This is a prompt list, not a universal acceptance specification. Calibrate each
+item to the confirmed design context, component datasheets, operating
+conditions, and fabrication or assembly requirements. Values below are common
+starting points only.
+
 ## Schematic Review
 
 ### Power
-- [ ] Every IC has decoupling cap (100nF minimum, close to VCC/GND pins)
-- [ ] Bulk capacitor on each power rail (10µF–100µF at entry point)
+- [ ] Every IC has datasheet-appropriate decoupling close to its supply pins
+- [ ] Bulk capacitance matches source impedance and load-transient requirements
 - [ ] Power indicator LED (optional but recommended for debug)
 - [ ] Reverse polarity protection on external power input
 - [ ] Voltage regulator output cap per datasheet recommendation
 - [ ] PWR_FLAG on power nets without power-output pins (prevents ERC error)
 
 ### Signal Integrity
-- [ ] I2C lines have pull-up resistors (4.7k for 100kHz, 2.2k for 400kHz)
+- [ ] I2C pull-ups satisfy bus voltage, capacitance, device, and speed limits
 - [ ] SPI chip select lines have pull-ups (prevent floating during boot)
-- [ ] Reset pins have RC filter (100nF + 10k pull-up)
+- [ ] Reset pins use the device-recommended biasing or supervisor circuit
 - [ ] Unused op-amp inputs tied to known state
 - [ ] Crystal load caps match crystal specification
 - [ ] ADC reference has dedicated decoupling

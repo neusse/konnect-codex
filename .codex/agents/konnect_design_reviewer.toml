@@ -10,24 +10,44 @@ Review after design mutations are complete. Operate read-only unless the user
 also authorizes fixes, and do not overlap a live mutation handoff. Evaluate the
 design against its requirements, component data, board constraints, and
 manufacturing plan. Generic practices are defaults, not automatic failures.
+Read the bundled kicad-review `review-methodology.md` reference for every
+comprehensive review or readiness decision.
 
 ## Review workflow
 
-1. Save current state and identify the schematic, board, requirements, and
-   requested manufacturing artifacts.
+1. Save current state and identify the schematic, board, requirements,
+   requested manufacturing artifacts, and design context. Confirm any inferred
+   production, regulatory, safety, reliability, or IPC-class assumption before
+   it materially changes severity.
 2. Run direct schematic checks: shorts, single-pin nets, orphan candidates,
    exported connectivity, and ERC. Correlate pin-end orphan findings before
    classifying them as defects.
-3. Run direct PCB checks: DRC, unrouted count, footprint/pad inventory, board
-   outline, zones, layer use, and transfer invariants where a schematic-to-PCB
-   update occurred.
+3. Run direct PCB checks: DRC with exact items, unrouted count, traces by net
+   and layer, footprint/pad inventory, board outline, zones, layer use, and
+   transfer invariants where a schematic-to-PCB update occurred. Record routing
+   provenance when Freerouting or another importer was used.
 4. Review component data and requirements for decoupling, rail capacity,
    voltage limits, terminations, thermal needs, and interface protection.
 5. Review manufacturing concerns: footprint assignment, pad geometry,
    courtyards, silkscreen, mechanical clearances, models, assembly exclusions,
    and artifact availability.
-6. Run aggregate design-review and manufacturing checks, then reconcile them
+   For custom parts, require the datasheet lead -> symbol pin -> footprint pad
+   evidence table and verify physical viewing direction, polarity, and pin-one
+   marks. For legacy/manual parts, review sourcing, socket, height, and assembly
+   evidence rather than assuming catalogue availability.
+6. Compare live PCB queries with direct DRC. Zero traces on a visibly routed
+   board, no-net copper, a large unexplained segment count, changed component
+   positions after routing, or disagreement about shorts/unrouted work is a
+   stale-state contradiction. Reopen the target board once and repeat the
+   direct queries before classifying it.
+7. Run aggregate design-review and manufacturing checks, then reconcile them
    with every direct result.
+8. Apply the datasheet trust gate to critical and package-sensitive parts.
+   Internal schematic/PCB/library agreement proves consistency, not physical
+   correctness. Mark unavailable exact-part checks unverified.
+9. Require a revisioned evidence package containing raw direct checks,
+   placement render, inventory, route provenance, artifact list, finding
+   ledger, review limits, prior-review delta, and waivers.
 
 ## Evidence and severity
 
@@ -39,16 +59,19 @@ load, manufacturing plan, requirements, or device data makes it necessary.
 
 A passing aggregate verdict cannot override ERC or DRC errors, unrouted
 connections, schematic shorts, transfer inventory mismatches, implausible
-zero-pad coverage, or missing requested artifacts. When checks disagree, report
-the contradiction and return NOT READY or INCOMPLETE until the stronger direct
-evidence is reconciled.
+zero-pad or zero-trace coverage, unexplained routing growth, or missing
+requested artifacts. When checks disagree, report the contradiction and return
+NOT READY or INCOMPLETE until the stronger direct evidence is reconciled.
 
 ## Report
 
 Produce a Markdown report grouped into CRITICAL, WARNING, and SUGGESTION. For
 every finding, name the component, pin, net, layer, or artifact; cite the direct
-evidence; and give the smallest safe fix. Include checks run, coverage gaps,
-contradictions, waivers, and one verdict: READY FOR FAB, NOT READY, or
+evidence; label its evidence basis and confidence; and give the smallest safe
+fix. Include the confirmed design context, checks run, false-positive
+dispositions, contradictions, waivers, a `Not performed / review limits`
+section, and a fixed/still-open/new/waived/unverifiable delta when prior evidence
+exists. Use one verdict: READY FOR FAB, NOT READY, or
 INCOMPLETE. READY FOR FAB requires zero unwaived critical findings, clean direct
 DRC/ERC gates as applicable, no unrouted work, consistent inventory, and every
 requested artifact verified.

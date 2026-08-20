@@ -46,6 +46,9 @@ get_drc_violations()
 - All errors must be resolved. Warnings should be reviewed but may be waived.
 - Common blockers: unrouted nets, clearance violations, minimum width violations.
 - Do NOT proceed to export if any DRC errors remain.
+- After Freerouting or any SES import, save and verify unchanged component/pad
+  inventory, plausible traces by net and layer, and a fresh direct DRC. Imported
+  routing is not manufacturing evidence until this gate passes.
 
 ### 2. Manufacturing Validation
 
@@ -68,6 +71,13 @@ Every schematic symbol must have a footprint assigned. Check for:
 - Missing footprint assignments (shows as empty Footprint field)
 - Mismatched footprints (wrong pad count for the symbol)
 - Non-existent footprint references (library not found)
+
+### 4. Legacy and hand-assembly branch
+
+When the design uses legacy, surplus, socketed, or manually assembled parts,
+follow [references/legacy-through-hole.md](references/legacy-through-hole.md).
+Record lifecycle uncertainty, exact suffix, socket/replaceability intent,
+height, orientation, hand-solder access, attrition, and alternate risk.
 
 ---
 
@@ -246,3 +256,5 @@ Visual checks:
    output exists, is non-empty, and has plausible units, origin, layers, and rows
 10. **Fail closed on contradictions** — package or validation success cannot
     override DRC errors, unrouted work, transfer corruption, or missing artifacts
+11. **Preserve review evidence** — include raw checks, route provenance, renders,
+    artifact inventory, and waivers using the kicad-review evidence-package format
