@@ -1,13 +1,21 @@
-# konnect-codex plugin v0.6.1 — companion revision 6
+# konnect-codex plugin v0.7.0 — companion revision 1
 
 This release is reviewed for
-[Konnect v0.6.1](https://github.com/mixelpixx/Konnect/releases/tag/v0.6.1) at
-commit `506abe094204c6d4acd77415892e9e0e8fdb35fb`.
+[Konnect v0.7.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.7.0) at
+commit `8e458d43602e7979bdc0e4456ce9c0cbe3eb2fe4`.
 
-Konnect 0.6.1 fixes the KiCad crash caused by footprint graphics on
-`Dwgs.User` and makes `konnect init --help` non-destructive. Its bundled
-skills, references, agents, and hook are byte-for-byte unchanged from 0.6.0,
-so the companion's existing Codex enhancements remain applicable.
+Konnect 0.7.0 fixes the schematic-to-board corruption that converted footprint
+graphics into phantom pads, reads the applied IPC state back, requires DRC
+evidence for review/manufacturing verdicts, preserves all DRC result categories,
+and adds guarded closed-board move, rotate, and flip behavior. The upstream
+guidance review found one changed asset: `kicad-pcb/SKILL.md`, updated for those
+closed-board operations. The companion PCB skill now carries that contract while
+retaining its stricter single-owner, transfer-inventory, placement, Freerouting,
+and route-acceptance gates.
+
+The existing transfer-integrity and contradictory-verdict enhancements remain
+active until the v0.7 behavior is exercised in the companion's end-to-end KiCad
+benchmark; the source fixes alone do not retire a proven workflow gate.
 
 Companion revision 6 adds evidence-grounded review methodology and a dedicated
 KiCad BOM qualification skill. Comprehensive reviews now record confirmed
@@ -42,7 +50,7 @@ verification. The router and prompt hook use a deterministic schematic -> PCB
 a time.
 
 The revision retains revision 2's durable reviewed-mode installation across MCP
-restarts. Konnect 0.6.1 silently reinstalls its native Codex skills whenever
+restarts. Konnect 0.6.1 through 0.7.0 silently reinstalls its native Codex skills whenever
 the `.installed-codex` marker is absent, reversing an explicit uninstall. The
 plugin now owns a reversible suppression guard while enabled, repairs it before
 every MCP launch, reports it through `doctor`, and restores the marker's prior
@@ -72,7 +80,7 @@ state on disable or uninstall. The upstream behavior is tracked in
   from the safe-parts benchmark.
 - Health output that reports plugin-managed and upstream-native agents
   separately.
-- A pre-install gate that requires Konnect to be present and exactly v0.6.1
+- A pre-install gate that requires Konnect to be present and exactly v0.7.0
   before any plugin file is created or replaced.
 - Downloadable Windows, Linux, and macOS archives with SHA-256 checksums.
 

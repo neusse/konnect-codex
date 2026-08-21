@@ -23,8 +23,8 @@ offline Freerouting bridge requires none.
    path and plausible board inventory, board dimensions, layer count,
    fabrication limits, mechanical constraints, current requirements, net
    classes, and required manufacturing outputs. Save a checkpoint. If IPC is
-   lost or a mutator reports file fallback after this point, stop and restore a
-   single live owner before continuing.
+   lost or a mutator reports one of Konnect 0.7.0's closed-board file paths
+   after this point, stop and restore a single live owner before continuing.
 2. Before schematic-to-PCB transfer, inventory every selected footprint's
    reference, expected pad count, supported graphic layers, graphic count, and
    model associations. Replace or report footprints with unsupported child

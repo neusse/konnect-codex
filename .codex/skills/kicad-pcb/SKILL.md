@@ -15,11 +15,13 @@ ALL modifications go through MCP tools — never edit .kicad_pcb files directly.
 Most PCB layout operations require KiCAD to be running with the board file open. The IPC
 connection communicates with the running KiCAD instance in real-time.
 
-`place_component` is the narrow exception: when IPC is unreachable, it can place one
-front-side footprint into a closed `.kicad_pcb` file through a revision-aware atomic
-fallback. It preserves pads, graphics, attributes, and models, and rejects duplicate
-references. If KiCAD is reachable but rejects the request, the fallback stays disabled
-to avoid racing a live editor.
+`place_component`, `move_component`, `rotate_component`, and `flip_component` are
+narrow closed-board exceptions in Konnect 0.7.0. Placement, move, and rotation can
+fall back when IPC is unreachable. Flip requires IPC to be unreachable because the
+typed KiCad IPC API has no native footprint-flip command. The file paths use
+revision-aware atomic writes and preserve or transform supported footprint children;
+unsupported flip geometry is refused. If KiCad is reachable and rejects a request,
+the fallback stays disabled to avoid racing a live editor.
 
 If connection fails, open the target `.kicad_pcb` in one PCB Editor and retry
 the readiness query once. After a live PCB phase begins, an IPC failure or an
@@ -44,7 +46,7 @@ absent, load these toolsets:
 
 ```
 load_toolset('pcb_board')        # board outline, layers, setup, stackup
-load_toolset('pcb_components')   # place, move, rotate, align footprints
+load_toolset('pcb_components')   # place, move, rotate, flip, align footprints
 load_toolset('pcb_routing')      # traces, vias, differential pairs
 load_toolset('sch_export')       # update PCB from the saved schematic hierarchy
 load_toolset('integration')      # check_freerouting, autoroute capability
@@ -126,8 +128,9 @@ placement approval.
 | Tool                      | Use Case                                    |
 |---------------------------|---------------------------------------------|
 | `place_component`         | Position one footprint via IPC or safe file fallback |
-| `move_component`          | Relocate an existing footprint              |
-| `rotate_component`        | Rotate footprint (0/90/180/270)             |
+| `move_component`          | Relocate a footprint via IPC or safe file fallback |
+| `rotate_component`        | Rotate a footprint via IPC or safe file fallback |
+| `flip_component`          | Set F.Cu/B.Cu on a closed board with geometry mirroring |
 | `align_components`        | Align multiple components (top/bottom/left/right/center) |
 | `place_component_array`   | Grid placement for repeated elements        |
 
