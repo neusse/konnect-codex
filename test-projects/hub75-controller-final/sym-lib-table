@@ -1,0 +1,11 @@
+(sym_lib_table
+  (version 7)
+
+  (lib (name "Switch") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/Switch.kicad_sym") (options "") (descr ""))
+  (lib (name "Regulator_Linear") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/Regulator_Linear.kicad_sym") (options "") (descr ""))
+  (lib (name "RF_Module") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/RF_Module.kicad_sym") (options "") (descr ""))
+  (lib (name "Device") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/Device.kicad_sym") (options "") (descr ""))
+  (lib (name "Connector") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/Connector.kicad_sym") (options "") (descr ""))
+  (lib (name "Connector_Generic") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/Connector_Generic.kicad_sym") (options "") (descr ""))
+  (lib (name "74xx") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/74xx.kicad_sym") (options "") (descr ""))
+  (lib (name "power") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/power.kicad_sym") (options "") (descr "")))
