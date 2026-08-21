@@ -2423,11 +2423,12 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 19);
+        assert_eq!(active.len(), 20);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
             "schematic-evidence-and-collision-gate",
+            "schematic-layout-readability-gate",
             "pcb-transfer-integrity",
             "contradictory-verifier-gate",
             "requirements-based-review-defaults",

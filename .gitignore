@@ -1,1 +1,4 @@
 /target/
+Thumbs.db
+*.kicad_prl
+test-projects/.history/

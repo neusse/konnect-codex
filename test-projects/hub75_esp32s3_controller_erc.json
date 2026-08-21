@@ -1,0 +1,219 @@
+[
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol J1 Pin S [SHIELD, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.5969,
+    "y": 0.3461
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Horizontal Wire, length 0.0800 mm",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.5969,
+    "y": 0.3961
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Horizontal Wire, length 0.0800 mm",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.5969,
+    "y": 0.4461
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Horizontal Wire, length 0.0800 mm",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.5969,
+    "y": 0.4961
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Horizontal Wire, length 0.0800 mm",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.5969,
+    "y": 0.5961
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Horizontal Wire, length 0.0800 mm",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.5969,
+    "y": 0.6961
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol R1 Pin 2 [2, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.6477,
+    "y": 0.6693
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Horizontal Wire, length 0.0800 mm",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.5969,
+    "y": 0.5461
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol C2 Pin 1 [1, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.7747,
+    "y": 1.1011
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol R2 Pin 1 [1, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 0.8001,
+    "y": 0.8293
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol U2 Pin 2 [GND, Power input, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.0541,
+    "y": 1.2692
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol SW1 Pin 1 [A, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.0938,
+    "y": 2.1971
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol U1 Pin 3 [OUT, Power output, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.1025,
+    "y": 0.5961
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol SW2 Pin 2 [B, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.2938,
+    "y": 2.3495
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol C3 Pin 1 [1, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.3335,
+    "y": 1.1011
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol J2 Pin 2 [GND, Power input, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.4351,
+    "y": 0.4453
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol R4 Pin 1 [1, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.4694,
+    "y": 1.8034
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol C1 Pin 2 [2, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.4986,
+    "y": 0.8547
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol R3 Pin 2 [2, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.6294,
+    "y": 1.651
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol C4 Pin 1 [1, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.7526,
+    "y": 0.8979
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol SW3 Pin 1 [A, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.7542,
+    "y": 2.1971
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol C5 Pin 1 [1, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.8542,
+    "y": 0.8979
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol SW4 Pin 2 [B, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 1.9542,
+    "y": 2.3495
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol U3 Pin 19 [HUB_LAT, Output, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 2.2947,
+    "y": 1.0462
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol SW5 Pin 2 [B, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 2.6019,
+    "y": 2.1971
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol SW6 Pin 2 [B, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 2.6019,
+    "y": 2.3495
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol U4 Pin 2 [A1, Input, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 2.6964,
+    "y": 1.0517
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol C6 Pin 2 [2, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 2.7051,
+    "y": 0.6261
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol C7 Pin 1 [1, Passive, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 2.7051,
+    "y": 2.0155
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol U5 Pin 14 [B5, Output, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 3.1964,
+    "y": 1.6518
+  },
+  {
+    "description": "Symbol pin or wire end off connection grid: Symbol J3 Pin 2 [G1, Input, Line]",
+    "severity": "warning",
+    "sheet": "/",
+    "x": 3.4163,
+    "y": 1.5954
+  }
+]

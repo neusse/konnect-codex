@@ -36,6 +36,31 @@
       ]
     },
     {
+      "id": "schematic-layout-readability-gate",
+      "status": "active",
+      "reason": "Generated schematics can be electrically valid but unusable by humans when components, labels, fields, and support parts are scattered or overlapping.",
+      "evidence": [
+        "AI-assisted schematic readability prior-art research on 2026-08-21",
+        "User-reported Konnect schematic readability failures on 2026-08-21"
+      ],
+      "introduced_for": "0.7.0",
+      "retire_when": "Konnect supplies an equivalent schematic layout/readability gate with block grouping, label-inclusive overlap checks, rendered inspection, and block-level re-layout.",
+      "assertions": [
+        {
+          "target": "skills/kicad-schematic/SKILL.md",
+          "contains": "group and tag each"
+        },
+        {
+          "target": "skills/kicad-schematic/references/schematic-layout-acceptance.md",
+          "contains": "Component-only grouping is not full grouping"
+        },
+        {
+          "target": "agents/konnect_schematic_builder.toml",
+          "contains": "group-closure evidence"
+        }
+      ]
+    },
+    {
       "id": "pcb-transfer-integrity",
       "status": "active",
       "reason": "A successful schematic-to-PCB transfer converted footprint graphics into phantom pads without reporting failure.",
