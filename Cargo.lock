@@ -166,6 +166,7 @@ dependencies = [
  "sha2",
  "tempfile",
  "toml",
+ "windows-sys",
 ]
 
 [[package]]

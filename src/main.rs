@@ -1,8 +1,9 @@
 use anyhow::{bail, Context, Result};
 use konnect_codex::{
     audit_guidance, disable, doctor, enable, freerouting_export, freerouting_import,
-    freerouting_route, freerouting_status, native_status, pcb_preflight, run_hook, run_mcp, sync,
-    uninstall, CompanionPaths, OperationReport, PcbPreflightMode, SyncOptions,
+    freerouting_route, freerouting_status, mcp_sessions, native_status, pcb_preflight, run_hook,
+    run_mcp, stop_mcp_sessions, sync, uninstall, CompanionPaths, OperationReport, PcbPreflightMode,
+    SyncOptions,
 };
 use std::env;
 use std::path::PathBuf;
@@ -39,6 +40,8 @@ fn main() -> Result<()> {
         "disable" => print_report(disable(&paths)?),
         "enable" => print_report(enable(&paths)?),
         "doctor" => print_report(doctor(&paths)?),
+        "sessions" => print_report(mcp_sessions()?),
+        "stop-sessions" => print_report(stop_mcp_sessions()?),
         "native-status" => print_report(native_status(&paths)?),
         "pcb-preflight" => {
             let parsed = parse_pcb_preflight_args(&args[1..])?;
@@ -371,6 +374,8 @@ fn print_help() {
     println!("                       [--prefer-native-skills] [--no-activate] [--dry-run]");
     println!("  konnect-codex audit [--source <path>] [--konnect <path>]");
     println!("  konnect-codex doctor");
+    println!("  konnect-codex sessions");
+    println!("  konnect-codex stop-sessions");
     println!("  konnect-codex native-status");
     println!("  konnect-codex pcb-preflight --board <path> [--mode live|offline]");
     println!("  konnect-codex freerouting status");

@@ -140,6 +140,8 @@ konnect-codex disable       # remove active plugin and agents, retain generated 
 konnect-codex enable        # reactivate the retained integration
 konnect-codex audit         # verify installed Claude-side assets still match this release
 konnect-codex native-status # compare native Konnect coverage with the plugin
+konnect-codex sessions      # list active companion -> Konnect MCP process pairs
+konnect-codex stop-sessions # retire those pairs before an upgrade or after a stale task
 konnect-codex freerouting status # inspect KiCad Python, Java, and router bridge
 konnect-codex pcb-preflight --board C:\path\board.kicad_pcb --mode live
 konnect-codex uninstall     # remove only plugin-owned files and marketplace entry
@@ -162,6 +164,15 @@ silently reinstalls its six native Codex skills on every MCP start after an
 uninstall. The companion repairs the marker before launching Konnect and
 restores its prior state when disabled or uninstalled; it does not claim or
 delete native skill files.
+
+Each MCP launch owns its Konnect child process with an operating-system cleanup
+boundary on Windows. If Codex retains obsolete MCP connections, `sessions`
+shows the exact adapter/server PIDs and their owning process. `stop-sessions`
+only stops a `konnect.exe` process whose direct parent is
+`konnect-codex.exe`, then lets the waiting adapter exit normally; it does not
+target Cargo, Rust, KiCad, standalone Konnect runs, or unrelated processes.
+Run it before replacing either executable when an upgrade reports a locked
+file. Codex starts a fresh session the next time the MCP server is needed.
 
 ## Generated locations
 

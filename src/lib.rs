@@ -7,8 +7,13 @@ use std::ffi::OsStr;
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
+use std::thread;
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+#[cfg(windows)]
+use std::os::windows::io::AsRawHandle;
 
 pub const PLUGIN_NAME: &str = "konnect-codex";
 pub const MARKETPLACE_NAME: &str = "personal";
@@ -605,6 +610,127 @@ pub fn uninstall(paths: &CompanionPaths, force: bool) -> Result<OperationReport>
     Ok(report)
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ProcessRecord {
+    pid: u32,
+    parent_pid: u32,
+    name: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct McpSession {
+    adapter_pid: u32,
+    server_pid: u32,
+    owner_pid: u32,
+    owner_name: String,
+}
+
+fn process_name_is(name: &str, expected_stem: &str) -> bool {
+    Path::new(name)
+        .file_stem()
+        .and_then(OsStr::to_str)
+        .unwrap_or(name)
+        .eq_ignore_ascii_case(expected_stem)
+}
+
+fn find_mcp_sessions(processes: &[ProcessRecord]) -> Vec<McpSession> {
+    let by_pid: BTreeMap<_, _> = processes
+        .iter()
+        .map(|process| (process.pid, process))
+        .collect();
+    let mut sessions = Vec::new();
+    for server in processes
+        .iter()
+        .filter(|process| process_name_is(&process.name, "konnect"))
+    {
+        let Some(adapter) = by_pid.get(&server.parent_pid) else {
+            continue;
+        };
+        if !process_name_is(&adapter.name, "konnect-codex") {
+            continue;
+        }
+        let owner = by_pid.get(&adapter.parent_pid);
+        sessions.push(McpSession {
+            adapter_pid: adapter.pid,
+            server_pid: server.pid,
+            owner_pid: adapter.parent_pid,
+            owner_name: owner
+                .map(|process| process.name.clone())
+                .unwrap_or_else(|| "unknown".to_string()),
+        });
+    }
+    sessions.sort_by_key(|session| (session.adapter_pid, session.server_pid));
+    sessions
+}
+
+pub fn mcp_sessions() -> Result<OperationReport> {
+    let sessions = find_mcp_sessions(&process_snapshot()?);
+    let mut report = OperationReport::default();
+    report.push(format!("Active Konnect MCP sessions: {}", sessions.len()));
+    for session in sessions {
+        report.push(format!(
+            "adapter PID {} -> server PID {} (owner {} PID {})",
+            session.adapter_pid, session.server_pid, session.owner_name, session.owner_pid
+        ));
+    }
+    Ok(report)
+}
+
+pub fn stop_mcp_sessions() -> Result<OperationReport> {
+    let sessions = find_mcp_sessions(&process_snapshot()?);
+    let mut report = OperationReport::default();
+    if sessions.is_empty() {
+        report.push("No active Konnect MCP sessions found.");
+        return Ok(report);
+    }
+
+    // Stop the server first. The waiting adapter should then exit normally after
+    // forwarding the server's status, preserving the normal MCP shutdown path.
+    for session in &sessions {
+        let active_sessions = find_mcp_sessions(&process_snapshot()?);
+        if !active_sessions.contains(session) {
+            continue;
+        }
+        terminate_process(session.server_pid)
+            .with_context(|| format!("could not stop Konnect server PID {}", session.server_pid))?;
+    }
+
+    for _ in 0..20 {
+        let active = process_snapshot()?;
+        if sessions.iter().all(|session| {
+            !active
+                .iter()
+                .any(|process| process.pid == session.adapter_pid)
+        }) {
+            break;
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+
+    let active = process_snapshot()?;
+    for session in &sessions {
+        if active.iter().any(|process| {
+            process.pid == session.adapter_pid
+                && process.parent_pid == session.owner_pid
+                && process_name_is(&process.name, "konnect-codex")
+        }) {
+            terminate_process(session.adapter_pid).with_context(|| {
+                format!(
+                    "Konnect server stopped but adapter PID {} did not exit",
+                    session.adapter_pid
+                )
+            })?;
+        }
+    }
+
+    report.push(format!(
+        "Stopped {} Konnect MCP session(s).",
+        sessions.len()
+    ));
+    report.push("Codex will start a fresh session when Konnect is needed again.");
+    Ok(report)
+}
+
 pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
     let manifest = load_manifest(&paths.manifest_path)?;
     let compatibility = compatibility()?;
@@ -700,6 +826,14 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
         user_prompt_context("Please review this KiCad PCB").is_some()
     ));
 
+    let session_count = find_mcp_sessions(&process_snapshot()?).len();
+    report.push(format!("Active Konnect MCP sessions: {session_count}"));
+    if session_count > 1 {
+        report.push(format!(
+            "Lifecycle warning: {session_count} sessions are active. Run `konnect-codex sessions` to inspect them or `konnect-codex stop-sessions` before an upgrade."
+        ));
+    }
+
     report.messages.extend(native_status(paths)?.messages);
     report.push(
         if healthy_count == manifest.files.len()
@@ -751,6 +885,159 @@ pub fn native_status(paths: &CompanionPaths) -> Result<OperationReport> {
     Ok(report)
 }
 
+#[cfg(windows)]
+fn process_snapshot() -> Result<Vec<ProcessRecord>> {
+    use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
+    use windows_sys::Win32::System::Diagnostics::ToolHelp::{
+        CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+        TH32CS_SNAPPROCESS,
+    };
+
+    let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+    if snapshot == INVALID_HANDLE_VALUE {
+        bail!("could not take a Windows process snapshot");
+    }
+
+    let mut entry = PROCESSENTRY32W {
+        dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+        ..Default::default()
+    };
+    let mut processes = Vec::new();
+    let mut has_entry = unsafe { Process32FirstW(snapshot, &mut entry) } != 0;
+    while has_entry {
+        let length = entry
+            .szExeFile
+            .iter()
+            .position(|character| *character == 0)
+            .unwrap_or(entry.szExeFile.len());
+        processes.push(ProcessRecord {
+            pid: entry.th32ProcessID,
+            parent_pid: entry.th32ParentProcessID,
+            name: String::from_utf16_lossy(&entry.szExeFile[..length]),
+        });
+        has_entry = unsafe { Process32NextW(snapshot, &mut entry) } != 0;
+    }
+    unsafe { CloseHandle(snapshot) };
+    Ok(processes)
+}
+
+#[cfg(not(windows))]
+fn process_snapshot() -> Result<Vec<ProcessRecord>> {
+    let output = Command::new("ps")
+        .args(["-A", "-o", "pid=,ppid=,comm="])
+        .output()
+        .context("could not query processes with ps")?;
+    if !output.status.success() {
+        bail!("ps failed while checking Konnect MCP sessions");
+    }
+    let mut processes = Vec::new();
+    for line in String::from_utf8_lossy(&output.stdout).lines() {
+        let mut fields = line.split_whitespace();
+        let (Some(pid), Some(parent_pid), Some(name)) =
+            (fields.next(), fields.next(), fields.next())
+        else {
+            continue;
+        };
+        let (Ok(pid), Ok(parent_pid)) = (pid.parse(), parent_pid.parse()) else {
+            continue;
+        };
+        processes.push(ProcessRecord {
+            pid,
+            parent_pid,
+            name: Path::new(name)
+                .file_name()
+                .and_then(OsStr::to_str)
+                .unwrap_or(name)
+                .to_string(),
+        });
+    }
+    Ok(processes)
+}
+
+#[cfg(windows)]
+fn terminate_process(pid: u32) -> Result<()> {
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE};
+
+    let process = unsafe { OpenProcess(PROCESS_TERMINATE, 0, pid) };
+    if process.is_null() {
+        // A process that exited between discovery and cleanup is already stopped.
+        if !process_snapshot()?.iter().any(|entry| entry.pid == pid) {
+            return Ok(());
+        }
+        bail!("could not open process PID {pid} for termination");
+    }
+    let terminated = unsafe { TerminateProcess(process, 0) } != 0;
+    unsafe { CloseHandle(process) };
+    if !terminated && process_snapshot()?.iter().any(|entry| entry.pid == pid) {
+        bail!("Windows could not terminate process PID {pid}");
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
+fn terminate_process(pid: u32) -> Result<()> {
+    let status = Command::new("kill")
+        .args(["-TERM", &pid.to_string()])
+        .status()
+        .context("could not invoke kill")?;
+    if !status.success() && process_snapshot()?.iter().any(|entry| entry.pid == pid) {
+        bail!("could not terminate process PID {pid}");
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+struct ChildJob(windows_sys::Win32::Foundation::HANDLE);
+
+#[cfg(windows)]
+impl ChildJob {
+    fn assign(child: &Child) -> Result<Self> {
+        use windows_sys::Win32::System::JobObjects::{
+            AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
+            SetInformationJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+        };
+
+        let job = unsafe { CreateJobObjectW(std::ptr::null(), std::ptr::null()) };
+        if job.is_null() {
+            bail!("could not create a Windows job for the Konnect server");
+        }
+        let mut limits = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        let configured = unsafe {
+            SetInformationJobObject(
+                job,
+                JobObjectExtendedLimitInformation,
+                &limits as *const _ as *const std::ffi::c_void,
+                std::mem::size_of_val(&limits) as u32,
+            )
+        } != 0;
+        if !configured {
+            unsafe { windows_sys::Win32::Foundation::CloseHandle(job) };
+            bail!("could not configure Konnect child-process cleanup");
+        }
+        let assigned = unsafe {
+            AssignProcessToJobObject(
+                job,
+                child.as_raw_handle() as windows_sys::Win32::Foundation::HANDLE,
+            )
+        } != 0;
+        if !assigned {
+            unsafe { windows_sys::Win32::Foundation::CloseHandle(job) };
+            bail!("could not assign the Konnect server to its cleanup job");
+        }
+        Ok(Self(job))
+    }
+}
+
+#[cfg(windows)]
+impl Drop for ChildJob {
+    fn drop(&mut self) {
+        unsafe { windows_sys::Win32::Foundation::CloseHandle(self.0) };
+    }
+}
+
 pub fn run_mcp(paths: &CompanionPaths) -> Result<i32> {
     let manifest = load_manifest(&paths.manifest_path)?;
     if manifest.state != InstallState::Enabled {
@@ -758,7 +1045,7 @@ pub fn run_mcp(paths: &CompanionPaths) -> Result<i32> {
     }
     acquire_native_install_guard(paths)
         .context("could not suppress Konnect's native guidance auto-installer")?;
-    let status = Command::new(&manifest.konnect_binary)
+    let mut child = Command::new(&manifest.konnect_binary)
         .arg("--client")
         .arg("codex")
         .arg("--config")
@@ -766,13 +1053,25 @@ pub fn run_mcp(paths: &CompanionPaths) -> Result<i32> {
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
-        .status()
+        .spawn()
         .with_context(|| {
             format!(
                 "could not start Konnect at {}",
                 manifest.konnect_binary.display()
             )
         })?;
+    #[cfg(windows)]
+    let _child_job = match ChildJob::assign(&child) {
+        Ok(job) => job,
+        Err(error) => {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(error);
+        }
+    };
+    let status = child
+        .wait()
+        .context("could not wait for the Konnect server")?;
     Ok(status.code().unwrap_or(1))
 }
 
@@ -2196,6 +2495,54 @@ mod tests {
         assert!(report.contains("Upstream-native Konnect coverage"));
         assert!(report.contains("0 agents"));
         assert!(!report.contains("recognizable agents"));
+    }
+
+    #[test]
+    fn mcp_session_detection_requires_a_direct_companion_server_pair() {
+        let processes = vec![
+            ProcessRecord {
+                pid: 10,
+                parent_pid: 1,
+                name: "codex.exe".to_string(),
+            },
+            ProcessRecord {
+                pid: 20,
+                parent_pid: 10,
+                name: "konnect-codex.exe".to_string(),
+            },
+            ProcessRecord {
+                pid: 30,
+                parent_pid: 20,
+                name: "konnect.exe".to_string(),
+            },
+            ProcessRecord {
+                pid: 40,
+                parent_pid: 10,
+                name: "konnect.exe".to_string(),
+            },
+            ProcessRecord {
+                pid: 50,
+                parent_pid: 10,
+                name: "konnect-codex.exe".to_string(),
+            },
+        ];
+
+        assert_eq!(
+            find_mcp_sessions(&processes),
+            vec![McpSession {
+                adapter_pid: 20,
+                server_pid: 30,
+                owner_pid: 10,
+                owner_name: "codex.exe".to_string(),
+            }]
+        );
+    }
+
+    #[test]
+    fn process_name_matching_is_cross_platform_and_case_insensitive() {
+        assert!(process_name_is("KONNECT-CODEX.EXE", "konnect-codex"));
+        assert!(process_name_is("konnect-codex", "konnect-codex"));
+        assert!(!process_name_is("konnect.exe", "konnect-codex"));
     }
 
     #[test]

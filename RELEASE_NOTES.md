@@ -17,6 +17,14 @@ The existing transfer-integrity and contradictory-verdict enhancements remain
 active until the v0.7 behavior is exercised in the companion's end-to-end KiCad
 benchmark; the source fixes alone do not retire a proven workflow gate.
 
+The companion now reports retained MCP process pairs through `sessions`,
+retires only verified companion-to-Konnect pairs through `stop-sessions`, and
+warns about duplicate sessions in `doctor`. On Windows, every newly launched
+Konnect server is assigned to a kill-on-close Job Object so an unexpectedly
+terminated adapter cannot leave its child behind. These safeguards make locked
+binary recovery local and explicit while still allowing separate active Codex
+tasks to hold independent MCP sessions.
+
 Companion revision 6 adds evidence-grounded review methodology and a dedicated
 KiCad BOM qualification skill. Comprehensive reviews now record confirmed
 design context, evidence basis, confidence, exact-part datasheet status,
@@ -64,6 +72,8 @@ state on disable or uninstall. The upstream behavior is tracked in
   layout, independent design review, and read-only firmware/bring-up handoff.
 - Codex-native hooks and eager discovery of the complete Konnect MCP catalogue.
 - Reversible sync, disable, enable, doctor, and uninstall operations.
+- Scoped MCP session inspection and cleanup, with Windows child-process
+  ownership for abnormal adapter exits.
 - A compatibility audit that detects upstream guidance or hook drift.
 - A machine-enforced guidance change policy with per-file upstream provenance,
   named Codex enhancements, evidence, and retirement criteria.
