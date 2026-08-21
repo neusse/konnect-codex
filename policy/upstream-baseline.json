@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "konnect_version": "0.6.1",
-  "konnect_commit": "506abe094204c6d4acd77415892e9e0e8fdb35fb",
+  "konnect_version": "0.7.0",
+  "konnect_commit": "8e458d43602e7979bdc0e4456ce9c0cbe3eb2fe4",
   "files": [
     { "path": "agents/kicad-design-review-agent.md", "sha256": "6fb278234b799174b782f6c677815f200dff168c2e894cf85e558636873b2944" },
     { "path": "agents/kicad-schematic-build-agent.md", "sha256": "b2ddeba2b210801ee93e8084c923340a47b4bcb126e5095396a55c59e54b854e" },
@@ -12,7 +12,7 @@
     { "path": "skills/kicad-pcb/references/design-rules.md", "sha256": "18f83ddf7d7489e21c4a70aff74e7bb3f416f0e1f6e5fdb15db2c01cd7840c4a" },
     { "path": "skills/kicad-pcb/references/layer-reference.md", "sha256": "5f82f1df35eb1cb4754c9150859b44a2fc7f58b046524d8701d7c78c86e10f81" },
     { "path": "skills/kicad-pcb/references/trace-width-table.md", "sha256": "2446fa3bfaef124110f9e8bd8b5493d3f4d985cdb684daaa7d1cb04757082c2e" },
-    { "path": "skills/kicad-pcb/SKILL.md", "sha256": "1c4059d14fb33176cc3cb371fa58aa8833fc0f1b8c3f5112f40c9a1dac400d52" },
+    { "path": "skills/kicad-pcb/SKILL.md", "sha256": "2d6ebbd74db63ba51e47997f8e1af83b4ddd2860529bb3326630d2b54b9577ca" },
     { "path": "skills/kicad-review/references/design-checklist.md", "sha256": "3556534b5cf8446bdb58b14fdc8dc77dab7b80f43d3750dc143bfb7c16e320b1" },
     { "path": "skills/kicad-review/references/error-taxonomy.md", "sha256": "14f4d53338d23db57aebc02748fb4462b428be88619c084b952d390ea679bc9d" },
     { "path": "skills/kicad-review/SKILL.md", "sha256": "ee11ac9f2dffb0ca51cb8a549ca2419c4f2f141006018be84154d74bb858d4cd" },

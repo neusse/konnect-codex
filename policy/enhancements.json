@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.6.1",
-  "companion_revision": 6,
+  "supported_konnect_version": "0.7.0",
+  "companion_revision": 1,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -97,7 +97,7 @@
     {
       "id": "native-auto-install-suppression",
       "status": "active",
-      "reason": "Konnect 0.6.1 silently reinstalls all six native Codex skills on MCP startup whenever uninstall removed its marker.",
+      "reason": "Konnect 0.6.1 through 0.7.0 silently reinstalls all six native Codex skills on MCP startup whenever uninstall removed its marker.",
       "evidence": ["Konnect issue #242", "Clean uninstall/start/stop reproduction on 2026-08-16"],
       "introduced_for": "0.6.1",
       "retire_when": "Konnect MCP startup is non-mutating or supports a tested no-guidance-install option.",

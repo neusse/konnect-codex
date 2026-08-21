@@ -11,7 +11,7 @@
   <a href="https://github.com/neusse/konnect-codex/blob/main/LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-7c3aed.svg"></a>
   <img alt="Rust 1.85 or newer" src="https://img.shields.io/badge/Rust-1.85%2B-f97316.svg">
   <img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-10a37f.svg">
-  <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.6.1" src="https://img.shields.io/badge/Konnect-0.6.1-22d3ee.svg"></a>
+  <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.7.0" src="https://img.shields.io/badge/Konnect-0.7.0-22d3ee.svg"></a>
   <a href="https://github.com/neusse/konnect-codex/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/neusse/konnect-codex"></a>
 </p>
 
@@ -22,7 +22,7 @@ separate from Konnect so each release can preserve a known-good Codex workflow
 without changing Konnect itself.
 
 Release numbers match the Konnect release reviewed by the plugin:
-`konnect-codex v0.6.1` supports `Konnect v0.6.1`. The exact reviewed upstream
+`konnect-codex v0.7.0` supports `Konnect v0.7.0`. The exact reviewed upstream
 commit and guidance fingerprints are recorded in
 [`compatibility.json`](compatibility.json).
 
@@ -75,10 +75,10 @@ release for the current operating system, verify it, install the plugin, and
 run its health check for you:
 
 ```text
-Install the konnect-codex v0.6.1 companion revision 6 plugin from
-https://github.com/neusse/konnect-codex/releases/tag/v0.6.1-codex.6 for this operating
+Install the konnect-codex v0.7.0 companion revision 1 plugin from
+https://github.com/neusse/konnect-codex/releases/tag/v0.7.0 for this operating
 system. First locate the Konnect executable and run `konnect --version`. Stop
-without changing anything if Konnect is missing or is not exactly v0.6.1.
+without changing anything if Konnect is missing or is not exactly v0.7.0.
 Download SHA256SUMS.txt and verify the plugin archive before extracting it.
 Install the konnect-codex executable in a user-writable location on PATH. Do
 not run `konnect init --client codex`. If Konnect's native Codex guidance is
@@ -104,7 +104,7 @@ Then download the archive for your operating system from
 `konnect-codex` on `PATH`, and run:
 
 ```powershell
-konnect --version            # must report: konnect 0.6.1
+konnect --version            # must report: konnect 0.7.0
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -112,7 +112,7 @@ konnect-codex doctor
 You can also install the version-matched source release with Cargo:
 
 ```powershell
-cargo install --git https://github.com/neusse/konnect-codex --tag v0.6.1-codex.6
+cargo install --git https://github.com/neusse/konnect-codex --tag v0.7.0
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -140,6 +140,8 @@ konnect-codex disable       # remove active plugin and agents, retain generated 
 konnect-codex enable        # reactivate the retained integration
 konnect-codex audit         # verify installed Claude-side assets still match this release
 konnect-codex native-status # compare native Konnect coverage with the plugin
+konnect-codex sessions      # list active companion -> Konnect MCP process pairs
+konnect-codex stop-sessions # retire those pairs before an upgrade or after a stale task
 konnect-codex freerouting status # inspect KiCad Python, Java, and router bridge
 konnect-codex pcb-preflight --board C:\path\board.kicad_pcb --mode live
 konnect-codex uninstall     # remove only plugin-owned files and marketplace entry
@@ -157,11 +159,20 @@ edited after installation, it stops and preserves the file. `--force` is
 available only for intentionally discarding those plugin-owned edits.
 
 While reviewed mode is enabled, the plugin maintains a reversible
-`~/.konnect/.installed-codex` suppression marker. Konnect 0.6.1 otherwise
+`~/.konnect/.installed-codex` suppression marker. Konnect 0.6.1 through 0.7.0 otherwise
 silently reinstalls its six native Codex skills on every MCP start after an
 uninstall. The companion repairs the marker before launching Konnect and
 restores its prior state when disabled or uninstalled; it does not claim or
 delete native skill files.
+
+Each MCP launch owns its Konnect child process with an operating-system cleanup
+boundary on Windows. If Codex retains obsolete MCP connections, `sessions`
+shows the exact adapter/server PIDs and their owning process. `stop-sessions`
+only stops a `konnect.exe` process whose direct parent is
+`konnect-codex.exe`, then lets the waiting adapter exit normally; it does not
+target Cargo, Rust, KiCad, standalone Konnect runs, or unrelated processes.
+Run it before replacing either executable when an upgrade reports a locked
+file. Codex starts a fresh session the next time the MCP server is needed.
 
 ## Generated locations
 
