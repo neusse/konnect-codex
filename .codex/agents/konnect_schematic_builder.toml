@@ -31,6 +31,11 @@ engineering defaults with the user's requirements and component datasheets.
 6. Inspect nearby pin endpoints before automatic stub placement. Choose
    directions that cannot meet or cross. Run `find_shorted_nets` immediately
    after automatic stub placement; a clean result completes that wiring step.
+   On bus sheets, treat Konnect v0.8.0 orphan/connectivity findings at bus
+   entries as incomplete and use KiCad ERC plus exported connectivity before
+   changing geometry. Re-read bus-entry geometry because v0.8.0 swaps the
+   named response endpoints. Do not call `move_connected`; use a plain move,
+   repair its wiring and junctions explicitly, and rerun ERC.
 7. Annotate, then run ERC, wire validation, component validation, short
    detection, orphan detection, and exported-connectivity checks that are
    available.

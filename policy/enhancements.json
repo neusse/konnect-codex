@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.7.0",
+  "supported_konnect_version": "0.8.0",
   "companion_revision": 1,
   "enhancements": [
     {
@@ -122,7 +122,7 @@
     {
       "id": "native-auto-install-suppression",
       "status": "active",
-      "reason": "Konnect 0.6.1 through 0.7.0 silently reinstalls all six native Codex skills on MCP startup whenever uninstall removed its marker.",
+      "reason": "Konnect 0.6.1 through 0.8.0 silently reinstalls all six native Codex skills on MCP startup whenever uninstall removed its marker.",
       "evidence": ["Konnect issue #242", "Clean uninstall/start/stop reproduction on 2026-08-16"],
       "introduced_for": "0.6.1",
       "retire_when": "Konnect MCP startup is non-mutating or supports a tested no-guidance-install option.",
@@ -150,7 +150,7 @@
       "id": "freerouting-first-routing",
       "status": "active",
       "reason": "Konnect's local L-bend and segment tools do not provide global obstacle avoidance, rip-up and retry, or congestion management; using them as a whole-board fallback generated an unusable 1,332-segment route.",
-      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18", "Konnect issue #253", "Konnect integration autoroute capability response"],
+      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18", "Konnect issue #253", "Konnect v0.8.0 roadmap Freerouting bridge direction"],
       "introduced_for": "0.6.1",
       "retire_when": "Konnect supplies and documents an end-to-end KiCad DSN/SES bridge or an equivalent verified global router, and its native PCB guidance selects it before local segment tools.",
       "assertions": [
@@ -304,6 +304,24 @@
         {"target": "skills/kicad-bom/SKILL.md", "contains": "Stock, price, lead time"},
         {"target": "skills/kicad-bom/SKILL.md", "contains": "native DNP"},
         {"target": "skills/konnect-codex/SKILL.md", "contains": "library -> schematic -> BOM -> PCB"}
+      ]
+    },
+    {
+      "id": "v0.8-known-safety-gates",
+      "status": "active",
+      "reason": "Konnect v0.8.0 can serialize an incomplete Default netclass, reports false connectivity on bus entries, swaps bus-entry response endpoint names, and honestly refuses connected moves that still require an explicit repair workflow.",
+      "evidence": [
+        "Konnect issues #315, #326, #328, and #329",
+        "Konnect v0.8.0 release notes and API migrations"
+      ],
+      "introduced_for": "0.8.0",
+      "retire_when": "The named issues are fixed with KiCad round-trip evidence and the companion benchmark verifies the corrected contracts.",
+      "assertions": [
+        {"target": "skills/kicad-pcb/SKILL.md", "contains": "issue #326"},
+        {"target": "skills/kicad-schematic/SKILL.md", "contains": "#328"},
+        {"target": "skills/kicad-schematic/SKILL.md", "contains": "#329"},
+        {"target": "skills/kicad-schematic/SKILL.md", "contains": "Do not call `move_connected`"},
+        {"target": "agents/konnect_schematic_builder.toml", "contains": "v0.8.0 orphan/connectivity"}
       ]
     }
   ]

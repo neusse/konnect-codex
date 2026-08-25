@@ -23,7 +23,7 @@ offline Freerouting bridge requires none.
    path and plausible board inventory, board dimensions, layer count,
    fabrication limits, mechanical constraints, current requirements, net
    classes, and required manufacturing outputs. Save a checkpoint. If IPC is
-   lost or a mutator reports one of Konnect 0.7.0's closed-board file paths
+   lost or a mutator reports one of Konnect 0.8.0's closed-board file paths
    after this point, stop and restore a single live owner before continuing.
 2. Before schematic-to-PCB transfer, inventory every selected footprint's
    reference, expected pad count, supported graphic layers, graphic count, and
@@ -34,6 +34,8 @@ offline Freerouting bridge requires none.
    reviewed revision, then immediately compare the board against the inventory.
    A reference, pad, graphic, layer, or model mismatch ends the handoff as a
    transfer conflict; reverse the single update when safe and report evidence.
+   Use `repair_corrupted_footprints` only for its documented legacy corruption
+   signature: inspect the dry-run plan and apply only its returned revision.
 4. Establish or verify the closed board outline, stackup, keepouts, mounting,
    design rules, and net classes before placement.
 5. Place by functional block. Put connectors and controls at usable edges,
@@ -46,8 +48,8 @@ offline Freerouting bridge requires none.
    inventory, trace count, unrouted count, and direct DRC as the route
    checkpoint; do not route before this visible checkpoint is accepted.
 6. For a complete board or interacting nets, make Freerouting the default.
-   Call `check_freerouting`; use a working Konnect `autoroute` DSN/SES bridge
-   when available. Otherwise use `konnect-codex freerouting status` and its
+   Call `check_freerouting` only to inspect the engine installation. Konnect
+   v0.8.0 has no autoroute tool. Use `konnect-codex freerouting status` and its
    non-overwriting offline `route` bridge when ready, or use the KiCad
    Freerouting ActionPlugin through an available desktop-control capability. If
    neither bridge is available, pause

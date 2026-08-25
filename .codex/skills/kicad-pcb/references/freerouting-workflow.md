@@ -27,17 +27,15 @@ the route gate closed.
 ## Select the bridge
 
 1. Call `check_freerouting` and record the detected JAR, version, and diagnostic.
-2. If Konnect's `autoroute` reports an operational DSN/SES bridge, use it and
-   preserve its output paths and status as evidence.
-3. If `autoroute` reports that DSN export or SES import is unavailable, run
-   `konnect-codex freerouting status`. When its offline bridge is ready, save the
+   This is an installation check, not an autorouting operation.
+2. Run `konnect-codex freerouting status`. When its offline bridge is ready, save the
    checkpoint, close PCB Editor, and run `konnect-codex freerouting route
    --board <path>`. It uses KiCad's native Python DSN/SES API and writes a
    separate `.freerouted.kicad_pcb`; it never overwrites the checkpoint.
-4. Otherwise use the KiCad Freerouting ActionPlugin through an available
+3. Otherwise use the KiCad Freerouting ActionPlugin through an available
    desktop-control capability. The ActionPlugin owns KiCad's DSN export, starts
    Freerouting, and imports the returned session.
-5. If no automated bridge is available, pause at the route gate and give the
+4. If no automated bridge is available, pause at the route gate and give the
    user the smallest manual KiCad step: run **Tools > External Plugins >
    Freerouting**, complete routing, save, and return for verification.
 

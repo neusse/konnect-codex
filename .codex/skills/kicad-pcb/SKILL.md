@@ -16,7 +16,7 @@ Most PCB layout operations require KiCAD to be running with the board file open.
 connection communicates with the running KiCAD instance in real-time.
 
 `place_component`, `move_component`, `rotate_component`, and `flip_component` are
-narrow closed-board exceptions in Konnect 0.7.0. Placement, move, and rotation can
+narrow closed-board exceptions in Konnect 0.8.0. Placement, move, and rotation can
 fall back when IPC is unreachable. Flip requires IPC to be unreachable because the
 typed KiCad IPC API has no native footprint-flip command. The file paths use
 revision-aware atomic writes and preserve or transform supported footprint children;
@@ -49,7 +49,7 @@ load_toolset('pcb_board')        # board outline, layers, setup, stackup
 load_toolset('pcb_components')   # place, move, rotate, flip, align footprints
 load_toolset('pcb_routing')      # traces, vias, differential pairs
 load_toolset('sch_export')       # update PCB from the saved schematic hierarchy
-load_toolset('integration')      # check_freerouting, autoroute capability
+load_toolset('integration')      # Freerouting installation checks and datasheets
 ```
 
 Zones (`pcb_board`: add_zone; `pcb_routing`: add_copper_pour), component/net queries (`pcb_components`: find_component, get_component_list; `pcb_board`: get_board_info), and bulk placement (`pcb_components`: place_component_array, align_components, duplicate_component) are already covered by the toolsets loaded above.
@@ -223,6 +223,12 @@ create_netclass(board, name, trace_width?, clearance?, via_drill?, via_diameter?
 The class is written to the project's `.kicad_pro` file, which is where KiCad
 has kept netclasses since v7 — the board file is not modified.
 
+Konnect v0.8.0 issue #326: do not create or overwrite the `Default` netclass
+unless the returned/project data proves `wire_width` and the full KiCad default
+field set survived. An incomplete Default class can make Eeschema suppress or
+strip junction dots. After any netclass mutation, reopen through KiCad, run ERC,
+and inspect T-junction connectivity before continuing.
+
 Common netclass configurations:
 - Signal: 0.25mm track, 0.2mm clearance
 - Power: 0.5-1.0mm track, 0.3mm clearance
@@ -245,14 +251,19 @@ Zone tools live in the `pcb_board` toolset.
 Creates a copper pour area (polygon fill).
 
 ```
-add_zone(board, net_name, layer, points, clearance?, min_width?)
+add_zone(board, net_name, layer, points, clearance?, min_width?,
+         name?, priority?, pad_connection?)
 ```
 
 - Almost always GND net on both F.Cu and B.Cu
 - `points` is the outline polygon; define it slightly inside the board edge
   (0.5mm inset)
-- There is no priority argument, and no `(priority …)` is written, so every
-  zone takes KiCad's default. Set priority in KiCad if two pours overlap
+- `priority` defaults to 0; the higher priority wins where two pours overlap
+- `pad_connection` is `solid` | `thermal` | `none`, defaulting to `thermal`
+- A live-board IPC result refills immediately and participates in KiCad undo.
+  A `source: file` result is not visible to an open PCB Editor and will be lost
+  on its next save; treat that fallback as a stopped phase under the live-state
+  gate above, not as a completed zone operation
 
 ### refill_zones
 

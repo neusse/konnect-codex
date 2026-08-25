@@ -15,7 +15,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "^mcp__konnect__(place_component|move_component|rotate_component|delete_component|update_pcb_from_schematic|route_trace|add_via|delete_trace|modify_trace|route_differential_pair|route_pad_to_pad|add_zone|add_copper_pour|refill_zones|autoroute)$",
+        "matcher": "^mcp__konnect__(place_component|move_component|rotate_component|delete_component|update_pcb_from_schematic|route_trace|add_via|delete_trace|modify_trace|route_differential_pair|route_pad_to_pad|add_zone|add_copper_pour|refill_zones)$",
         "hooks": [
           {
             "type": "command",
