@@ -13,21 +13,39 @@ engineering defaults with the user's requirements and component datasheets.
 ## Build workflow
 
 1. Establish voltage rails, interfaces, constraints, key parts, and sheet scope.
-2. Search existing templates and libraries before creating or placing parts.
-3. Place functional blocks on the schematic grid with explicit references,
-   values, footprints, and required support components.
-4. Wire power with `add_power_symbol` at exact pin endpoints, direct local
+2. Create a schematic layout plan before placement: functional block inventory,
+   sheet or bounded-region assignment, interface nets, and intended signal flow.
+3. Search existing templates and libraries before creating or placing parts.
+   Register missing standard KiCad project libraries before creating local
+   symbols. Use standard symbols for generic resistors, capacitors, power
+   symbols, and connectors whenever they are available.
+4. Place functional blocks on the schematic grid with explicit references,
+   values, footprints, and required support components. Group or tag each block's
+   symbols, local labels, local wires, no-connect markers, text notes, and
+   boundary graphics when the tools support it. If only `group_components` is
+   available, treat it as component-only metadata; keep every label/wire/note
+   inside the block's bounded region, verify `move_region` would carry the whole
+   closure, and report the missing full-group capability.
+5. Wire power with `add_power_symbol` at exact pin endpoints, direct local
    signals with `connect_pins`, and named or distant signals with net labels.
-5. Inspect nearby pin endpoints before automatic stub placement. Choose
+6. Inspect nearby pin endpoints before automatic stub placement. Choose
    directions that cannot meet or cross. Run `find_shorted_nets` immediately
    after automatic stub placement; a clean result completes that wiring step.
-6. Annotate, then run ERC, wire validation, component validation, short
+7. Annotate, then run ERC, wire validation, component validation, short
    detection, orphan detection, and exported-connectivity checks that are
    available.
-7. Fix confirmed defects. Correlate pin-end orphan findings with ERC and
+8. Render or capture every schematic sheet and inspect symbol bodies, pins,
+   fields, labels, sheet pins, wires, no-connect markers, text notes, block
+   regions, and page-frame margins for overlap or unreadable clutter.
+9. Fix confirmed defects. Correlate pin-end orphan findings with ERC and
    exported connectivity; preserve electrically valid direct labels rather than
    rewiring solely to satisfy a contradictory orphan result.
-8. Re-run the affected checks and verify the requested project artifacts exist.
+   If readability fails, move whole blocks or regions first, then support parts,
+   then labels and wires.
+10. Re-run the affected checks and verify the requested project artifacts exist.
+    ERC off-grid warnings, rendered text collisions, clipped notes, labels over
+    pin names, or support parts separated from their parent block are layout
+    defects unless explicitly justified.
 
 ## Completion gate
 
@@ -38,12 +56,20 @@ engineering defaults with the user's requirements and component datasheets.
   requirements rather than a universal value rule.
 - All component values, references, and required footprint assignments are
   present.
+- The schematic layout gate in
+  `kicad-schematic/references/schematic-layout-acceptance.md` is satisfied:
+  every block has a sheet/region assignment and group-closure evidence for
+  components, labels, wires, no-connect markers, notes, and support parts; no
+  unresolved symbol/field/label/wire/note/page-frame overlap remains; generic
+  parts use available standard KiCad symbols; and every sheet has been rendered
+  or captured for inspection.
 - Contradictory or unsupported checks are reported explicitly; they are not
   silently converted into design changes or a passing verdict.
 
 ## Report
 
-Summarize the circuit, components, key nets, checks run, direct results,
-contradictions, and unresolved requirements. Name exact components and nets for
-every remaining issue.
+Summarize the circuit, functional blocks, grouping/tag mechanism, components,
+key nets, rendered layout checkpoint, checks run, direct results,
+contradictions, readability waivers, and unresolved requirements. Name exact
+components and nets for every remaining issue.
 """

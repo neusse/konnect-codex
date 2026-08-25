@@ -1,0 +1,7 @@
+{
+  "design_rules": [
+    "For schematic generation, use functional block regions, group or tag each block, avoid symbol/label/field overlap, render every sheet before completion, and move whole blocks before individual symbols when repairing readability."
+  ],
+  "fab_constraints": {},
+  "naming_conventions": {}
+}

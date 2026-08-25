@@ -1,0 +1,9 @@
+(sym_lib_table
+  (version 7)
+
+  (lib (name "hub75_controller") (type "KiCad") (uri "${KIPRJMOD}/hub75_esp32s3_controller.kicad_sym") (options "") (descr ""))
+  (lib (name "Device") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/Device.kicad_sym") (options "") (descr ""))
+  (lib (name "Connector_Generic") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/Connector_Generic.kicad_sym") (options "") (descr ""))
+  (lib (name "Connector") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/Connector.kicad_sym") (options "") (descr ""))
+  (lib (name "74xx") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/74xx.kicad_sym") (options "") (descr ""))
+  (lib (name "power") (type "KiCad") (uri "C:/Users/georg/AppData/Local/Programs/KiCad/10.0/share/kicad/symbols/power.kicad_sym") (options "") (descr "")))

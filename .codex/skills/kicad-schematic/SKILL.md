@@ -35,12 +35,26 @@ Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
 ## Component Placement
 
+For complete builds or substantial rearrangement, follow the schematic layout
+gate in [references/schematic-layout-acceptance.md](references/schematic-layout-acceptance.md):
+plan functional blocks, use hierarchy or bounded regions, group and tag each
+block for human movement, and reject unresolved symbol, label, field, wire, or
+page-frame overlap before completion.
+Use available standard KiCad symbols for generic parts before creating local
+symbols. Component-only grouping is not full grouping: labels, wires,
+no-connects, text notes, and support parts must stay in the same movable block
+region or the missing grouping capability must be reported as a blocker/waiver.
+
 ### Workflow
 
 1. Search the library first: use `search_symbols` to find the correct lib_id
 2. Get pin info: use `get_symbol_info` to see pin names, numbers, and positions
-3. Place on the 1.27mm grid (KiCAD default schematic grid)
-4. Verify placement with `list_schematic_components`
+3. Register missing standard KiCad libraries into the project before creating
+   any local generic symbol
+4. Assign each part, label, note, and support component to a functional block
+   before placement
+5. Place on the 1.27mm grid (KiCAD default schematic grid)
+6. Verify placement with `list_schematic_components`
 
 ### Common Library IDs
 
@@ -80,6 +94,8 @@ Power symbols: GND uses 0 (arrow points down), VCC/VDD/+3V3/+5V use 0 (arrow poi
 - Between passive components: 10-15mm
 - Between a decoupling cap and its IC: 5-10mm
 - Leave room for wiring: minimum 5mm between component pins and other elements
+- Keep grouped functional blocks separated enough that references, values, net
+  labels, sheet pins, and text fields do not overlap after rendering.
 
 ---
 
@@ -234,16 +250,22 @@ connectivity before changing geometry.
 
 ### Verification Workflow
 
-1. Place all components
-2. Complete all wiring
-3. Run `annotate_schematic`
-4. Run `validate_wire_connections`
-5. Run `validate_component_connections`
-6. Run `find_shorted_nets`
-7. Run `find_orphan_items` and reconcile it with ERC/connectivity evidence
-8. Fix confirmed issues; preserve electrically valid geometry reported only by
+1. Record the functional block inventory and sheet/region plan
+2. Place and group/tag all block members
+3. Complete all wiring
+4. Run `annotate_schematic`
+5. Run `validate_wire_connections`
+6. Run `validate_component_connections`
+7. Run `find_shorted_nets`
+8. Run `find_orphan_items` and reconcile it with ERC/connectivity evidence
+9. Render or capture every sheet and inspect for symbol, label, field, wire,
+   group, and page-frame overlap
+10. Treat rendered text collisions, clipped notes, labels over pin names,
+    off-grid warnings, and support parts outside their parent block as layout
+    defects even if the numeric overlap checker is clean
+11. Fix confirmed issues; preserve electrically valid geometry reported only by
    a contradictory orphan check
-9. Save with `save_project`
+12. Save with `save_project`
 
 ---
 
@@ -263,3 +285,10 @@ connectivity before changing geometry.
     `find_shorted_nets` immediately after placement
 12. **Reconcile verifiers** — never change a known-good net solely to satisfy a
     contradictory orphan result
+13. **Accept layout visibly** — complete the schematic layout gate before
+    declaring a generated or rearranged schematic human-usable
+14. **Use real libraries first** — standard KiCad symbols beat local placeholder
+    symbols for generic parts, connectors, and power symbols
+15. **Require full group closure** — a block is not movable until its labels,
+    notes, wires, no-connects, and support parts move with it by real grouping
+    or a bounded-region workflow
