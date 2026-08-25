@@ -1,7 +1,7 @@
 {
   "name": "konnect-codex",
-  "version": "0.7.0",
-  "description": "Reviewed Codex-native skills, agents, hooks, and eager MCP access for Konnect v0.7.0",
+  "version": "0.8.0",
+  "description": "Reviewed Codex-native skills, agents, hooks, and eager MCP access for Konnect v0.8.0",
   "author": {
     "name": "Konnect Codex Plugin"
   },
@@ -11,7 +11,7 @@
   "interface": {
     "displayName": "Konnect Codex",
     "shortDescription": "Design and review KiCad projects through Konnect.",
-    "longDescription": "Adds reviewed Konnect v0.7.0 KiCad workflows, eager MCP tools, Codex agents, and lifecycle guidance.",
+    "longDescription": "Adds reviewed Konnect v0.8.0 KiCad workflows, eager MCP tools, Codex agents, and lifecycle guidance.",
     "developerName": "Konnect Codex Plugin",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],

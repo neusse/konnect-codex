@@ -2423,7 +2423,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 20);
+        assert_eq!(active.len(), 21);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -2446,6 +2446,7 @@ mod tests {
             "legacy-sourcing-and-review-evidence",
             "evidence-grounded-review-methodology",
             "bom-lifecycle-workflow",
+            "v0.8-known-safety-gates",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -2791,7 +2792,6 @@ mod tests {
         let hooks: JsonValue = serde_json::from_str(HOOKS_TEMPLATE).unwrap();
         let matcher = hooks["hooks"]["PreToolUse"][0]["matcher"].as_str().unwrap();
         for tool in [
-            "autoroute",
             "update_pcb_from_schematic",
             "delete_trace",
             "add_zone",

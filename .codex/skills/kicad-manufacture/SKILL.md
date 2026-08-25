@@ -86,7 +86,7 @@ height, orientation, hand-solder access, attrition, and alternate risk.
 ### One-Shot Export (Recommended)
 
 ```
-export_manufacturing_package(board, output_dir, fab_house?, schematic?, quantity?)
+export_manufacturing_package(board, output_dir, fab_house?, schematic?)
 ```
 
 `fab_house` selects the house profile (there is no `format` argument). Pass
@@ -196,7 +196,7 @@ Use `add_design_rule` or `list_design_rules` to configure project rules to match
 ## Cost Estimation
 
 ```
-estimate_cost(board, quantity?, layers?, fab_house?, schematic?)
+estimate_cost(board, quantity?, layers?, fab_house?)
 ```
 
 Factors that increase cost:

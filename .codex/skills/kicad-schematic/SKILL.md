@@ -153,6 +153,12 @@ connect_to_net(schematic, reference, pin_number, net)
   an electrically valid direct label solely to clear an orphan finding. Confirm
   it with ERC, exported connectivity or netlist evidence, and the short detector;
   record a contradictory orphan result as a verifier limitation.
+- Konnect v0.8.0 connectivity queries are not bus-aware (#328). On a bus sheet,
+  treat floating/orphan results at bus entries and bus labels as candidates and
+  use KiCad ERC plus exported connectivity as authority before changing wiring.
+- Konnect v0.8.0 `add_bus_entry` writes the correct geometry but reports
+  `bus_side` and `wire_side` in reverse (#329). Re-read the schematic geometry;
+  do not route another wire from the named response endpoint.
 
 ### add_power_symbol
 
@@ -258,7 +264,8 @@ connectivity before changing geometry.
 6. Run `validate_component_connections`
 7. Run `find_shorted_nets`
 8. Run `find_orphan_items` and reconcile it with ERC/connectivity evidence
-9. Render or capture every sheet and inspect for symbol, label, field, wire,
+9. Call `get_schematic_view` and use its structured `svg` path, `bytes`, and
+   `format` fields, or capture every sheet, then inspect for symbol, label, field, wire,
    group, and page-frame overlap
 10. Treat rendered text collisions, clipped notes, labels over pin names,
     off-grid warnings, and support parts outside their parent block as layout
@@ -289,6 +296,9 @@ connectivity before changing geometry.
     declaring a generated or rearranged schematic human-usable
 14. **Use real libraries first** — standard KiCad symbols beat local placeholder
     symbols for generic parts, connectors, and power symbols
-15. **Require full group closure** — a block is not movable until its labels,
+15. **Do not call `move_connected` in v0.8.0** — it refuses because wire
+    carrying is not implemented. Use a plain move, explicitly repair affected
+    wires and junctions, then run ERC and connectivity checks.
+16. **Require full group closure** — a block is not movable until its labels,
     notes, wires, no-connects, and support parts move with it by real grouping
     or a bounded-region workflow
