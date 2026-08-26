@@ -16,7 +16,7 @@ Most PCB layout operations require KiCAD to be running with the board file open.
 connection communicates with the running KiCAD instance in real-time.
 
 `place_component`, `move_component`, `rotate_component`, and `flip_component` are
-narrow closed-board exceptions in Konnect 0.8.0. Placement, move, and rotation can
+narrow closed-board exceptions in Konnect 0.9.0. Placement, move, and rotation can
 fall back when IPC is unreachable. Flip requires IPC to be unreachable because the
 typed KiCad IPC API has no native footprint-flip command. The file paths use
 revision-aware atomic writes and preserve or transform supported footprint children;
@@ -46,7 +46,7 @@ absent, load these toolsets:
 
 ```
 load_toolset('pcb_board')        # board outline, layers, setup, stackup
-load_toolset('pcb_components')   # place, move, rotate, flip, align footprints
+load_toolset('pcb_components')   # place, refresh, move, rotate, flip, align footprints
 load_toolset('pcb_routing')      # traces, vias, differential pairs
 load_toolset('sch_export')       # update PCB from the saved schematic hierarchy
 load_toolset('integration')      # Freerouting installation checks and datasheets
@@ -88,19 +88,33 @@ Follow this sequence for a clean PCB workflow:
    and models with the inventory. Phantom unnamed pads, missing graphics, changed
    pad counts, undefined layers, or missing models are transfer corruption. Stop,
    roll back the single update, and report the exact mismatch.
-5. **Place components** — position all footprints
-6. **Placement gate** — follow
+5. **Refresh changed libraries** — if a linked footprint library changed, call
+   `update_footprints_from_library` first with `dry_run: true`; review status,
+   coverage, changes, diagnostics, and the plan revision. Apply only with
+   `dry_run: false` and that exact `expected_plan_revision`. The board must be
+   open in live KiCad. This is distinct from schematic transfer: it replaces
+   supported library-owned pads, graphics, attributes, metadata, and 3D models
+   while preserving placed identity, position, rotation, side, instance
+   overrides, and pad nets. One apply is one undo entry and conflicts are
+   non-mutating. Konnect v0.9.0 issue #331 means most official footprints with
+   `fp_text user` are currently refused; do not remove that content or claim a
+   refresh succeeded. Preserve the placed footprint and report the conflict.
+6. **Place components** — position all footprints. For a reviewed batch, prefer
+   one atomic `set_component_placements` call so the set has one commit, one
+   undo entry, and post-commit readback. Review every stored position,
+   rotation, and side before continuing.
+7. **Placement gate** — follow
    [references/placement-acceptance.md](references/placement-acceptance.md),
    save, produce a visible 2D checkpoint, verify pad, hole, courtyard, edge,
    connector, and mounting clearances; record component positions, pad
    inventory, trace count, unrouted count, and direct DRC baseline
-7. **Select the router** — use Freerouting by default for a complete board or
+8. **Select the router** — use Freerouting by default for a complete board or
    interacting nets; read [references/freerouting-workflow.md](references/freerouting-workflow.md)
-8. **Route acceptance gate** — verify unchanged placement/inventory, plausible
+9. **Route acceptance gate** — verify unchanged placement/inventory, plausible
    traces, no shorts, clean direct DRC, and no required unrouted connection
-9. **Copper pour** — add ground/power zones after route acceptance
-10. **Final DRC** — refill zones, run direct DRC, and reconcile live queries
-11. **Save** — `save_project`, then re-query final state
+10. **Copper pour** — add ground/power zones after route acceptance
+11. **Final DRC** — refill zones, run direct DRC, and reconcile live queries
+12. **Save** — `save_project`, then re-query final state
 
 Do NOT add copper pours before routing is complete — they interfere with interactive routing.
 
@@ -128,6 +142,8 @@ placement approval.
 | Tool                      | Use Case                                    |
 |---------------------------|---------------------------------------------|
 | `place_component`         | Position one footprint via IPC or safe file fallback |
+| `set_component_placements` | Apply an approved placement batch atomically with readback |
+| `update_footprints_from_library` | Refresh supported placed definitions from linked libraries |
 | `move_component`          | Relocate a footprint via IPC or safe file fallback |
 | `rotate_component`        | Rotate a footprint via IPC or safe file fallback |
 | `flip_component`          | Set F.Cu/B.Cu on a closed board with geometry mirroring |
@@ -223,7 +239,7 @@ create_netclass(board, name, trace_width?, clearance?, via_drill?, via_diameter?
 The class is written to the project's `.kicad_pro` file, which is where KiCad
 has kept netclasses since v7 — the board file is not modified.
 
-Konnect v0.8.0 issue #326: do not create or overwrite the `Default` netclass
+Konnect v0.9.0 issue #326: do not create or overwrite the `Default` netclass
 unless the returned/project data proves `wire_width` and the full KiCad default
 field set survived. An incomplete Default class can make Eeschema suppress or
 strip junction dots. After any netclass mutation, reopen through KiCad, run ERC,

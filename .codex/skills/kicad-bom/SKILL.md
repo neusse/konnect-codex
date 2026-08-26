@@ -61,7 +61,7 @@ current stock, price, lifecycle status, qualification, or alternates.
    numbers.
 9. Report unresolved gaps and hand the qualified BOM to `kicad-manufacture`.
 
-Konnect 0.8.0 does not expose a dedicated mutation for KiCad's native DNP
+Konnect 0.9.0 does not expose a dedicated mutation for KiCad's native DNP
 attribute. Do not create a custom field named `DNP` and assume it controls
 KiCad export behavior. When native DNP state must change and no visible tool
 supports it, preserve the source file and report the smallest manual KiCad

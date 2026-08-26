@@ -1,55 +1,53 @@
-# konnect-codex plugin v0.8.0 — companion revision 1
+# konnect-codex plugin v0.9.0 — companion revision 1
 
 This release is reviewed for
-[Konnect v0.8.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.8.0) at
-commit `dee8a27ce606f644cef0220deac98e88640d9b16`.
+[Konnect v0.9.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.9.0) at
+commit `8648fe2573377eac78525907cbdd16216986f08e`.
 
-Konnect 0.8.0 is a large correctness release. It adds live IPC board reads and
-zone creation, repairs footprints damaged by legacy synchronization, replaces
-stacked rectangular board outlines, preserves complete ERC/DRC violation item
-sets, validates schema parameters in CI, and fixes the schematic corruption,
-UUID, library-table, view-return, datasheet-catalog, and idempotency defects
-tracked in the v0.7.0 improvement backlog.
+Konnect 0.9.0 is the upstream “truth-in-responses” release. It adds atomic,
+revision-gated placed-footprint refresh; atomic batch placement with live
+readback; junction reconciliation after ordinary schematic moves; multi-unit
+schematic mutations; live pad readback; transformed symbol geometry; and
+correct bus-entry endpoint reporting.
 
 ## Guidance compatibility review
 
-The upstream guidance inventory remains 17 files. Three skills changed:
+The upstream inventory remains 17 files. Two skills changed and no upstream
+agent changed:
 
-- `kicad-manufacture` removed two parameters that the implementation did not
-  consume: `quantity` from `export_manufacturing_package` and `schematic` from
-  `estimate_cost`;
-- `kicad-pcb` documents the expanded `add_zone` contract, including name,
-  priority, pad connection, live IPC behavior, and the warning attached to
-  closed-file fallback;
-- `konnect` now describes Freerouting as installation detection rather than an
-  available autorouting tool.
+- `kicad-library` adds the dry-run/apply contract for
+  `update_footprints_from_library`;
+- `kicad-pcb` places linked-library refresh between schematic transfer and
+  placement.
 
-The reviewed Codex assets carry each change. The stricter companion behavior is
-unchanged: a live PCB phase stops on file fallback, whole-board routing uses the
-companion's non-overwriting Freerouting DSN/SES bridge, and imported routing is
-accepted only after inventory, unrouted, short, and direct DRC checks.
+The reviewed Codex guidance carries those changes and adds the server's current
+limits. Issue #331 means most official footprints containing `fp_text user`
+are safely refused by refresh; issue #326 still protects the complete Default
+netclass; issue #328 keeps bus connectivity checks advisory; and #315 means
+`move_connected` still refuses even though ordinary moves now reconcile
+junction dots. The PCB builder prefers `set_component_placements` for an
+already reviewed batch so it is one atomic operation with post-commit readback.
 
-No Codex enhancement is retired solely because a server fix landed. Transfer
-integrity, contradictory-verdict, placement, and live-board gates remain active
-until a v0.8.0 end-to-end benchmark proves their recorded retirement conditions.
-The native-guidance suppression remains necessary because upstream issue #242
-is still open and MCP startup can still reinstall explicitly removed native
-Codex skills.
+The companion Freerouting bridge remains separate from Konnect's public tool
+surface. It now passes the documented `--gui.enabled=false` setting and the
+explicit router pass limit, so a complete route is headless and does not depend
+on desktop control. DSN export and SES import still use KiCad 10's offline
+Python API, preserve the source board, and require the existing acceptance
+gate.
 
 ## Included
 
-- Nine reviewed Codex-native workflow skills, including the execution router,
+- Nine reviewed Codex-native workflow skills, including execution routing,
   BOM qualification, and controlled firmware/bring-up handoff.
 - Five specialist Codex agents for libraries, schematics, PCB construction,
   independent review, and bring-up planning.
-- Exact Konnect v0.8.0 version, commit, guidance, hook, and per-file baseline
-  verification before plugin state changes.
-- Eager discovery of Konnect's 210-tool catalogue and Codex-native lifecycle
-  hooks.
+- Exact Konnect v0.9.0 version, commit, guidance, hook, and 17-file upstream
+  baseline verification before plugin state changes.
+- Eager access to the released 206 registered tools across 19 toolsets.
 - Scoped MCP session inspection and cleanup with Windows child-process
   ownership, preventing stale Konnect processes from locking upgrades.
-- Freerouting-first, non-overwriting whole-board routing with live/offline PCB
-  ownership preflight.
+- Freerouting-first, explicitly headless, non-overwriting whole-board routing
+  with live/offline PCB ownership preflight.
 - Custom-part physical pin-map acceptance, schematic readability gates,
   placement checkpoints, ECO and power-layout branches, evidence-grounded
   review, legacy/manual assembly guidance, and manufacturing verification.
