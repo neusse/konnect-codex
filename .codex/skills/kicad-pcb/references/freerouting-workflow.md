@@ -30,8 +30,10 @@ the route gate closed.
    This is an installation check, not an autorouting operation.
 2. Run `konnect-codex freerouting status`. When its offline bridge is ready, save the
    checkpoint, close PCB Editor, and run `konnect-codex freerouting route
-   --board <path>`. It uses KiCad's native Python DSN/SES API and writes a
-   separate `.freerouted.kicad_pcb`; it never overwrites the checkpoint.
+   --board <path>`. It launches Freerouting explicitly headlessly, uses KiCad's
+   native Python DSN/SES API, and writes a separate
+   `.freerouted.kicad_pcb`; it never overwrites the checkpoint and does not
+   require desktop control.
 3. Otherwise use the KiCad Freerouting ActionPlugin through an available
    desktop-control capability. The ActionPlugin owns KiCad's DSN export, starts
    Freerouting, and imports the returned session.

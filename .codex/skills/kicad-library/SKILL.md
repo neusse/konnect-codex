@@ -22,9 +22,36 @@ load_toolset('library')    # search_symbols, search_footprints, create_symbol, c
                            # edit_footprint_pad, set_footprint_graphics, set_footprint_metadata,
                            # set_footprint_models, get_footprint_info, register_symbol_library,
                            # register_footprint_library, get_symbol_info
+load_toolset('pcb_components') # update_footprints_from_library for placed instances
 ```
 
 Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
+
+---
+
+## Refresh Placed Footprints
+
+Editing a `.kicad_mod` library file does not change copies already embedded on
+a board. After a library edit, use `update_footprints_from_library`, Konnect's
+MCP equivalent of KiCad **Tools -> Update Footprints from Library**. It is not
+`update_pcb_from_schematic`: schematic sync updates schematic-owned fields,
+while library refresh replaces supported library-owned pads, graphics,
+attributes, metadata, and 3D models and preserves the placed reference, value,
+position, rotation, side, lock state, KIID, symbol metadata, instance
+overrides, and pad nets by logical pad number.
+
+Always dry-run first. Review `status`, `coverage`, `changes`, `diagnostics`, and
+the returned plan revision, then apply with `dry_run: false` and that exact
+`expected_plan_revision`. Keep the requested board open in live KiCad. One
+successful apply is one undo entry; a stale plan, unresolved library, removed
+connected pad, or unsupported content is a non-mutating conflict for the full
+selection.
+
+Konnect v0.9.0 issue #331 is a production limitation: most official KiCad
+footprints contain `fp_text user`, which this tool cannot yet represent and
+therefore safely refuses. Do not delete user text or rebuild the footprint to
+force the operation through. Preserve the placed instance and report the exact
+conflict until the server supports lossless refresh.
 
 ---
 

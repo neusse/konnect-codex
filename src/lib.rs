@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value as JsonValue};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -1237,14 +1237,7 @@ pub fn freerouting_route(
         return Err(error).context(format!("routing workspace retained at {}", work.display()));
     }
     let status = Command::new(&java)
-        .arg("-jar")
-        .arg(&jar)
-        .arg("-de")
-        .arg(&dsn)
-        .arg("-do")
-        .arg(&ses)
-        .arg("-mp")
-        .arg(passes.to_string())
+        .args(freerouting_command_args(&jar, &dsn, &ses, passes))
         .status()
         .with_context(|| format!("could not start Freerouting through {}", java.display()))?;
     if !status.success() || !ses.is_file() || fs::metadata(&ses)?.len() == 0 {
@@ -1264,6 +1257,19 @@ pub fn freerouting_route(
         ),
     );
     Ok(report)
+}
+
+fn freerouting_command_args(jar: &Path, dsn: &Path, ses: &Path, passes: u32) -> Vec<OsString> {
+    vec![
+        OsString::from("-jar"),
+        jar.as_os_str().to_owned(),
+        OsString::from("--gui.enabled=false"),
+        OsString::from("-de"),
+        dsn.as_os_str().to_owned(),
+        OsString::from("-do"),
+        ses.as_os_str().to_owned(),
+        OsString::from(format!("--router.max_passes={passes}")),
+    ]
 }
 
 fn validate_board_path(board: &Path) -> Result<()> {
@@ -2446,7 +2452,7 @@ mod tests {
             "legacy-sourcing-and-review-evidence",
             "evidence-grounded-review-methodology",
             "bom-lifecycle-workflow",
-            "v0.8-known-safety-gates",
+            "v0.9-known-safety-gates",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -2614,6 +2620,19 @@ mod tests {
             default_freerouted_board(board),
             PathBuf::from("clock.freerouted.kicad_pcb")
         );
+    }
+
+    #[test]
+    fn freerouting_route_is_explicitly_headless() {
+        let args = freerouting_command_args(
+            Path::new("freerouting.jar"),
+            Path::new("board.dsn"),
+            Path::new("board.ses"),
+            37,
+        );
+        let rendered: Vec<_> = args.iter().map(|arg| arg.to_string_lossy()).collect();
+        assert!(rendered.iter().any(|arg| arg == "--gui.enabled=false"));
+        assert!(rendered.iter().any(|arg| arg == "--router.max_passes=37"));
     }
 
     #[test]
