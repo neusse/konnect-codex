@@ -47,7 +47,7 @@ successful apply is one undo entry; a stale plan, unresolved library, removed
 connected pad, or unsupported content is a non-mutating conflict for the full
 selection.
 
-Konnect v0.9.0 issue #331 is a production limitation: most official KiCad
+Konnect v0.10.0 issue #331 is a production limitation: most official KiCad
 footprints contain `fp_text user`, which this tool cannot yet represent and
 therefore safely refuses. Do not delete user text or rebuild the footprint to
 force the operation through. Preserve the placed instance and report the exact

@@ -153,7 +153,7 @@ connect_to_net(schematic, reference, pin_number, net)
   an electrically valid direct label solely to clear an orphan finding. Confirm
   it with ERC, exported connectivity or netlist evidence, and the short detector;
   record a contradictory orphan result as a verifier limitation.
-- Konnect v0.9.0 connectivity queries are not bus-aware (#328). On a bus sheet,
+- Konnect v0.10.0 connectivity queries are not bus-aware (#328). On a bus sheet,
   treat floating/orphan results at bus entries and bus labels as candidates and
   use KiCad ERC plus exported connectivity as authority before changing wiring.
 
@@ -253,23 +253,30 @@ connectivity before changing geometry.
 
 ### Verification Workflow
 
-1. Record the functional block inventory and sheet/region plan
-2. Place and group/tag all block members
-3. Complete all wiring
-4. Run `annotate_schematic`
-5. Run `validate_wire_connections`
-6. Run `validate_component_connections`
-7. Run `find_shorted_nets`
-8. Run `find_orphan_items` and reconcile it with ERC/connectivity evidence
-9. Call `get_schematic_view` and use its structured `svg` path, `bytes`, and
-   `format` fields, or capture every sheet, then inspect for symbol, label, field, wire,
-   group, and page-frame overlap
-10. Treat rendered text collisions, clipped notes, labels over pin names,
+1. Record the functional block inventory and sheet/region plan.
+2. For an established sheet, call `set_visual_baseline` before a meaningful
+   batch of edits. No stored baseline is a normal state; a baseline from a
+   different renderer is stale evidence and must not be silently trusted.
+3. Place and group/tag all block members.
+4. Complete all wiring.
+5. Run `annotate_schematic`.
+6. Run `validate_wire_connections`.
+7. Run `validate_component_connections`.
+8. Run `find_shorted_nets`.
+9. Run `find_orphan_items` and reconcile it with ERC/connectivity evidence.
+10. Call `render_schematic_png` with `inline: true` and actually inspect the
+    returned image. Use `get_schematic_view` or a sheet capture as an additional
+    artifact when its structured SVG is useful. Inspect every sheet for symbol,
+    label, field, wire, group, and page-frame overlap.
+11. After editing an established baseline, call `compare_visual_baseline`.
+    Treat DRIFT and its changed-region bounding box as a direction for visual
+    review, not as automatic failure: an intended edit should drift.
+12. Treat rendered text collisions, clipped notes, labels over pin names,
     off-grid warnings, and support parts outside their parent block as layout
     defects even if the numeric overlap checker is clean
-11. Fix confirmed issues; preserve electrically valid geometry reported only by
+13. Fix confirmed issues; preserve electrically valid geometry reported only by
    a contradictory orphan check
-12. Save with `save_project`
+14. Re-render the affected sheet and save with `save_project`.
 
 ---
 
@@ -293,7 +300,7 @@ connectivity before changing geometry.
     declaring a generated or rearranged schematic human-usable
 14. **Use real libraries first** — standard KiCad symbols beat local placeholder
     symbols for generic parts, connectors, and power symbols
-15. **Do not call `move_connected` in v0.9.0** — it still refuses because wire
+15. **Do not call `move_connected` in v0.10.0** — it still refuses because wire
     carrying is not implemented (#315). Ordinary component moves now reconcile
     affected junction dots, but they do not carry attached wires. Use a plain
     move, explicitly repair affected wires, then run ERC and connectivity

@@ -16,7 +16,7 @@ Most PCB layout operations require KiCAD to be running with the board file open.
 connection communicates with the running KiCAD instance in real-time.
 
 `place_component`, `move_component`, `rotate_component`, and `flip_component` are
-narrow closed-board exceptions in Konnect 0.9.0. Placement, move, and rotation can
+narrow closed-board exceptions in Konnect 0.10.0. Placement, move, and rotation can
 fall back when IPC is unreachable. Flip requires IPC to be unreachable because the
 typed KiCad IPC API has no native footprint-flip command. The file paths use
 revision-aware atomic writes and preserve or transform supported footprint children;
@@ -47,6 +47,7 @@ absent, load these toolsets:
 ```
 load_toolset('pcb_board')        # board outline, layers, setup, stackup
 load_toolset('pcb_components')   # place, refresh, move, rotate, flip, align footprints
+load_toolset('placement')        # score and deterministic dry-run placement planners
 load_toolset('pcb_routing')      # traces, vias, differential pairs
 load_toolset('sch_export')       # update PCB from the saved schematic hierarchy
 load_toolset('integration')      # Freerouting installation checks and datasheets
@@ -96,7 +97,7 @@ Follow this sequence for a clean PCB workflow:
    supported library-owned pads, graphics, attributes, metadata, and 3D models
    while preserving placed identity, position, rotation, side, instance
    overrides, and pad nets. One apply is one undo entry and conflicts are
-   non-mutating. Konnect v0.9.0 issue #331 means most official footprints with
+   non-mutating. Konnect v0.10.0 issue #331 means most official footprints with
    `fp_text user` are currently refused; do not remove that content or claim a
    refresh succeeded. Preserve the placed footprint and report the conflict.
 6. **Place components** — position all footprints. For a reviewed batch, prefer
@@ -149,6 +150,30 @@ placement approval.
 | `flip_component`          | Set F.Cu/B.Cu on a closed board with geometry mirroring |
 | `align_components`        | Align multiple components (top/bottom/left/right/center) |
 | `place_component_array`   | Grid placement for repeated elements        |
+
+### Score-first automation
+
+For a new or substantially changed placement, use the v0.10 placement toolset
+as a measured planning loop, not as a substitute for engineering judgement or
+visible inspection:
+
+1. Run `score_placement` before planning. Preserve its score, deductions, and
+   hard failures as the baseline. A missing outline, courtyard overlap, or part
+   outside the outline prevents acceptance regardless of the numeric score.
+2. Run `auto_place_from_schematic`, `refine_placement_force_directed`,
+   `place_decoupling_caps`, or `plan_bga_fanout` in dry-run mode. Lock
+   connectors, mounting hardware, controls, displays, antennas, and every other
+   mechanically constrained reference before refinement.
+3. Reject a plan that introduces a hard failure, lowers the score without a
+   documented electrical or mechanical reason, breaks a functional block, or
+   violates the placement-acceptance reference. Determinism makes a plan
+   reproducible; it does not make the plan correct.
+4. Apply only the exact reviewed plan under the tool's live/offline rules.
+   Ordinary planners refuse to apply while KiCad holds the board open;
+   `plan_bga_fanout` is the inverse and requires live IPC.
+5. Run an independent `score_placement` after apply, then produce and inspect
+   the visible 2D placement checkpoint. The planner's reported after-score is
+   evidence, not the acceptance verdict.
 
 ### Placement Tips
 
@@ -239,7 +264,7 @@ create_netclass(board, name, trace_width?, clearance?, via_drill?, via_diameter?
 The class is written to the project's `.kicad_pro` file, which is where KiCad
 has kept netclasses since v7 — the board file is not modified.
 
-Konnect v0.9.0 issue #326: do not create or overwrite the `Default` netclass
+Konnect v0.10.0 issue #326: do not create or overwrite the `Default` netclass
 unless the returned/project data proves `wire_width` and the full KiCad default
 field set survived. An incomplete Default class can make Eeschema suppress or
 strip junction dots. After any netclass mutation, reopen through KiCad, run ERC,
