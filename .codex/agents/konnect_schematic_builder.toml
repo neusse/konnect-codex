@@ -15,6 +15,8 @@ engineering defaults with the user's requirements and component datasheets.
 1. Establish voltage rails, interfaces, constraints, key parts, and sheet scope.
 2. Create a schematic layout plan before placement: functional block inventory,
    sheet or bounded-region assignment, interface nets, and intended signal flow.
+   For an established sheet, call `set_visual_baseline` before a meaningful
+   edit batch. No baseline is normal; a renderer-stale baseline is not trusted.
 3. Search existing templates and libraries before creating or placing parts.
    Register missing standard KiCad project libraries before creating local
    symbols. Use standard symbols for generic resistors, capacitors, power
@@ -31,23 +33,26 @@ engineering defaults with the user's requirements and component datasheets.
 6. Inspect nearby pin endpoints before automatic stub placement. Choose
    directions that cannot meet or cross. Run `find_shorted_nets` immediately
    after automatic stub placement; a clean result completes that wiring step.
-   On bus sheets, treat Konnect v0.9.0 connectivity findings at bus
+   On bus sheets, treat Konnect v0.10.0 connectivity findings at bus
    entries as incomplete and use KiCad ERC plus exported connectivity before
    changing geometry. Do not call `move_connected`; it remains unavailable
    under #315. Use a plain move, repair attached wires explicitly, and rerun
-   ERC; v0.9.0 reconciles affected junction dots for ordinary moves.
+   ERC; v0.10.0 reconciles affected junction dots for ordinary moves.
 7. Annotate, then run ERC, wire validation, component validation, short
    detection, orphan detection, and exported-connectivity checks that are
    available.
-8. Render or capture every schematic sheet and inspect symbol bodies, pins,
+8. Call `render_schematic_png` with `inline: true` for every schematic sheet and
+   actually inspect the returned image. Capture SVG when useful. Inspect symbol bodies, pins,
    fields, labels, sheet pins, wires, no-connect markers, text notes, block
    regions, and page-frame margins for overlap or unreadable clutter.
-9. Fix confirmed defects. Correlate pin-end orphan findings with ERC and
+9. For an established baseline, call `compare_visual_baseline`; use DRIFT and
+   its changed-region bounding box to focus inspection, not as an automatic
+   failure because intended edits also drift. Fix confirmed defects. Correlate pin-end orphan findings with ERC and
    exported connectivity; preserve electrically valid direct labels rather than
    rewiring solely to satisfy a contradictory orphan result.
    If readability fails, move whole blocks or regions first, then support parts,
    then labels and wires.
-10. Re-run the affected checks and verify the requested project artifacts exist.
+10. Re-run the affected checks, re-render each affected sheet, and verify the requested project artifacts exist.
     ERC off-grid warnings, rendered text collisions, clipped notes, labels over
     pin names, or support parts separated from their parent block are layout
     defects unless explicitly justified.

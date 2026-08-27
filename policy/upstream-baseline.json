@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "konnect_version": "0.9.0",
-  "konnect_commit": "8648fe2573377eac78525907cbdd16216986f08e",
+  "konnect_version": "0.10.0",
+  "konnect_commit": "866933e8aca1c115479963463cc7e34370b5822b",
   "files": [
     { "path": "agents/kicad-design-review-agent.md", "sha256": "6fb278234b799174b782f6c677815f200dff168c2e894cf85e558636873b2944" },
     { "path": "agents/kicad-schematic-build-agent.md", "sha256": "b2ddeba2b210801ee93e8084c923340a47b4bcb126e5095396a55c59e54b854e" },
@@ -12,13 +12,13 @@
     { "path": "skills/kicad-pcb/references/design-rules.md", "sha256": "18f83ddf7d7489e21c4a70aff74e7bb3f416f0e1f6e5fdb15db2c01cd7840c4a" },
     { "path": "skills/kicad-pcb/references/layer-reference.md", "sha256": "5f82f1df35eb1cb4754c9150859b44a2fc7f58b046524d8701d7c78c86e10f81" },
     { "path": "skills/kicad-pcb/references/trace-width-table.md", "sha256": "2446fa3bfaef124110f9e8bd8b5493d3f4d985cdb684daaa7d1cb04757082c2e" },
-    { "path": "skills/kicad-pcb/SKILL.md", "sha256": "c4947d10ba7df3445e71066b5d1d4d87db5c3fd1dff346d8e6e49cce2a547251" },
+    { "path": "skills/kicad-pcb/SKILL.md", "sha256": "81746728c756904ca9cdb720010fb0fd24bb3b89ded728b11a7babe91cc2b7af" },
     { "path": "skills/kicad-review/references/design-checklist.md", "sha256": "3556534b5cf8446bdb58b14fdc8dc77dab7b80f43d3750dc143bfb7c16e320b1" },
     { "path": "skills/kicad-review/references/error-taxonomy.md", "sha256": "14f4d53338d23db57aebc02748fb4462b428be88619c084b952d390ea679bc9d" },
     { "path": "skills/kicad-review/SKILL.md", "sha256": "ee11ac9f2dffb0ca51cb8a549ca2419c4f2f141006018be84154d74bb858d4cd" },
     { "path": "skills/kicad-schematic/references/common-lib-ids.md", "sha256": "898a0e40d107b72ade9d45268f6aa73565b5e1b01542e22a51ed8776290c7ef9" },
     { "path": "skills/kicad-schematic/references/wiring-patterns.md", "sha256": "5196e49ca80261a1aec0b61b6f5d567be325914e5d7365bb802325eba08b2c7e" },
-    { "path": "skills/kicad-schematic/SKILL.md", "sha256": "cf5eac98757bc9f2abb0d7e38c3d8601115cb8e1a37f59866b0061fbb673a607" },
+    { "path": "skills/kicad-schematic/SKILL.md", "sha256": "6ce84a2e56ffa7540f7d77f075da62d6864653be45f785c88849f9b508bee9d3" },
     { "path": "skills/konnect/SKILL.md", "sha256": "39f7fdcbf00c9fd3541ae163df17f35cc1574c23080a085b1bfce48ed5b3e197" }
   ]
 }

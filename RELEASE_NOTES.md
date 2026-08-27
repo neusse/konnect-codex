@@ -1,32 +1,35 @@
-# konnect-codex plugin v0.9.0 — companion revision 1
+# konnect-codex plugin v0.10.0 — companion revision 1
 
 This release is reviewed for
-[Konnect v0.9.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.9.0) at
-commit `8648fe2573377eac78525907cbdd16216986f08e`.
+[Konnect v0.10.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.10.0) at
+commit `866933e8aca1c115479963463cc7e34370b5822b`.
 
-Konnect 0.9.0 is the upstream “truth-in-responses” release. It adds atomic,
-revision-gated placed-footprint refresh; atomic batch placement with live
-readback; junction reconciliation after ordinary schematic moves; multi-unit
-schematic mutations; live pad readback; transformed symbol geometry; and
-correct bus-entry endpoint reporting.
+Konnect 0.10.0 adds a deterministic placement-analysis toolset and schematic
+visual-baseline tools. The release exposes 214 registered domain tools across
+20 toolsets, plus six router/meta tools.
 
 ## Guidance compatibility review
 
 The upstream inventory remains 17 files. Two skills changed and no upstream
 agent changed:
 
-- `kicad-library` adds the dry-run/apply contract for
-  `update_footprints_from_library`;
-- `kicad-pcb` places linked-library refresh between schematic transfer and
-  placement.
+- `kicad-pcb` adds score-first placement automation with dry-run planners for
+  schematic clustering, force-directed refinement, decoupling placement, and
+  BGA fanout;
+- `kicad-schematic` adds inline PNG rendering plus persistent visual baseline
+  capture and comparison.
 
-The reviewed Codex guidance carries those changes and adds the server's current
-limits. Issue #331 means most official footprints containing `fp_text user`
-are safely refused by refresh; issue #326 still protects the complete Default
-netclass; issue #328 keeps bus connectivity checks advisory; and #315 means
-`move_connected` still refuses even though ordinary moves now reconcile
-junction dots. The PCB builder prefers `set_component_placements` for an
-already reviewed batch so it is one atomic operation with post-commit readback.
+The reviewed Codex guidance integrates those additions into stronger acceptance
+loops. Placement starts with an independent score, locks mechanically
+constrained references, reviews a dry-run plan, re-scores after apply, and still
+requires a human-readable 2D checkpoint. Schematic work captures a baseline
+before an established-sheet edit, renders inline for actual inspection, and
+treats visual drift as review evidence rather than an automatic failure.
+
+The existing safety guidance remains active. Issue #331 still prevents most
+official footprints containing `fp_text user` from being refreshed; issue #326
+still protects the complete Default netclass; issue #328 keeps bus connectivity
+checks advisory; and #315 means `move_connected` still refuses.
 
 The companion Freerouting bridge remains separate from Konnect's public tool
 surface. It now passes the documented `--gui.enabled=false` setting and the
@@ -41,9 +44,11 @@ gate.
   BOM qualification, and controlled firmware/bring-up handoff.
 - Five specialist Codex agents for libraries, schematics, PCB construction,
   independent review, and bring-up planning.
-- Exact Konnect v0.9.0 version, commit, guidance, hook, and 17-file upstream
+- Exact Konnect v0.10.0 version, commit, guidance, hook, and 17-file upstream
   baseline verification before plugin state changes.
-- Eager access to the released 206 registered tools across 19 toolsets.
+- Eager access to the released 214 registered domain tools across 20 toolsets.
+- Score-first placement and visual schematic feedback integrated into the
+  companion's existing transfer, readability, placement, and review gates.
 - Scoped MCP session inspection and cleanup with Windows child-process
   ownership, preventing stale Konnect processes from locking upgrades.
 - Freerouting-first, explicitly headless, non-overwriting whole-board routing
