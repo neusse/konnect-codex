@@ -39,6 +39,19 @@ load_toolset('pcb_routing')      # query_traces, get_nets_list
 
 Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
+### Reference routing
+
+- Read [references/review-methodology.md](references/review-methodology.md) for
+  every comprehensive or readiness review.
+- Use [references/design-checklist.md](references/design-checklist.md) as a
+  coverage prompt after requirements and exact component evidence are known;
+  unchecked or inapplicable entries must not be reported as passed.
+- Use [references/error-taxonomy.md](references/error-taxonomy.md) when
+  classifying direct ERC/DRC/connectivity findings and known false positives.
+- Use [references/evidence-package.md](references/evidence-package.md) whenever
+  the result needs to be repeatable, compared with a prior review, or used for
+  fabrication readiness.
+
 ---
 
 ## Quick Checks (Escalating Severity)

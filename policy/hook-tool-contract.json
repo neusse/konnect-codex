@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "supported_konnect_version": "0.10.0",
+  "source": "Konnect v0.10.0 tool-directory.md and registered tool implementations at commit 866933e8aca1c115479963463cc7e34370b5822b",
+  "tools": [
+    {"name": "place_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
+    {"name": "move_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
+    {"name": "rotate_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
+    {"name": "set_component_placements", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
+    {"name": "add_board_outline", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
+    {"name": "add_zone", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
+    {"name": "add_copper_pour", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
+
+    {"name": "flip_component", "hook": "pre-pcb-closed", "mode": "closed-board-only"},
+
+    {"name": "update_pcb_from_schematic", "hook": "pre-pcb-plan-apply", "mode": "dry-run-plan-live-apply"},
+    {"name": "update_footprints_from_library", "hook": "pre-pcb-plan-apply", "mode": "dry-run-plan-live-apply"},
+    {"name": "repair_corrupted_footprints", "hook": "pre-pcb-plan-apply", "mode": "dry-run-plan-live-apply"},
+
+    {"name": "delete_component", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "edit_component", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "edit_board_footprint_graphic", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "place_component_array", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "align_components", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "duplicate_component", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "route_trace", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "route_pad_to_pad", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "add_via", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "delete_trace", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "modify_trace", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "route_differential_pair", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "refill_zones", "hook": "pre-pcb-live", "mode": "live-only"}
+  ]
+}

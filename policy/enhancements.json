@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "supported_konnect_version": "0.10.0",
-  "companion_revision": 1,
+  "companion_revision": 2,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -340,6 +340,69 @@
         {"target": "skills/kicad-schematic/SKILL.md", "contains": "#328"},
         {"target": "skills/kicad-schematic/SKILL.md", "contains": "Do not call `move_connected`"},
         {"target": "agents/konnect_schematic_builder.toml", "contains": "v0.10.0 connectivity"}
+      ]
+    },
+    {
+      "id": "verified-symbol-and-pin-guidance",
+      "status": "active",
+      "reason": "Konnect v0.10.0 guidance contains invalid KiCad 10 library IDs, reverses the standard Device:LED wiring example, and states unsafe universal physical pin-number conventions.",
+      "evidence": [
+        "Konnect issue #356",
+        "Direct comparison with the installed official KiCad 10 symbol libraries on 2026-08-28"
+      ],
+      "introduced_for": "0.10.0",
+      "retire_when": "Upstream guidance removes universal physical pin assignments, corrects the known IDs and LED map, and equivalent asset tests pass against the supported KiCad libraries.",
+      "assertions": [
+        {"target": "skills/kicad-schematic/references/common-lib-ids.md", "contains": "non-exhaustive quick-start cache"},
+        {"target": "skills/kicad-schematic/references/wiring-patterns.md", "contains": "pin 1 = K"},
+        {"target": "skills/kicad-library/SKILL.md", "contains": "There are no safe universal physical lead-number assignments"}
+      ]
+    },
+    {
+      "id": "reference-reachability-and-evidence-contracts",
+      "status": "active",
+      "reason": "Installed references can be skipped when no parent skill links them, and agents/manufacturing guidance can otherwise report evidence or validation coverage their workflow never collected.",
+      "evidence": [
+        "Konnect issue #357",
+        "konnect-codex reference reachability and manufacturing-contract audit on 2026-08-28"
+      ],
+      "introduced_for": "0.10.0",
+      "retire_when": "Upstream Codex-native guidance provides equivalent progressive disclosure, executable evidence contracts, and accurate released manufacturing behavior.",
+      "assertions": [
+        {"target": "skills/konnect-codex/SKILL.md", "contains": "unless its direct output is present"},
+        {"target": "agents/konnect_design_reviewer.toml", "contains": "rather than filling a success field from expectation"},
+        {"target": "skills/kicad-manufacture/SKILL.md", "contains": "does **not**"}
+      ]
+    },
+    {
+      "id": "codex-hook-contract",
+      "status": "active",
+      "reason": "Codex PreToolUse guidance must be structured, safely installed, and accurate for live-only, fallback-capable, closed-board-only, and plan/apply PCB operations.",
+      "evidence": [
+        "Konnect issue #358 findings adapted to the Codex hook contract",
+        "Konnect v0.10.0 tool-directory runtime classifications",
+        "Correction: refill_zones is a registered live-only pcb_export tool in v0.10.0"
+      ],
+      "introduced_for": "0.10.0",
+      "retire_when": "Konnect provides an equivalent tested Codex-native hook contract and server-side ownership checks remain authoritative.",
+      "assertions": [
+        {"target": "hooks/hooks.json", "contains": "pre-pcb-closed"},
+        {"target": "hooks/hooks.json", "contains": "set_component_placements"}
+      ]
+    },
+    {
+      "id": "guidance-governance-register",
+      "status": "active",
+      "reason": "Companion-only safety fixes and workflow improvements need an explicit retain/revise/retire decision on every Konnect release instead of relying on memory or blind prose merges.",
+      "evidence": [
+        "Konnect release-refresh history through v0.10.0",
+        "User requirement for a durable living change document on 2026-08-28"
+      ],
+      "introduced_for": "0.10.0",
+      "retire_when": "The companion is no longer needed because upstream supplies equivalent first-class Codex skills, agents, hooks, governance, and tested release refresh behavior.",
+      "assertions": [
+        {"target": "docs/GUIDANCE_DELTA_REGISTER.md", "contains": "The required decision set is"},
+        {"target": "docs/GUIDANCE_STANDARDS.md", "contains": "This is the acceptance standard"}
       ]
     }
   ]

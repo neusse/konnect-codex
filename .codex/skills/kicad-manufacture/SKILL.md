@@ -31,6 +31,16 @@ load_toolset('pcb_export')       # export_3d for visual verification
 
 Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
+### Reference routing
+
+- Read [references/gerber-layers.md](references/gerber-layers.md) when choosing
+  fabrication layers or checking a Gerber/drill inventory.
+- Read [references/jlcpcb-rules.md](references/jlcpcb-rules.md) only when JLCPCB
+  is the selected fabricator, then verify every time-sensitive field, fee,
+  capability, and format against JLCPCB's current official order contract.
+- Read [references/legacy-through-hole.md](references/legacy-through-hole.md)
+  for legacy, surplus, socketed, or manually assembled parts.
+
 ---
 
 ## Pre-Flight Checklist
@@ -56,10 +66,12 @@ get_drc_violations()
 validate_for_manufacturing()
 ```
 
-- Checks board outline is closed
-- Checks all pads have copper
-- Checks drill sizes are within fabrication limits
-- Checks silkscreen does not overlap pads
+In Konnect v0.10.0 this aggregate check confirms that Edge.Cuts content and
+footprints exist, evaluates configured minimum trace width, reports a coarse
+no-tracks heuristic, and incorporates direct KiCad DRC evidence. It does **not**
+prove that the outline is closed, every pad has copper, drills satisfy the
+selected fabricator, or silkscreen clears pads. Collect those results with
+direct DRC, artifact/viewer inspection, and the current fab contract.
 
 This aggregate result cannot override DRC errors, unrouted connections,
 implausible board inventory, transfer mismatches, or missing artifacts. Any such
@@ -83,7 +95,7 @@ height, orientation, hand-solder access, attrition, and alternate risk.
 
 ## Export Workflow
 
-### One-Shot Export (Recommended)
+### One-Shot Export (Convenience)
 
 ```
 export_manufacturing_package(board, output_dir, fab_house?, schematic?)
@@ -92,15 +104,17 @@ export_manufacturing_package(board, output_dir, fab_house?, schematic?)
 `fab_house` selects the house profile (there is no `format` argument). Pass
 `schematic` when you want the BOM generated as part of the package.
 
-Generates all manufacturing files in one call:
+Attempts the requested manufacturing files in one call:
 - Gerbers (all copper layers + mask + silkscreen + edge cuts)
 - Drill files (Excellon format)
 - BOM (CSV)
 - Pick-and-place / component position file (CPL)
 - Job file (optional, fab-house specific)
 
-After export, inspect the output directory rather than trusting the success
-status alone. Verify every requested file exists and is non-empty, the Gerber
+The handler may return after partial failures and report them in warnings.
+Inspect `warnings`, `files_generated`, and the output directory rather than
+trusting request success alone. Verify every requested file exists and is
+non-empty, the Gerber
 set contains only the intended production layers, drill counts are plausible,
 and assembly CSV files state or unambiguously use the intended units and origin.
 Exclude mounting holes, fiducials, and other non-placeable footprints from the
@@ -144,6 +158,13 @@ Export separately for top and bottom if double-sided assembly.
 
 ## JLCPCB-Specific Guidance
 
+JLCPCB capabilities, fees, stock categories, order-column names, and design
+limits are time-sensitive. Do not use a static count, price, or minimum from
+this skill as an order constraint. Read
+[references/jlcpcb-rules.md](references/jlcpcb-rules.md), retrieve the current
+official assembly/fabrication requirements on the order date, record the
+source and date, and configure the project to the selected process.
+
 ### Part Sourcing
 
 ```
@@ -151,45 +172,11 @@ search_jlcpcb_parts(query)                     # Find LCSC part numbers
 suggest_jlcpcb_alternatives(value, footprint)  # Find alternatives for OOS parts
 ```
 
-### Part Categories
-
-| Category           | Description                              | Extra Cost             |
-|--------------------|------------------------------------------|------------------------|
-| **Basic**          | ~700 common parts, pre-loaded on machine | None                   |
-| **Preferred Ext.** | Popular extended parts                   | No feeder loading fee  |
-| **Extended**       | 300k+ parts, loaded on demand            | $3 per unique part     |
-
-**Strategy**: Use basic parts wherever possible. Every extended part adds $3 to assembly cost.
-Search with `search_jlcpcb_parts` and filter by `basic: true` when looking for alternatives.
-
-### Minimum Design Rules (JLCPCB Standard Process)
-
-| Parameter              | Minimum Value |
-|------------------------|---------------|
-| Trace width            | 0.127mm (5mil)  |
-| Trace spacing          | 0.127mm (5mil)  |
-| Via drill              | 0.3mm          |
-| Via annular ring       | 0.15mm (6mil)   |
-| Min hole size          | 0.3mm          |
-| Pad-to-pad clearance   | 0.254mm (10mil) |
-| Silkscreen line width  | 0.15mm         |
-| Board thickness        | 0.8-2.0mm (1.6 default) |
-| Min board size         | 10x10mm        |
-
-Use `add_design_rule` or `list_design_rules` to configure project rules to match.
-
-### JLCPCB BOM Requirements
-
-- Column headers must be exactly: `Designator`, `Comment`, `Footprint`, `LCSC Part #`
-- LCSC Part # format: `Cxxxxxx` (e.g., C14663)
-- Group identical parts on one row with comma-separated designators
-
-### JLCPCB CPL (Position File) Requirements
-
-- Columns: `Designator`, `Mid X`, `Mid Y`, `Layer`, `Rotation`
-- Coordinates in millimeters
-- Rotation in degrees (0-360)
-- Layer values: `Top` or `Bottom`
+Prefer currently eligible low-setup-cost parts when that matches the design,
+but preserve exact MPN, package, ratings, and lifecycle requirements. Use
+`search_jlcpcb_parts` as catalogue evidence, then verify the exact selected
+part and the uploaded BOM/CPL preview. Use the field names and units required
+by the current uploader rather than normalizing to an old hard-coded spelling.
 
 ---
 
@@ -198,6 +185,10 @@ Use `add_design_rule` or `list_design_rules` to configure project rules to match
 ```
 estimate_cost(board, quantity?, layers?, fab_house?)
 ```
+
+In Konnect v0.10.0 this is a fixed rough heuristic, not a live quote. Label its
+result as an estimate and obtain a current vendor quote before making a cost or
+supplier decision.
 
 Factors that increase cost:
 - Layer count (2 vs 4 vs 6+)
@@ -245,12 +236,14 @@ Visual checks:
 ## Rules
 
 1. **Never export without passing DRC** — zero errors required
-2. **Never skip validate_for_manufacturing** — catches issues DRC misses
+2. **Never overstate validate_for_manufacturing** — report its actual coverage
+   and collect direct evidence for checks it does not implement
 3. **Always verify part availability** before finalizing BOM for assembly
 4. **Export 3D model** before submitting order — visual sanity check
 5. **Save project before export** — ensures exported files match current state
 6. **Load toolsets first** — check `get_active_toolsets()` and load what you need
-7. **Use one-shot export when possible** — `export_manufacturing_package` ensures consistency
+7. **Use one-shot export when useful** — then inspect warnings, generated-file
+   inventory, and each requested artifact because partial completion is possible
 8. **Double-check fab house requirements** — each house has slightly different file format expectations
 9. **Verify artifacts directly** — success is incomplete until every requested
    output exists, is non-empty, and has plausible units, origin, layers, and rows

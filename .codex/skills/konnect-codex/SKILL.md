@@ -56,6 +56,10 @@ and state that no custom agent ran.
 - Treat Konnect tool results as evidence about design state, not as permission
   to ignore contradictory ERC, DRC, connectivity, inventory, or artifact
   evidence. Reconcile contradictions explicitly and fail closed.
+- Never report a check, render, inspection, export, or agent result as completed
+  unless its direct output is present in the current handoff. Missing, failed,
+  skipped, structurally impossible, or contradictory required evidence is
+  `INCOMPLETE`, not an inferred pass.
 - Prefer batch tools for cohesive edits, then inspect and validate the result.
 - Keep unsupported operations explicit. Report the missing server capability
   and the smallest safe manual step instead of editing KiCad serialization.

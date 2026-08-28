@@ -1,4 +1,4 @@
-# konnect-codex plugin v0.10.0 — companion revision 1
+# konnect-codex plugin v0.10.0-codex.2 — companion revision 2
 
 This release is reviewed for
 [Konnect v0.10.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.10.0) at
@@ -7,6 +7,36 @@ commit `866933e8aca1c115479963463cc7e34370b5822b`.
 Konnect 0.10.0 adds a deterministic placement-analysis toolset and schematic
 visual-baseline tools. The release exposes 214 registered domain tools across
 20 toolsets, plus six router/meta tools.
+
+Companion revision 2 is a full Codex-guidance audit against upstream issues
+#356, #357, and #358. It preserves all prior companion enhancements while
+making their release-to-release treatment explicit and executable.
+
+## Codex guidance audit
+
+- Added a living guidance delta register and standards document. Every active
+  enhancement now has a retain/revise/retire/add review path for the next
+  Konnect release, and tests require every policy ID to remain represented.
+- Corrected the seven known invalid KiCad 10 shortcut IDs, fixed the standard
+  `Device:LED` polarity example (`1=K`, `2=A`), and removed universal diode,
+  transistor, MOSFET, connector, crystal, and IC physical pin-number rules.
+- Linked every bundled reference from its parent skill with a read trigger, so
+  progressive disclosure can actually reach all 18 references.
+- Added an explicit evidence contract to all five agents and the router: no
+  check, render, inspection, export, or measurement may be reported as run
+  without its result; missing or contradictory required evidence is
+  `BLOCKED`/`INCOMPLETE`.
+- Corrected manufacturing guidance to the v0.10.0 handler contract, made
+  partial export/artifact verification explicit, labeled `estimate_cost` a
+  rough heuristic, and demoted time-sensitive vendor/trace tables to sourced
+  starting references.
+- Replaced the single inaccurate PCB IPC hook warning with four reviewed
+  runtime classes: live-only, live-or-closed fallback, closed-board-only, and
+  dry-run/apply. A machine-readable tool contract is checked against every
+  matcher, including real v0.10.0 `refill_zones` coverage.
+- Refactored hook output behind a testable structured Codex response and added
+  tests for runtime messages, reference reachability, unsafe shortcut
+  regression, and living-register coverage.
 
 ## Guidance compatibility review
 

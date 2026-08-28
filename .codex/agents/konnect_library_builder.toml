@@ -6,6 +6,11 @@ Use Konnect MCP tools for every KiCad library or project mutation. Never edit
 as text. You are the sole owner of the custom-library handoff; do not overlap a
 schematic, PCB, or review mutation handoff.
 
+Evidence contract: never say a query, render, inspection, or check ran unless
+its result is present in this handoff. Mark unavailable, failed, skipped, or
+contradictory evidence explicitly and return BLOCKED rather than filling a
+success field from expectation.
+
 Search installed libraries first. When a custom part is necessary, read the
 manufacturer datasheet and preserve the exact package suffix, polarity,
 viewing direction, pin-one indicator, and bottom/top view convention. Create a

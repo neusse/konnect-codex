@@ -72,7 +72,13 @@ continuation.
 
 ## KiCAD 10 IPC API Reality
 
-**PCB Editor (pcbnew):** Full CRUD via NNG + protobuf. Real-time communication with running KiCAD instance. Create, read, update, delete any PCB item with immediate UI refresh. **Requires KiCAD to be running.**
+**PCB Editor (pcbnew):** Most item-level mutation uses NNG + protobuf against a
+running KiCad instance. Konnect v0.10.0 also has narrow revision-aware
+closed-board fallbacks for placement/move/rotation/batch placement and selected
+board operations, a closed-board-only footprint flip, and live-only trace,
+delete, refresh/apply, and zone-refill operations. Read the `kicad-pcb` skill
+and the companion hook context for the exact tool contract; never assume all
+PCB tools share one ownership mode.
 
 **Schematic Editor (eeschema):** No item-level IPC API. Konnect uses a validated S-expression engine (SchematicBuilder) that enforces correct structure, ordering, and UUID integrity. File-based — **does not require KiCAD to be running.**
 
@@ -103,7 +109,7 @@ unload_toolset("name")  → Remove a toolset when done
 |----------|----------|
 | Project | project |
 | Schematic | sch_components, sch_wiring, sch_bus, sch_analysis, sch_batch, sch_export, sch_hierarchy |
-| PCB | pcb_board, pcb_components, pcb_routing, pcb_export |
+| PCB | pcb_board, pcb_components, placement, pcb_routing, pcb_export |
 | Library | library |
 | Integration | integration (JLCPCB parts, Freerouting installation checks, datasheets) |
 | Verification & Review | verification, design_review |
@@ -111,14 +117,19 @@ unload_toolset("name")  → Remove a toolset when done
 | Templates | templates |
 | Manufacturing | manufacturing |
 
-## Design Rules Quick Reference
+## Design questions, not universal rules
+
+These are familiar starting questions only. Exact requirements, component
+datasheets, topology, bus capacitance/rise-time calculations, current, thermal
+conditions, and the selected fabrication stackup determine the actual values.
+Do not place or condemn a part solely because it differs from this table.
 
 | Rule | Value |
 |------|-------|
-| IC decoupling cap | 100nF ceramic within 3-5mm of VDD pin |
+| IC decoupling | Start by checking 100nF near a supply pin; use the device data and PDN needs |
 | Crystal load caps | CL = (C1*C2)/(C1+C2) + Cstray (Cstray ~ 3-5pF) |
-| Reset pull-up | 10k to VCC + 100nF to GND |
-| I2C pull-ups | 4.7k (standard), 2.2k (fast), 1k (fast+) — one set per bus |
+| Reset network | Use the device's reset thresholds, timing, internal pulls, and programming path |
+| I2C pull-ups | Calculate from bus voltage, capacitance, speed, sink current, and device limits |
 | LED resistor | R = (VCC - Vf) / If |
 
 ## Common Library IDs

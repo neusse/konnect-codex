@@ -58,6 +58,14 @@ region or the missing grouping capability must be reported as a blocker/waiver.
 
 ### Common Library IDs
 
+This table is a small convenience cache, not an allowlist or a substitute for
+the active KiCad library catalogue. Verify every ID with `search_symbols`
+before placement. Read
+[references/common-lib-ids.md](references/common-lib-ids.md) when selecting a
+common generic symbol, and fall back to search whenever an exact ID is absent
+or uncertain. Package-sensitive semiconductors and ICs require exact-part
+evidence rather than a generic shortcut.
+
 | Component        | lib_id                          |
 |------------------|---------------------------------|
 | Resistor         | `Device:R`                      |
@@ -67,10 +75,10 @@ region or the missing grouping capability must be reported as a blocker/waiver.
 | LED              | `Device:LED`                    |
 | Diode            | `Device:D`                      |
 | Zener            | `Device:D_Zener`                |
-| NPN Transistor   | `Device:Q_NPN_BCE`              |
-| PNP Transistor   | `Device:Q_PNP_BCE`              |
-| N-MOSFET         | `Device:Q_NMOS_GDS`             |
-| P-MOSFET         | `Device:Q_PMOS_GDS`             |
+| NPN Transistor   | search `Transistor_BJT` by required pin order |
+| PNP Transistor   | search `Transistor_BJT` by required pin order |
+| N-MOSFET         | search `Transistor_FET` by required pin order |
+| P-MOSFET         | search `Transistor_FET` by required pin order |
 | 2-pin Connector  | `Connector_Generic:Conn_01x02`  |
 | 4-pin Connector  | `Connector_Generic:Conn_01x04`  |
 | Ground           | `power:GND`                     |
@@ -206,6 +214,11 @@ Bulk-modify component properties (values, footprints, fields) across multiple co
 ---
 
 ## Common Patterns
+
+Read [references/wiring-patterns.md](references/wiring-patterns.md) when using
+a standard circuit pattern. Treat its named pins as a checked starting point,
+then confirm them against `get_symbol_info` for the selected symbol before
+wiring. The reference is authoritative over abbreviated examples here.
 
 ### Decoupling Capacitor
 Place 100nF cap (Device:C) within 5mm of IC power pin. Connect one pin to VCC via power symbol, other pin to GND via power symbol. One cap per VCC/VDD pin.

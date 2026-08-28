@@ -21,8 +21,10 @@ Konnect behaves like a first-class Codex integration. It is deliberately
 separate from Konnect so each release can preserve a known-good Codex workflow
 without changing Konnect itself.
 
-Release numbers match the Konnect release reviewed by the plugin:
-`konnect-codex v0.10.0` supports `Konnect v0.10.0`. The exact reviewed upstream
+Release numbers identify the Konnect release reviewed by the plugin:
+`konnect-codex v0.10.0-codex.2` supports `Konnect v0.10.0`; the `codex.2`
+suffix is the second companion revision for that unchanged upstream release.
+The exact reviewed upstream
 commit and guidance fingerprints are recorded in
 [`compatibility.json`](compatibility.json).
 
@@ -42,7 +44,9 @@ The plugin supplies:
   cache the first MCP tool list can see the complete tool catalogue;
 - ownership, health checks, disable/enable, and exact uninstall support;
 - a machine-enforced [guidance change policy](docs/CHANGE_POLICY.md) with
-  per-file upstream provenance, named Codex enhancements, and retirement rules.
+  per-file upstream provenance, named Codex enhancements, retirement rules,
+  a living [delta register](docs/GUIDANCE_DELTA_REGISTER.md), and explicit
+  [guidance standards](docs/GUIDANCE_STANDARDS.md).
 
 The reviewed plugin skills are authoritative by default. Do not run
 `konnect init --client codex`; that installs another set of skills with the same
@@ -75,8 +79,8 @@ release for the current operating system, verify it, install the plugin, and
 run its health check for you:
 
 ```text
-Install the konnect-codex v0.10.0 companion revision 1 plugin from
-https://github.com/neusse/konnect-codex/releases/tag/v0.10.0 for this operating
+Install the konnect-codex v0.10.0 companion revision 2 plugin from
+https://github.com/neusse/konnect-codex/releases/tag/v0.10.0-codex.2 for this operating
 system. First locate the Konnect executable and run `konnect --version`. Stop
 without changing anything if Konnect is missing or is not exactly v0.10.0.
 Download SHA256SUMS.txt and verify the plugin archive before extracting it.
@@ -112,7 +116,7 @@ konnect-codex doctor
 You can also install the version-matched source release with Cargo:
 
 ```powershell
-cargo install --git https://github.com/neusse/konnect-codex --tag v0.10.0
+cargo install --git https://github.com/neusse/konnect-codex --tag v0.10.0-codex.2
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -195,8 +199,13 @@ Every Konnect release is handled as a compatibility review under the
    account for every changed skill, reference, agent, hook, and tool contract.
 2. Review every entry in [`policy/enhancements.json`](policy/enhancements.json):
    port it, adapt it, or retire it only after its recorded condition is met.
-3. Run `konnect-codex audit --source <Konnect checkout>` against the pinned
+3. Review every row in the living
+   [`docs/GUIDANCE_DELTA_REGISTER.md`](docs/GUIDANCE_DELTA_REGISTER.md) and audit
+   all runtime assets against
+   [`docs/GUIDANCE_STANDARDS.md`](docs/GUIDANCE_STANDARDS.md).
+4. Run `konnect-codex audit --source <Konnect checkout>` against the pinned
    version, commit, per-file baseline, aggregate guidance, and hook fingerprint.
-4. Validate enhancement assertions, skill frontmatter, agent TOML, lifecycle
+5. Validate enhancement assertions, reference reachability, hook target/runtime
+   classification, skill frontmatter, agent TOML, lifecycle
    safety, tests, Clippy, and packaging on Windows, Linux, and macOS.
-5. Run the end-to-end KiCad benchmark before publishing matching artifacts.
+6. Run the end-to-end KiCad benchmark before publishing matching artifacts.

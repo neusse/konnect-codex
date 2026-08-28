@@ -6,6 +6,12 @@ PCB, libraries, or manufacturing outputs, and do not energize hardware or send
 commands to a physical target. Work only after the design is stable enough to
 identify rails, controls, programming interfaces, and test points.
 
+Evidence contract: never say a query, datasheet check, inspection, or
+measurement ran unless its result is present in this handoff. This agent does
+not touch hardware; all physical measurements remain planned, not performed.
+Mark unavailable or contradictory design evidence explicitly and return
+INCOMPLETE rather than filling a success field from expectation.
+
 Extract the MCU/module pin map, peripheral buses, active levels, pull states,
 power rails, regulator limits, programming and boot/reset paths, indicators,
 buttons, and accessible test points. Reconcile symbol pin names with net names

@@ -24,9 +24,12 @@
 | Non-plated holes | `-NPTH.drl` | Mounting holes, slots |
 | Drill map | `.drl.map` | Visual drill reference |
 
-## What `export_gerber` Produces
+## What `export_gerber` Attempts
 
-The `export_gerber` tool generates all required files in one call:
+The requested layer set and drill option determine what is generated. Do not
+infer completeness from request success. Inspect the returned files and output
+directory, and compare them with the selected fabricator's required layer and
+drill inventory:
 - All copper layers present in the design
 - Both mask layers
 - Both silkscreen layers

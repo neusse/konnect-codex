@@ -1,5 +1,12 @@
 # Trace Width Reference
 
+This file is a rough screening aid, not design proof. Trace/via current and
+impedance depend on actual stackup, copper thickness, temperature rise,
+ambient, length, allowable voltage drop, plating, and fabrication tolerances.
+Use a recognized current calculation and the board fabricator's field solver
+or impedance service for production constraints. The project netclass must
+record the resulting value and assumptions.
+
 ## Current Capacity (1oz/ft² copper, 10°C rise, external layer)
 
 | Current (A) | Min Width (mm) | Recommended Width (mm) |
@@ -13,7 +20,8 @@
 | 5.0 | 2.00 | 2.50 |
 
 **For internal layers**: multiply width by 1.5x (less cooling)
-**For 2oz copper**: divide width by ~0.7x
+**For 2oz copper**: a first-order estimate may multiply the 1oz width by about
+0.7; recalculate for the actual process instead of using that factor as proof.
 
 ## Standard Trace Widths by Application
 
@@ -23,8 +31,8 @@
 | High-speed digital | 0.10–0.15 | HighSpeed |
 | Power (< 1A) | 0.30–0.50 | Power |
 | Power (1–3A) | 0.50–1.50 | PowerHigh |
-| USB 2.0 differential | 0.15 (90Ω diff) | USB |
-| USB 3.0 differential | 0.10 (85Ω diff) | USB3 |
+| USB 2.0 differential | Calculate for actual stackup and target impedance | USB |
+| USB 3.0 differential | Calculate for actual stackup and target impedance | USB3 |
 | Antenna / RF | per impedance calc | RF |
 
 ## Via Sizing
@@ -58,13 +66,10 @@
 | Hole-to-hole | 0.50mm |
 | Board edge clearance | 0.30mm |
 
-## Impedance Reference (FR4, 1.6mm, 1oz)
+## Impedance reference
 
-| Target | Trace width | Gap | Layer |
-|--------|------------|-----|-------|
-| 50Ω single-ended | 0.30mm | — | External |
-| 90Ω differential (USB 2.0) | 0.15mm | 0.15mm | External |
-| 100Ω differential (Ethernet) | 0.12mm | 0.18mm | External |
-| 50Ω microstrip (internal) | 0.18mm | — | Internal |
-
-*Note: These are approximate. Use a proper impedance calculator for production designs.*
+Do not publish a fixed width/gap without dielectric thickness, dielectric
+constant, copper thickness, solder mask, reference-plane geometry, and the
+fabricator's tolerances. External routing is generally microstrip; routing
+between reference planes is stripline. Calculate the geometry for the selected
+stackup and confirm it with the fabricator.

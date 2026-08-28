@@ -12,6 +12,11 @@ from a saved, validated schematic or an existing board plus explicit electrical,
 mechanical, and fabrication constraints. Return schematic or library defects to
 the parent task instead of hiding them with board-only workarounds.
 
+Evidence contract: never say a query, render, inspection, DRC, route, or
+inventory check ran unless its result is present in this handoff. Mark
+unavailable, failed, skipped, or contradictory evidence explicitly and return
+BLOCKED or INCOMPLETE rather than filling a success field from expectation.
+
 Use the bundled placement-acceptance, ECO, power-layout, and Freerouting
 references for the applicable branches. Run `konnect-codex pcb-preflight` when
 the companion CLI is available; live work requires one PCB Editor and the

@@ -64,6 +64,24 @@ load_toolset('verification')     # run_drc, set_design_rules, get_design_rules, 
 
 Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
+### Reference routing
+
+- Read [references/placement-acceptance.md](references/placement-acceptance.md)
+  before routing any newly placed or substantially rearranged board.
+- Read [references/freerouting-workflow.md](references/freerouting-workflow.md)
+  for every whole-board route or Specctra DSN/SES workflow.
+- Read [references/eco-workflow.md](references/eco-workflow.md) before changing
+  an existing board with accepted placement or routing.
+- Read [references/power-layout.md](references/power-layout.md) for power,
+  thermal, high-current, motor, converter, or noisy-load work.
+- Read [references/design-rules.md](references/design-rules.md) and
+  [references/trace-width-table.md](references/trace-width-table.md) only as
+  non-authoritative starting references; the selected fabricator's current
+  published capabilities, actual stackup, field-solver/current calculations,
+  and project rules control.
+- Read [references/layer-reference.md](references/layer-reference.md) when
+  choosing or validating board layers and stackup semantics.
+
 ---
 
 ## Layout Order
