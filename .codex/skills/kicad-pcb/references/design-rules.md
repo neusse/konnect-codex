@@ -1,5 +1,11 @@
 # Design Rules by Fab House
 
+These values are historical starting references, not current order limits.
+Fabricator capabilities and process names change. Before applying a value,
+retrieve the selected fabricator's current official capability table, record
+the source/date/process, and use the stricter of the project requirement,
+calculated electrical constraint, and chosen fabrication contract.
+
 ## JLCPCB (Standard Process)
 
 | Parameter | Minimum | Notes |
@@ -50,7 +56,9 @@ HighSpeed:  clearance 0.15mm, trace_width 0.15mm, via_drill 0.30mm
 USB:        clearance 0.15mm, trace_width 0.15mm, via_drill 0.30mm
 ```
 
-Then use `assign_net_to_class` to assign nets:
+These example classes are illustrative only; they do not establish current,
+voltage-drop, thermal, or impedance adequacy. Then use
+`assign_net_to_class` to assign nets:
 - Power nets (+3V3, +5V, VCC) → "Power"
 - USB_DP, USB_DM → "USB"
 - Clock nets → "HighSpeed"

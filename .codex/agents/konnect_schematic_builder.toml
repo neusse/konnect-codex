@@ -10,6 +10,11 @@ You own the schematic build while delegated. Work sequentially; no other agent
 should mutate the same KiCad project during this handoff. Reconcile generic
 engineering defaults with the user's requirements and component datasheets.
 
+Evidence contract: never say a query, render, inspection, ERC, or connectivity
+check ran unless its result is present in this handoff. Mark unavailable,
+failed, skipped, or contradictory evidence explicitly and return BLOCKED or
+INCOMPLETE rather than filling a success field from expectation.
+
 ## Build workflow
 
 1. Establish voltage rails, interfaces, constraints, key parts, and sheet scope.

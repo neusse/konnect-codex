@@ -1,5 +1,13 @@
 # Common KiCAD Library Identifiers
 
+This is a non-exhaustive quick-start cache for generic symbols verified against
+the KiCad 10 library installed for the Konnect 0.10.0 companion release. It is
+not an allowlist and it must not contain personal favorites. Verify an ID with
+`search_symbols` against the active installation before use; search rather than
+guess whenever the required part is absent or its exact identity is uncertain.
+Exact manufacturer part, package suffix, pin order, and datasheet evidence
+outrank this list for ICs and package-sensitive semiconductors.
+
 ## Passive Components (Device library)
 | lib_id | Description | Reference prefix |
 |--------|-------------|-----------------|
@@ -16,14 +24,14 @@
 | `Device:D_TVS` | TVS protection diode | D |
 | `Device:LED` | Light-emitting diode | D |
 | `Device:LED_Small` | LED (compact) | D |
-| `Device:Q_NPN_BEC` | NPN transistor (B-E-C pinout) | Q |
-| `Device:Q_PNP_BEC` | PNP transistor (B-E-C pinout) | Q |
-| `Device:Q_NMOS_GDS` | N-channel MOSFET (G-D-S) | Q |
-| `Device:Q_PMOS_GDS` | P-channel MOSFET (G-D-S) | Q |
+| `Transistor_BJT:Q_NPN_BEC` | Generic NPN symbol with B-E-C symbol-pin order; verify exact device/package | Q |
+| `Transistor_BJT:Q_PNP_BEC` | Generic PNP symbol with B-E-C symbol-pin order; verify exact device/package | Q |
+| `Transistor_FET:Q_NMOS_GDS` | Generic N-MOSFET symbol with G-D-S symbol-pin order; verify exact device/package | Q |
+| `Transistor_FET:Q_PMOS_GDS` | Generic P-MOSFET symbol with G-D-S symbol-pin order; verify exact device/package | Q |
 | `Device:Crystal` | Crystal oscillator (2-pin) | Y |
 | `Device:Crystal_GND24` | Crystal with ground pins 2,4 | Y |
 | `Device:Fuse` | Fuse | F |
-| `Device:Ferrite_Bead` | Ferrite bead | FB |
+| `Device:FerriteBead` | Ferrite bead | FB |
 | `Device:Thermistor_NTC` | NTC thermistor | TH |
 
 ## Connectors (Connector_Generic library)
@@ -59,14 +67,14 @@
 |--------|-------------|
 | `Regulator_Linear:AMS1117-3.3` | 3.3V LDO, 1A |
 | `Regulator_Linear:AP2112K-3.3` | 3.3V LDO, 600mA |
-| `Regulator_Linear:MCP1700-3302E_SOT23` | 3.3V LDO, 250mA, low Iq |
+| `Regulator_Linear:MCP1700x-330xxTT` | MCP1700 family, 3.3V SOT-23 variant; verify exact suffix and pinout |
 | `Regulator_Linear:LP5907MFX-3.3` | 3.3V LDO, ultra-low noise |
 
 ## Interface ICs (Interface library)
 | lib_id | Description |
 |--------|-------------|
 | `Interface_USB:CH340G` | USB-UART bridge |
-| `Interface_USB:CP2102N-A02-GQFN24` | USB-UART bridge |
+| `Interface_USB:CP2102N-Axx-xQFN24` | CP2102N 24-pin family; verify exact ordering code |
 | `Interface_CAN_LIN:MCP2551-I-SN` | CAN transceiver |
 
 ## Common MCUs (MCU_ST library)
@@ -78,6 +86,9 @@
 ## Usage Notes
 
 - Always verify a lib_id exists with `search_symbols` before using it
+- Treat this file as a convenience index, never as a complete catalogue
+- Keep personal or project favorites in a separate user/project overlay rather
+  than changing the shared compatibility list
 - Power symbols create their net automatically — no manual net label needed
 - `PWR_FLAG` is needed on power nets that don't connect to a power output pin (fixes ERC warnings)
 - For device variants (e.g., specific resistor values), set the `value` parameter when placing

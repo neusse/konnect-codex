@@ -36,6 +36,9 @@ const HOOKS_TEMPLATE: &str = include_str!("../template/konnect-codex/hooks/hooks
 const COMPATIBILITY_JSON: &str = include_str!("../compatibility.json");
 const ENHANCEMENT_POLICY_JSON: &str = include_str!("../policy/enhancements.json");
 const UPSTREAM_BASELINE_JSON: &str = include_str!("../policy/upstream-baseline.json");
+const HOOK_TOOL_CONTRACT_JSON: &str = include_str!("../policy/hook-tool-contract.json");
+const GUIDANCE_STANDARDS: &str = include_str!("../docs/GUIDANCE_STANDARDS.md");
+const GUIDANCE_DELTA_REGISTER: &str = include_str!("../docs/GUIDANCE_DELTA_REGISTER.md");
 
 include!(concat!(env!("OUT_DIR"), "/reviewed_assets.rs"));
 
@@ -223,6 +226,20 @@ struct Enhancement {
 struct EnhancementAssertion {
     target: String,
     contains: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct HookToolContract {
+    schema_version: u32,
+    supported_konnect_version: String,
+    tools: Vec<HookToolEntry>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct HookToolEntry {
+    name: String,
+    hook: String,
+    mode: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -1468,19 +1485,22 @@ pub fn run_hook(name: &str, argument: Option<&str>, paths: &CompanionPaths) -> R
     let mut raw = String::new();
     std::io::stdin().read_to_string(&mut raw)?;
     let input: JsonValue = serde_json::from_str(&raw).unwrap_or_else(|_| json!({}));
+    if let Some(output) = hook_response(name, argument, paths, &input)? {
+        println!("{}", serde_json::to_string(&output)?);
+    }
+    Ok(())
+}
+
+fn hook_response(
+    name: &str,
+    argument: Option<&str>,
+    paths: &CompanionPaths,
+    input: &JsonValue,
+) -> Result<Option<JsonValue>> {
     let context = match name {
-        "pre-pcb-ipc" => {
+        "pre-pcb-live" | "pre-pcb-fallback" | "pre-pcb-closed" | "pre-pcb-plan-apply" => {
             let editors = pcb_editor_process_count().unwrap_or(usize::MAX);
-            let ownership = if editors == 1 {
-                "One PCB Editor process is present. Confirm Konnect's active-board path matches the target before mutation."
-            } else if editors == usize::MAX {
-                "PCB Editor process ownership could not be determined. Stop and run `konnect-codex pcb-preflight --board <path> --mode live`."
-            } else {
-                "PCB ownership is unsafe. Do not run this mutation; open exactly one PCB Editor with the target board and rerun preflight."
-            };
-            Some(format!(
-                "This Konnect PCB operation requires exactly one responsive KiCad PCB Editor with the target board open. Detected pcbnew process count: {editors}. {ownership} Confirm a plausible component/pad inventory before mutation. If IPC is unavailable, the editor closes, or a mutator reports file fallback after live work began, stop the PCB phase, reopen the board, and retry the readiness query once. Never mix live IPC and closed-file fallback in one placement or routing sequence."
-            ))
+            Some(pcb_hook_context(name, input, editors))
         }
         "user-prompt" => input
             .get("prompt")
@@ -1499,21 +1519,58 @@ pub fn run_hook(name: &str, argument: Option<&str>, paths: &CompanionPaths) -> R
         }
         other => bail!("unknown hook '{other}'"),
     };
-    if let Some(context) = context {
-        println!(
-            "{}",
-            serde_json::to_string(&json!({
-                "hookSpecificOutput": {
-                    "hookEventName": input
-                        .get("hook_event_name")
-                        .and_then(JsonValue::as_str)
-                        .unwrap_or(if name == "user-prompt" { "UserPromptSubmit" } else { "PreToolUse" }),
-                    "additionalContext": context
-                }
-            }))?
-        );
+    Ok(context.map(|context| {
+        json!({
+            "hookSpecificOutput": {
+                "hookEventName": input
+                    .get("hook_event_name")
+                    .and_then(JsonValue::as_str)
+                    .unwrap_or(if name == "user-prompt" { "UserPromptSubmit" } else { "PreToolUse" }),
+                "additionalContext": context
+            }
+        })
+    }))
+}
+
+fn pcb_hook_context(name: &str, input: &JsonValue, editors: usize) -> String {
+    let tool = input
+        .get("tool_name")
+        .and_then(JsonValue::as_str)
+        .and_then(|value| value.rsplit("__").next())
+        .unwrap_or("this PCB tool");
+    let detected = if editors == usize::MAX {
+        "unknown".to_string()
+    } else {
+        editors.to_string()
+    };
+    let common = "Confirm the exact target-board path and a plausible component/pad inventory before mutation. Server-side board identity, liveness, revision, and conflict checks remain authoritative.";
+    match name {
+        "pre-pcb-live" => format!(
+            "`{tool}` is live-IPC-only in reviewed Konnect v0.10.0. Detected pcbnew process count: {detected}. Require exactly one responsive PCB Editor with the target board open; otherwise stop and run `konnect-codex pcb-preflight --board <path> --mode live`. {common}"
+        ),
+        "pre-pcb-fallback" => format!(
+            "`{tool}` supports live IPC or a deliberate revision-aware closed-board fallback in reviewed Konnect v0.10.0. Detected pcbnew process count: {detected}. With one editor, confirm it owns the target and remain live. With zero editors, the closed-file fallback may be used, but keep the board closed and verify the returned source/revision. More than one editor or an ownership change is unsafe. Never mix live and fallback mutations in one phase. {common}"
+        ),
+        "pre-pcb-closed" => format!(
+            "`{tool}` is closed-board-only in reviewed Konnect v0.10.0. Detected pcbnew process count: {detected}. Close every PCB Editor holding the board, confirm zero pcbnew processes, and run `konnect-codex pcb-preflight --board <path> --mode offline` before mutation. {common}"
+        ),
+        "pre-pcb-plan-apply" => {
+            let applying = input
+                .pointer("/tool_input/dry_run")
+                .and_then(JsonValue::as_bool)
+                .is_some_and(|dry_run| !dry_run);
+            if applying {
+                format!(
+                    "`{tool}` is in apply mode. Detected pcbnew process count: {detected}. Require exactly one responsive PCB Editor with the target board open and the exact reviewed `expected_plan_revision`; otherwise stop. Re-run the dry run after any state change. {common}"
+                )
+            } else {
+                format!(
+                    "`{tool}` defaults to a non-mutating dry run. Detected pcbnew process count: {detected}. Review status, coverage, diagnostics, changes, and the returned plan revision; a plan is not permission to apply. Apply later only with exactly one responsive target-board editor and that unchanged revision. {common}"
+                )
+            }
+        }
+        _ => unreachable!("PCB hook context called for non-PCB hook"),
     }
-    Ok(())
 }
 
 fn user_prompt_context(prompt: &str) -> Option<String> {
@@ -1741,6 +1798,10 @@ fn enhancement_policy() -> Result<EnhancementPolicy> {
     Ok(serde_json::from_str(ENHANCEMENT_POLICY_JSON)?)
 }
 
+fn hook_tool_contract() -> Result<HookToolContract> {
+    Ok(serde_json::from_str(HOOK_TOOL_CONTRACT_JSON)?)
+}
+
 fn upstream_baseline() -> Result<UpstreamBaseline> {
     Ok(serde_json::from_str(UPSTREAM_BASELINE_JSON)?)
 }
@@ -1756,6 +1817,12 @@ fn reviewed_asset_content(target: &str) -> Option<&'static [u8]> {
             .iter()
             .find(|(candidate, _)| *candidate == path)
             .map(|(_, content)| *content)
+    } else if target == "hooks/hooks.json" {
+        Some(HOOKS_TEMPLATE.as_bytes())
+    } else if target == "docs/GUIDANCE_STANDARDS.md" {
+        Some(GUIDANCE_STANDARDS.as_bytes())
+    } else if target == "docs/GUIDANCE_DELTA_REGISTER.md" {
+        Some(GUIDANCE_DELTA_REGISTER.as_bytes())
     } else {
         None
     }
@@ -1803,7 +1870,74 @@ fn validate_enhancement_policy(compatibility: &Compatibility) -> Result<usize> {
             }
         }
     }
+    validate_hook_tool_contract(compatibility)?;
     Ok(active_count)
+}
+
+fn validate_hook_tool_contract(compatibility: &Compatibility) -> Result<()> {
+    let contract = hook_tool_contract()?;
+    if contract.schema_version != 1
+        || contract.supported_konnect_version != compatibility.konnect_version
+    {
+        bail!("hook tool contract metadata does not match compatibility.json");
+    }
+
+    let hooks: JsonValue = serde_json::from_str(HOOKS_TEMPLATE)?;
+    let groups = hooks
+        .pointer("/hooks/PreToolUse")
+        .and_then(JsonValue::as_array)
+        .context("hook template has no PreToolUse groups")?;
+    let mut actual = BTreeMap::new();
+    for group in groups {
+        let matcher = group
+            .get("matcher")
+            .and_then(JsonValue::as_str)
+            .context("PreToolUse group has no matcher")?;
+        let targets = matcher
+            .strip_prefix("^mcp__konnect__(")
+            .and_then(|value| value.strip_suffix(")$"))
+            .context("PreToolUse matcher must be an explicit Konnect tool list")?;
+        let command = group
+            .pointer("/hooks/0/command")
+            .and_then(JsonValue::as_str)
+            .context("PreToolUse group has no command")?;
+        let hook = command
+            .split_once(" hook ")
+            .map(|(_, value)| value)
+            .context("PreToolUse command has no hook subcommand")?;
+        for target in targets.split('|') {
+            if actual
+                .insert(target.to_string(), hook.to_string())
+                .is_some()
+            {
+                bail!("hook tool {target} appears in more than one matcher");
+            }
+        }
+    }
+
+    let mut expected = BTreeMap::new();
+    for entry in contract.tools {
+        if !matches!(
+            entry.mode.as_str(),
+            "live-only"
+                | "live-or-closed-fallback"
+                | "closed-board-only"
+                | "dry-run-plan-live-apply"
+        ) {
+            bail!(
+                "hook tool {} has unsupported mode {}",
+                entry.name,
+                entry.mode
+            );
+        }
+        if expected.insert(entry.name.clone(), entry.hook).is_some() {
+            bail!("hook tool contract contains duplicate {}", entry.name);
+        }
+    }
+    if actual != expected {
+        bail!("hook matcher targets do not match policy/hook-tool-contract.json");
+    }
+    Ok(())
 }
 
 pub fn audit_guidance(
@@ -2429,7 +2563,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 22);
+        assert_eq!(active.len(), 26);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -2454,6 +2588,10 @@ mod tests {
             "bom-lifecycle-workflow",
             "v0.10-feedback-acceptance-integration",
             "v0.9-known-safety-gates",
+            "verified-symbol-and-pin-guidance",
+            "reference-reachability-and-evidence-contracts",
+            "codex-hook-contract",
+            "guidance-governance-register",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -2810,17 +2948,127 @@ mod tests {
     }
 
     #[test]
-    fn pcb_hook_covers_whole_board_routing_and_state_changes() {
-        let hooks: JsonValue = serde_json::from_str(HOOKS_TEMPLATE).unwrap();
-        let matcher = hooks["hooks"]["PreToolUse"][0]["matcher"].as_str().unwrap();
-        for tool in [
-            "update_pcb_from_schematic",
-            "delete_trace",
-            "add_zone",
-            "refill_zones",
-        ] {
-            assert!(matcher.contains(tool), "PCB hook misses {tool}");
+    fn pcb_hook_targets_match_the_reviewed_runtime_contract() {
+        validate_hook_tool_contract(&compatibility().unwrap()).unwrap();
+
+        let live = pcb_hook_context(
+            "pre-pcb-live",
+            &json!({"tool_name": "mcp__konnect__refill_zones"}),
+            1,
+        );
+        assert!(live.contains("live-IPC-only"));
+        assert!(live.contains("refill_zones"));
+
+        let fallback = pcb_hook_context(
+            "pre-pcb-fallback",
+            &json!({"tool_name": "mcp__konnect__set_component_placements"}),
+            0,
+        );
+        assert!(fallback.contains("closed-board fallback"));
+
+        let closed = pcb_hook_context(
+            "pre-pcb-closed",
+            &json!({"tool_name": "mcp__konnect__flip_component"}),
+            0,
+        );
+        assert!(closed.contains("closed-board-only"));
+
+        let apply = pcb_hook_context(
+            "pre-pcb-plan-apply",
+            &json!({
+                "tool_name": "mcp__konnect__update_pcb_from_schematic",
+                "tool_input": {"dry_run": false}
+            }),
+            1,
+        );
+        assert!(apply.contains("in apply mode"));
+        assert!(apply.contains("expected_plan_revision"));
+    }
+
+    #[test]
+    fn hook_output_is_structured_codex_context() {
+        let temp = TempDir::new().unwrap();
+        let paths = CompanionPaths::for_home(temp.path().to_path_buf());
+        let output = hook_response(
+            "user-prompt",
+            None,
+            &paths,
+            &json!({
+                "hook_event_name": "UserPromptSubmit",
+                "prompt": "Review this KiCad PCB"
+            }),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            output.pointer("/hookSpecificOutput/hookEventName"),
+            Some(&json!("UserPromptSubmit"))
+        );
+        assert!(output
+            .pointer("/hookSpecificOutput/additionalContext")
+            .and_then(JsonValue::as_str)
+            .unwrap()
+            .contains("Konnect/KiCad task"));
+    }
+
+    #[test]
+    fn every_reference_is_reachable_from_its_parent_skill() {
+        for (path, _) in REVIEWED_SKILL_FILES
+            .iter()
+            .filter(|(path, _)| path.contains("/references/"))
+        {
+            let (skill, reference) = path.split_once("/references/").unwrap();
+            let parent = REVIEWED_SKILL_FILES
+                .iter()
+                .find(|(candidate, _)| *candidate == format!("{skill}/SKILL.md"))
+                .unwrap_or_else(|| panic!("missing parent skill for {path}"));
+            let raw = std::str::from_utf8(parent.1).unwrap();
+            assert!(
+                raw.contains(&format!("references/{reference}")),
+                "{path} is not linked from {skill}/SKILL.md"
+            );
         }
+    }
+
+    #[test]
+    fn known_unsafe_symbol_shortcuts_and_led_reversal_do_not_return() {
+        let all = REVIEWED_SKILL_FILES
+            .iter()
+            .map(|(_, content)| std::str::from_utf8(content).unwrap())
+            .collect::<Vec<_>>()
+            .join("\n");
+        for invalid in [
+            "Device:Q_NPN_BEC",
+            "Device:Q_PNP_BEC",
+            "Device:Q_NMOS_GDS",
+            "Device:Q_PMOS_GDS",
+            "Device:Ferrite_Bead",
+            "Regulator_Linear:MCP1700-3302E_SOT23",
+            "Interface_USB:CP2102N-A02-GQFN24",
+            "D1 anode/pin 1",
+            "D1 cathode/pin 2",
+        ] {
+            assert!(
+                !all.contains(invalid),
+                "unsafe shortcut returned: {invalid}"
+            );
+        }
+    }
+
+    #[test]
+    fn living_register_covers_every_enhancement_id() {
+        let policy = enhancement_policy().unwrap();
+        let expected: BTreeSet<_> = policy
+            .enhancements
+            .into_iter()
+            .map(|enhancement| enhancement.id)
+            .collect();
+        let registered: BTreeSet<_> = GUIDANCE_DELTA_REGISTER
+            .lines()
+            .filter_map(|line| line.strip_prefix("| `"))
+            .filter_map(|line| line.split_once('`').map(|(id, _)| id.to_string()))
+            .collect();
+        assert_eq!(registered, expected);
     }
 
     #[test]

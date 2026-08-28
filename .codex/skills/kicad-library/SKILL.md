@@ -86,17 +86,28 @@ to `konnect_library_builder` when agent delegation is available.
 
 ## Symbol Creation
 
-### Pin Numbering Conventions
+### Physical pin-map contract
 
-| Component Type     | Convention                                           |
+There are no safe universal physical lead-number assignments for ICs, diodes,
+BJTs, MOSFETs, connectors, tubes, or displays. The exact manufacturer part and
+package suffix define the physical numbering. Symbol pin order is only a symbol
+variant description; it does not prove the selected footprint matches a real
+part.
+
+For every custom or package-sensitive part, use the evidence table in
+[references/custom-part-acceptance.md](references/custom-part-acceptance.md),
+state whether each drawing is a top, bottom, component, solder, pin, or mating
+view, and walk the leads from the documented key in the documented direction.
+
+| Component Type     | Required source                                      |
 |--------------------|------------------------------------------------------|
-| IC (DIP/SOIC/QFP) | Counter-clockwise from pin 1 (standard IC convention)|
-| Passives (R, C, L) | Pin 1 and Pin 2                                    |
-| Diodes             | Pin 1 = Anode (A), Pin 2 = Cathode (K)             |
-| Transistors (BJT)  | 1=Base, 2=Collector, 3=Emitter (BCE)                |
-| MOSFETs            | 1=Gate, 2=Drain, 3=Source (GDS)                     |
-| Connectors         | Sequential from 1                                    |
-| Crystal            | Pin 1, Pin 2 (+ case ground if 4-pin)               |
+| IC (DIP/SOIC/QFP) | Exact manufacturer datasheet and package drawing     |
+| Passives (R, C, L) | Selected KiCad symbol plus exact polarized-part data |
+| Diodes             | Selected symbol pin map plus exact package data       |
+| Transistors (BJT)  | Exact manufacturer part, package suffix, and datasheet|
+| MOSFETs            | Exact manufacturer part, package suffix, and datasheet|
+| Connectors         | Exact mating/pin view and manufacturer drawing        |
+| Crystal            | Exact device/package drawing, including case pads     |
 
 ### Pin Types
 
@@ -393,7 +404,8 @@ Dimension format: `LxW` in mm (body dimensions, not pad-to-pad).
 
 1. **Always search before creating** — most parts already exist in KiCAD libraries
 2. **Never edit .kicad_sym or .kicad_mod directly** — use MCP tools only
-3. **Follow pin numbering conventions** — IC pins counter-clockwise from pin 1
+3. **Follow the physical pin-map contract** — exact-part datasheet evidence
+   defines physical lead numbers; never substitute a generic convention
 4. **Set pin types correctly** — ERC depends on accurate pin types
 5. **Include all required properties** — Reference, Value, Footprint, Datasheet
 6. **Use 0.25mm courtyard margin** — standard clearance for assembly

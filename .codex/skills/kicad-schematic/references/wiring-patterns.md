@@ -37,7 +37,12 @@
 ```
     GPIO_OUT ──── R1 330Ω ──── D1 LED ──── GND
 ```
-**Tools**: Place R1 (330) and D1 (LED) → `connect_pins` (R1 pin 2 to D1 anode/pin 1) → `connect_to_net` (R1 pin 1, net "GPIO_OUT") → `add_power_symbol` (GND on D1 cathode/pin 2)
+**Tools**: Place R1 (330) and D1 (`Device:LED`) → confirm the selected
+symbol with `get_symbol_info` → `connect_pins` (R1 pin 2 to D1 anode/pin 2)
+→ `connect_to_net` (R1 pin 1, net "GPIO_OUT") → `add_power_symbol`
+(GND on D1 cathode/pin 1). KiCad 10's standard `Device:LED` maps pin 1 = K
+and pin 2 = A; do not transfer these numbers to a different LED symbol without
+querying it.
 
 ## Pattern 5: Crystal Oscillator
 ```

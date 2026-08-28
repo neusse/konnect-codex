@@ -11,6 +11,10 @@ Konnect guidance. Every release maintains three distinguishable layers:
    under which it should be removed.
 3. **Reviewed runtime assets** — `.codex/skills` and `.codex/agents` are the
    Codex-native files embedded and installed by the companion.
+4. **Living decision record** — `docs/GUIDANCE_DELTA_REGISTER.md` is the
+   human review surface for every active/retired enhancement, while
+   `docs/GUIDANCE_STANDARDS.md` defines the minimum quality contract for new
+   and refreshed guidance.
 
 The reviewed runtime assets are maintained deliberately; new upstream prose is
 never merged into them blindly. The machine-readable baseline makes upstream
@@ -26,16 +30,20 @@ For every Konnect release:
    baseline. Account for every added, removed, or modified upstream asset.
 3. Review every active enhancement. Port it, revise it to match new tool
    behavior, or retire it only when the recorded retirement condition is met.
-4. Update the reviewed Codex skills and agents. Keep procedures concise and put
+4. Update every row in `docs/GUIDANCE_DELTA_REGISTER.md`: retain, revise,
+   retire with benchmark evidence, or add. Update `policy/enhancements.json`,
+   release notes, assertions, and tests in the same change.
+5. Audit skills, agents, and hooks against `docs/GUIDANCE_STANDARDS.md`. Update
+   the reviewed Codex skills and agents. Keep procedures concise and put
    release-specific evidence or tables in references rather than duplicating it.
-5. Run `konnect-codex audit --source <Konnect checkout>`. A per-file mismatch,
+6. Run `konnect-codex audit --source <Konnect checkout>`. A per-file mismatch,
    aggregate guidance mismatch, hook mismatch, or version mismatch blocks the
    release.
-6. Run formatting, tests, Clippy, lifecycle tests, and the end-to-end KiCad
+7. Run formatting, tests, Clippy, lifecycle tests, and the end-to-end KiCad
    benchmark. The benchmark must exercise deterministic agent delegation,
    schematic collision checks, PCB transfer invariants, contradictory-verdict
    handling, and manufacturing artifact verification.
-7. Publish with the matching Konnect version and an incremented
+8. Publish with the matching Konnect version and an incremented
    `companion_revision` when the supported Konnect release is unchanged.
 
 ## Evidence and retirement

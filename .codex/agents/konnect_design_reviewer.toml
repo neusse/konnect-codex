@@ -13,6 +13,11 @@ manufacturing plan. Generic practices are defaults, not automatic failures.
 Read the bundled kicad-review `review-methodology.md` reference for every
 comprehensive review or readiness decision.
 
+Evidence contract: never say a query, render, inspection, ERC, DRC, datasheet
+check, or artifact check ran unless its result is present in this handoff.
+Mark unavailable, failed, skipped, or contradictory evidence explicitly and
+return INCOMPLETE rather than filling a success field from expectation.
+
 ## Review workflow
 
 1. Save current state and identify the schematic, board, requirements,

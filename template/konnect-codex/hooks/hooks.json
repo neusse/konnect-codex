@@ -15,13 +15,46 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "^mcp__konnect__(place_component|move_component|rotate_component|delete_component|update_pcb_from_schematic|route_trace|add_via|delete_trace|modify_trace|route_differential_pair|route_pad_to_pad|add_zone|add_copper_pour|refill_zones)$",
+        "matcher": "^mcp__konnect__(place_component|move_component|rotate_component|set_component_placements|add_board_outline|add_zone|add_copper_pour)$",
         "hooks": [
           {
             "type": "command",
-            "command": "konnect-codex hook pre-pcb-ipc",
+            "command": "konnect-codex hook pre-pcb-fallback",
             "timeout": 5,
-            "statusMessage": "Checking KiCad IPC prerequisites"
+            "statusMessage": "Checking live or closed-board ownership"
+          }
+        ]
+      },
+      {
+        "matcher": "^mcp__konnect__(flip_component)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "konnect-codex hook pre-pcb-closed",
+            "timeout": 5,
+            "statusMessage": "Checking closed-board ownership"
+          }
+        ]
+      },
+      {
+        "matcher": "^mcp__konnect__(update_pcb_from_schematic|update_footprints_from_library|repair_corrupted_footprints)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "konnect-codex hook pre-pcb-plan-apply",
+            "timeout": 5,
+            "statusMessage": "Checking dry-run and apply ownership"
+          }
+        ]
+      },
+      {
+        "matcher": "^mcp__konnect__(delete_component|edit_component|edit_board_footprint_graphic|place_component_array|align_components|duplicate_component|route_trace|route_pad_to_pad|add_via|delete_trace|modify_trace|route_differential_pair|refill_zones)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "konnect-codex hook pre-pcb-live",
+            "timeout": 5,
+            "statusMessage": "Checking live KiCad ownership"
           }
         ]
       }

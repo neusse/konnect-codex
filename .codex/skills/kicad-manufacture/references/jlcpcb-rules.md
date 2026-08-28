@@ -1,19 +1,21 @@
 # JLCPCB Manufacturing Reference
 
-## Part Categories
+This file is a workflow prompt, not a frozen JLCPCB contract. Part categories,
+fees, stock, process limits, uploader headers, and assembly capabilities are
+time-sensitive. Retrieve and cite the current official JLCPCB requirements on
+the order date; when this file disagrees with the current order interface, the
+current official contract controls.
 
-| Category | Assembly fee | Notes |
-|----------|-------------|-------|
-| **Basic** | Included in standard fee | ~350 common parts, no setup charge |
-| **Extended** | +$3 per unique part | Thousands of parts, requires setup |
-| **Consigned** | User-supplied parts | You ship parts to JLCPCB |
+## Part categories
 
-Use `search_jlcpcb_parts` and check the `category` field in results.
-Prefer **Basic** parts for cost optimization.
+Use `search_jlcpcb_parts` and record the category, stock, price, and retrieval
+date returned for the exact MPN. Verify the category and any setup fee in the
+current order interface before optimizing around it.
 
 ## BOM Format Requirements
 
-CSV with columns:
+Export a CSV, then map its fields to the column names accepted by the current
+JLCPCB uploader. A commonly encountered shape is:
 ```
 Comment, Designator, Footprint, LCSC Part Number
 100nF, C1;C2;C3, 0402, C1525
@@ -55,18 +57,12 @@ Common offsets (add to KiCAD rotation):
 
 *Always verify rotation in JLCPCB's preview tool before confirming order.*
 
-## Design Rules Summary
+## Design rules
 
-| Rule | JLCPCB Minimum | Recommended |
-|------|---------------|-------------|
-| Trace width | 0.127mm | 0.15mm |
-| Trace space | 0.127mm | 0.15mm |
-| Via drill | 0.30mm | 0.40mm |
-| Annular ring | 0.15mm | 0.20mm |
-| Hole to hole | 0.50mm | 0.60mm |
-| Hole to edge | 0.30mm | 0.50mm |
-| Min silkscreen | 0.15mm wide | 0.20mm wide |
-| Pad to pad | 0.127mm | 0.15mm |
+Do not use a static table here as the design authority. Select the current
+JLCPCB process, retrieve its official capabilities, record the source/date, and
+configure KiCad to those values. Electrical current, voltage-drop, thermal, and
+impedance constraints may require stricter rules.
 
 ## Assembly Constraints
 
@@ -89,5 +85,5 @@ Common offsets (add to KiCAD rotation):
 3. `export_manufacturing_package` — generates all files
 4. `search_jlcpcb_parts` for each component — get LCSC numbers
 5. `suggest_jlcpcb_alternatives` for any out-of-stock parts
-6. `estimate_cost` — get price breakdown
+6. `estimate_cost` — rough heuristic only; obtain a current vendor quote
 7. Upload Gerber zip + BOM CSV + CPL CSV to jlcpcb.com

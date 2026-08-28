@@ -32,6 +32,10 @@ jobs:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - name: Test release
+        run: cargo test --all --locked
+      - name: Lint release
+        run: cargo clippy --all-targets --all-features --locked -- -D warnings
       - name: Build release binary
         run: cargo build --release --locked
       - name: Package archive
@@ -39,14 +43,16 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist/package
-          cp target/release/konnect-codex README.md LICENSE compatibility.json dist/package/
+          cp target/release/konnect-codex README.md RELEASE_NOTES.md LICENSE compatibility.json dist/package/
+          cp -r docs policy dist/package/
           tar -C dist/package -czf "dist/konnect-codex-${{ github.ref_name }}-${{ matrix.archive_suffix }}" .
       - name: Package archive
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path dist/package -Force | Out-Null
-          Copy-Item target/release/konnect-codex.exe, README.md, LICENSE, compatibility.json dist/package/
+          Copy-Item target/release/konnect-codex.exe, README.md, RELEASE_NOTES.md, LICENSE, compatibility.json dist/package/
+          Copy-Item docs, policy -Destination dist/package/ -Recurse
           Compress-Archive -Path dist/package/* -DestinationPath "dist/konnect-codex-${{ github.ref_name }}-${{ matrix.archive_suffix }}"
       - uses: actions/upload-artifact@v7
         with:
