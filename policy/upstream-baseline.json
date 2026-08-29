@@ -1,24 +1,24 @@
 {
   "schema_version": 1,
-  "konnect_version": "0.10.0",
-  "konnect_commit": "866933e8aca1c115479963463cc7e34370b5822b",
+  "konnect_version": "0.11.0",
+  "konnect_commit": "a22ad2153dcf45dbcf1cc63b5b0f1e40c93d7956",
   "files": [
     { "path": "agents/kicad-design-review-agent.md", "sha256": "6fb278234b799174b782f6c677815f200dff168c2e894cf85e558636873b2944" },
     { "path": "agents/kicad-schematic-build-agent.md", "sha256": "b2ddeba2b210801ee93e8084c923340a47b4bcb126e5095396a55c59e54b854e" },
-    { "path": "skills/kicad-library/SKILL.md", "sha256": "02ded9f6312b2fe7f19f548451796bd006643a620b1b47798ee36b28f8fc8c57" },
+    { "path": "skills/kicad-library/SKILL.md", "sha256": "8e3bfe0e512d1b2a9ef8f3879585392e0d128b9dffcd86195e1e2ac5633cc724" },
     { "path": "skills/kicad-manufacture/references/gerber-layers.md", "sha256": "9ac3517eb11a8c54a078e74d4d21c88b93fe9057d52fe43c35923ed096fa970a" },
     { "path": "skills/kicad-manufacture/references/jlcpcb-rules.md", "sha256": "0e2edf10cccc6ba92b97524cecdb7cfd3a39ac358cf08487b7a75da081434da1" },
     { "path": "skills/kicad-manufacture/SKILL.md", "sha256": "eaec9af5c1dea768916457eaacf2dc254ceccdb1c00605dcb26fdd9d85771cfd" },
     { "path": "skills/kicad-pcb/references/design-rules.md", "sha256": "18f83ddf7d7489e21c4a70aff74e7bb3f416f0e1f6e5fdb15db2c01cd7840c4a" },
     { "path": "skills/kicad-pcb/references/layer-reference.md", "sha256": "5f82f1df35eb1cb4754c9150859b44a2fc7f58b046524d8701d7c78c86e10f81" },
     { "path": "skills/kicad-pcb/references/trace-width-table.md", "sha256": "2446fa3bfaef124110f9e8bd8b5493d3f4d985cdb684daaa7d1cb04757082c2e" },
-    { "path": "skills/kicad-pcb/SKILL.md", "sha256": "81746728c756904ca9cdb720010fb0fd24bb3b89ded728b11a7babe91cc2b7af" },
+    { "path": "skills/kicad-pcb/SKILL.md", "sha256": "bcff44e693b553dfa3637119cd18b8ae63ef34ed02a9336fa410852db5e1faea" },
     { "path": "skills/kicad-review/references/design-checklist.md", "sha256": "3556534b5cf8446bdb58b14fdc8dc77dab7b80f43d3750dc143bfb7c16e320b1" },
     { "path": "skills/kicad-review/references/error-taxonomy.md", "sha256": "14f4d53338d23db57aebc02748fb4462b428be88619c084b952d390ea679bc9d" },
     { "path": "skills/kicad-review/SKILL.md", "sha256": "ee11ac9f2dffb0ca51cb8a549ca2419c4f2f141006018be84154d74bb858d4cd" },
-    { "path": "skills/kicad-schematic/references/common-lib-ids.md", "sha256": "898a0e40d107b72ade9d45268f6aa73565b5e1b01542e22a51ed8776290c7ef9" },
-    { "path": "skills/kicad-schematic/references/wiring-patterns.md", "sha256": "5196e49ca80261a1aec0b61b6f5d567be325914e5d7365bb802325eba08b2c7e" },
-    { "path": "skills/kicad-schematic/SKILL.md", "sha256": "6ce84a2e56ffa7540f7d77f075da62d6864653be45f785c88849f9b508bee9d3" },
-    { "path": "skills/konnect/SKILL.md", "sha256": "39f7fdcbf00c9fd3541ae163df17f35cc1574c23080a085b1bfce48ed5b3e197" }
+    { "path": "skills/kicad-schematic/references/common-lib-ids.md", "sha256": "c1d5f1c2384c4215ac8db424dc78620b431a0a38e26db32aafc53fc0ace9dee6" },
+    { "path": "skills/kicad-schematic/references/wiring-patterns.md", "sha256": "6f4a9e216439ce4c6331083ea6ea5143d2c84a2e3ef5a4fcc8830e2cb68ac79e" },
+    { "path": "skills/kicad-schematic/SKILL.md", "sha256": "0161c00a7f4098163cb75f8ae2445b716546ff0746a4b653bb95010264aaded5" },
+    { "path": "skills/konnect/SKILL.md", "sha256": "45755c36117a37f0529ec588d4b3f9b445de8613607a82e0c8bcc6e7ba9f4352" }
   ]
 }

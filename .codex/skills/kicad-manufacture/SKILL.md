@@ -66,7 +66,7 @@ get_drc_violations()
 validate_for_manufacturing()
 ```
 
-In Konnect v0.10.0 this aggregate check confirms that Edge.Cuts content and
+In Konnect v0.11.0 this aggregate check confirms that Edge.Cuts content and
 footprints exist, evaluates configured minimum trace width, reports a coarse
 no-tracks heuristic, and incorporates direct KiCad DRC evidence. It does **not**
 prove that the outline is closed, every pad has copper, drills satisfy the
@@ -186,7 +186,7 @@ by the current uploader rather than normalizing to an old hard-coded spelling.
 estimate_cost(board, quantity?, layers?, fab_house?)
 ```
 
-In Konnect v0.10.0 this is a fixed rough heuristic, not a live quote. Label its
+In Konnect v0.11.0 this is a fixed rough heuristic, not a live quote. Label its
 result as an estimate and obtain a current vendor quote before making a cost or
 supplier decision.
 

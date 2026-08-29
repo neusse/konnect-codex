@@ -260,36 +260,6 @@ fn native_codex_install_marker(paths: &CompanionPaths) -> PathBuf {
     paths.home.join(".konnect").join(".installed-codex")
 }
 
-fn acquire_native_install_guard(paths: &CompanionPaths) -> Result<()> {
-    let marker = native_codex_install_marker(paths);
-    if paths.native_install_guard_path.exists() {
-        let guard: NativeInstallGuard =
-            serde_json::from_slice(&fs::read(&paths.native_install_guard_path)?)?;
-        if guard.schema_version != 1 {
-            bail!(
-                "unsupported native install guard schema {}",
-                guard.schema_version
-            );
-        }
-        if !marker.exists() {
-            write_atomic(&marker, env!("CARGO_PKG_VERSION").as_bytes())?;
-        }
-        return Ok(());
-    }
-
-    let guard = NativeInstallGuard {
-        schema_version: 1,
-        marker_preexisting: marker.exists(),
-    };
-    if !guard.marker_preexisting {
-        write_atomic(&marker, env!("CARGO_PKG_VERSION").as_bytes())?;
-    }
-    write_atomic(
-        &paths.native_install_guard_path,
-        &serde_json::to_vec_pretty(&guard)?,
-    )
-}
-
 fn release_native_install_guard(paths: &CompanionPaths) -> Result<()> {
     if !paths.native_install_guard_path.exists() {
         return Ok(());
@@ -370,6 +340,11 @@ where
         report.push(format!("Would register: {PLUGIN_NAME}@{MARKETPLACE_NAME}"));
         return Ok(report);
     }
+
+    // Konnect v0.11 makes MCP startup non-mutating. Remove only legacy
+    // suppression state previously owned by this companion.
+    release_native_install_guard(&options.paths)?;
+    report.push("Legacy native-guidance suppression state: cleaned".to_string());
 
     fs::create_dir_all(&options.paths.data_dir)?;
     remove_stale_owned_files(&generated, old_manifest.as_ref())?;
@@ -463,10 +438,6 @@ where
 
     if options.activate {
         activate_plugin()?;
-        if let Err(error) = acquire_native_install_guard(&options.paths) {
-            let _ = remove_plugin_registration();
-            return Err(error).context("could not arm native guidance suppression");
-        }
         manifest.state = InstallState::Enabled;
         write_manifest(&options.paths.manifest_path, &manifest)?;
         report.push(format!("Enabled: {PLUGIN_NAME}@{MARKETPLACE_NAME}"));
@@ -525,7 +496,6 @@ pub fn enable(paths: &CompanionPaths) -> Result<OperationReport> {
     let mut manifest = load_manifest(&paths.manifest_path)?;
     let mut report = OperationReport::default();
     if manifest.state == InstallState::Enabled {
-        acquire_native_install_guard(paths)?;
         report.push("Konnect Codex plugin is already enabled.");
         return Ok(report);
     }
@@ -558,10 +528,6 @@ pub fn enable(paths: &CompanionPaths) -> Result<OperationReport> {
     }
 
     activate_plugin()?;
-    if let Err(error) = acquire_native_install_guard(paths) {
-        let _ = remove_plugin_registration();
-        return Err(error).context("could not arm native guidance suppression");
-    }
     for file in manifest
         .files
         .iter()
@@ -835,10 +801,9 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
 
     let marketplace_ok = marketplace_has_owned_entry(&paths.marketplace_path)?;
     report.push(format!("Marketplace entry: {marketplace_ok}"));
-    let native_install_suppressed =
-        paths.native_install_guard_path.exists() && native_codex_install_marker(paths).exists();
+    let legacy_guard_present = paths.native_install_guard_path.exists();
     report.push(format!(
-        "Native guidance auto-install suppressed: {native_install_suppressed}"
+        "Konnect v0.11 non-mutating startup: true; legacy suppression state present: {legacy_guard_present}"
     ));
     report.push(format!(
         "Relevant-prompt hook: {}",
@@ -859,7 +824,7 @@ pub fn doctor(paths: &CompanionPaths) -> Result<OperationReport> {
             && eager
             && marketplace_ok
             && compatible_version
-            && (manifest.state == InstallState::Disabled || native_install_suppressed)
+            && !legacy_guard_present
         {
             "Health: PASS".to_string()
         } else {
@@ -889,7 +854,7 @@ pub fn native_status(paths: &CompanionPaths) -> Result<OperationReport> {
     };
     let marker = paths.home.join(".konnect").join(".installed-codex");
     report.push(format!(
-        "Upstream-native Konnect coverage: {skill_count}/{} skills, {native_agent_count} agents, installer marker {}, plugin suppression {}",
+        "Upstream-native Konnect coverage: {skill_count}/{} skills, {native_agent_count} agents, explicit-init marker {}, legacy plugin suppression state {}",
         NATIVE_SKILLS.len(),
         marker.exists(),
         paths.native_install_guard_path.exists()
@@ -1062,8 +1027,6 @@ pub fn run_mcp(paths: &CompanionPaths) -> Result<i32> {
     if manifest.state != InstallState::Enabled {
         bail!("Konnect Codex plugin is disabled; run `konnect-codex enable`");
     }
-    acquire_native_install_guard(paths)
-        .context("could not suppress Konnect's native guidance auto-installer")?;
     let mut child = Command::new(&manifest.konnect_binary)
         .arg("--client")
         .arg("codex")
@@ -1546,13 +1509,13 @@ fn pcb_hook_context(name: &str, input: &JsonValue, editors: usize) -> String {
     let common = "Confirm the exact target-board path and a plausible component/pad inventory before mutation. Server-side board identity, liveness, revision, and conflict checks remain authoritative.";
     match name {
         "pre-pcb-live" => format!(
-            "`{tool}` is live-IPC-only in reviewed Konnect v0.10.0. Detected pcbnew process count: {detected}. Require exactly one responsive PCB Editor with the target board open; otherwise stop and run `konnect-codex pcb-preflight --board <path> --mode live`. {common}"
+            "`{tool}` is live-IPC-only in reviewed Konnect v0.11.0. Detected pcbnew process count: {detected}. Require exactly one responsive PCB Editor with the target board open; otherwise stop and run `konnect-codex pcb-preflight --board <path> --mode live`. {common}"
         ),
         "pre-pcb-fallback" => format!(
-            "`{tool}` supports live IPC or a deliberate revision-aware closed-board fallback in reviewed Konnect v0.10.0. Detected pcbnew process count: {detected}. With one editor, confirm it owns the target and remain live. With zero editors, the closed-file fallback may be used, but keep the board closed and verify the returned source/revision. More than one editor or an ownership change is unsafe. Never mix live and fallback mutations in one phase. {common}"
+            "`{tool}` supports live IPC or a deliberate revision-aware closed-board fallback in reviewed Konnect v0.11.0. Detected pcbnew process count: {detected}. With one editor, confirm it owns the target and remain live. With zero editors, the closed-file fallback may be used, but keep the board closed and verify the returned source/revision. More than one editor or an ownership change is unsafe. Never mix live and fallback mutations in one phase. {common}"
         ),
         "pre-pcb-closed" => format!(
-            "`{tool}` is closed-board-only in reviewed Konnect v0.10.0. Detected pcbnew process count: {detected}. Close every PCB Editor holding the board, confirm zero pcbnew processes, and run `konnect-codex pcb-preflight --board <path> --mode offline` before mutation. {common}"
+            "`{tool}` is closed-board-only in reviewed Konnect v0.11.0. Detected pcbnew process count: {detected}. Close every PCB Editor holding the board, confirm zero pcbnew processes, and run `konnect-codex pcb-preflight --board <path> --mode offline` before mutation. {common}"
         ),
         "pre-pcb-plan-apply" => {
             let applying = input
@@ -1598,7 +1561,7 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
     .iter()
     .any(|term| lower.contains(term));
     relevant.then(|| {
-        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Use kicad-bom for MPN, datasheet, lifecycle, sourcing, DNP, alternate, or assembly-BOM work. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable work sequentially in library -> schematic -> BOM -> PCB -> review -> bring-up order. Use Konnect v0.10 score-first placement as a dry-run planning loop with locked mechanical references and independent post-apply scoring. Render schematics inline and inspect them; visual-baseline drift focuses review and is not automatic failure. The PCB builder must close the visible placement gate before routing and use Freerouting by default for a complete board, with route-import inventory and direct DRC acceptance before zones or manufacturing."
+        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. Use kicad-bom for MPN, datasheet, lifecycle, sourcing, DNP, alternate, or assembly-BOM work. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable work sequentially in library -> schematic -> BOM -> PCB -> review -> bring-up order. Use Konnect v0.11 score-first placement as a dry-run planning loop with locked mechanical references, an expected held set, and independent post-apply scoring. Render schematics inline and inspect them; visual-baseline drift focuses review and is not automatic failure. The PCB builder must close the visible placement gate before routing and use Freerouting by default for a complete board, with route-import inventory and direct DRC acceptance before zones or manufacturing."
             .to_string()
     })
 }
@@ -2563,7 +2526,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 26);
+        assert_eq!(active.len(), 24);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -2573,7 +2536,6 @@ mod tests {
             "contradictory-verifier-gate",
             "requirements-based-review-defaults",
             "doctor-agent-reporting",
-            "native-auto-install-suppression",
             "pcb-builder-delegation",
             "freerouting-first-routing",
             "pcb-live-state-and-placement-gates",
@@ -2588,7 +2550,6 @@ mod tests {
             "bom-lifecycle-workflow",
             "v0.10-feedback-acceptance-integration",
             "v0.9-known-safety-gates",
-            "verified-symbol-and-pin-guidance",
             "reference-reachability-and-evidence-contracts",
             "codex-hook-contract",
             "guidance-governance-register",
@@ -2695,29 +2656,42 @@ mod tests {
     }
 
     #[test]
-    fn native_install_guard_restores_an_absent_marker_after_plugin_use() {
+    fn legacy_native_install_guard_removes_only_the_marker_it_created() {
         let temp = TempDir::new().unwrap();
         let paths = CompanionPaths::for_home(temp.path().join("home"));
-
-        acquire_native_install_guard(&paths).unwrap();
-
-        assert_eq!(
-            fs::read_to_string(native_codex_install_marker(&paths)).unwrap(),
-            env!("CARGO_PKG_VERSION")
-        );
-        assert!(paths.native_install_guard_path.exists());
+        let marker = native_codex_install_marker(&paths);
+        write_atomic(&marker, b"legacy companion marker").unwrap();
+        write_atomic(
+            &paths.native_install_guard_path,
+            &serde_json::to_vec_pretty(&NativeInstallGuard {
+                schema_version: 1,
+                marker_preexisting: false,
+            })
+            .unwrap(),
+        )
+        .unwrap();
 
         release_native_install_guard(&paths).unwrap();
 
-        assert!(!native_codex_install_marker(&paths).exists());
+        assert!(!marker.exists());
         assert!(!paths.native_install_guard_path.exists());
     }
 
     #[test]
-    fn mcp_launch_repairs_the_native_install_guard_before_starting_konnect() {
+    fn mcp_launch_does_not_create_native_install_suppression_state() {
         let temp = TempDir::new().unwrap();
         let paths = CompanionPaths::for_home(temp.path().join("home"));
         let executable = std::env::current_exe().unwrap();
+        write_atomic(&native_codex_install_marker(&paths), b"legacy").unwrap();
+        write_atomic(
+            &paths.native_install_guard_path,
+            &serde_json::to_vec_pretty(&NativeInstallGuard {
+                schema_version: 1,
+                marker_preexisting: false,
+            })
+            .unwrap(),
+        )
+        .unwrap();
 
         sync_with_version_probe(
             SyncOptions {
@@ -2742,8 +2716,8 @@ mod tests {
 
         let _ = run_mcp(&paths).unwrap();
 
-        assert!(native_codex_install_marker(&paths).exists());
-        assert!(paths.native_install_guard_path.exists());
+        assert!(!native_codex_install_marker(&paths).exists());
+        assert!(!paths.native_install_guard_path.exists());
     }
 
     #[test]
@@ -3197,9 +3171,6 @@ mod tests {
             fs::read_to_string(&native_konnect_skill).unwrap(),
             "native Konnect skill"
         );
-
-        acquire_native_install_guard(&paths).unwrap();
-        assert!(paths.native_install_guard_path.exists());
 
         uninstall(&paths, false).unwrap();
         assert!(!paths.plugin_dir.exists());

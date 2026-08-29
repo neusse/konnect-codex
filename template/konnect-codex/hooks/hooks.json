@@ -15,7 +15,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "^mcp__konnect__(place_component|move_component|rotate_component|set_component_placements|add_board_outline|add_zone|add_copper_pour)$",
+        "matcher": "^mcp__konnect__(place_component|move_component|rotate_component|set_component_placements|add_board_outline|add_zone|add_copper_pour|delete_graphics)$",
         "hooks": [
           {
             "type": "command",
@@ -26,7 +26,7 @@
         ]
       },
       {
-        "matcher": "^mcp__konnect__(flip_component)$",
+        "matcher": "^mcp__konnect__(flip_component|set_predefined_sizes)$",
         "hooks": [
           {
             "type": "command",

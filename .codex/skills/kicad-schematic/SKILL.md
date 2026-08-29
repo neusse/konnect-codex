@@ -161,7 +161,7 @@ connect_to_net(schematic, reference, pin_number, net)
   an electrically valid direct label solely to clear an orphan finding. Confirm
   it with ERC, exported connectivity or netlist evidence, and the short detector;
   record a contradictory orphan result as a verifier limitation.
-- Konnect v0.10.0 connectivity queries are not bus-aware (#328). On a bus sheet,
+- Konnect v0.11.0 connectivity queries are not bus-aware (#328). On a bus sheet,
   treat floating/orphan results at bus entries and bus labels as candidates and
   use KiCad ERC plus exported connectivity as authority before changing wiring.
 
@@ -313,7 +313,7 @@ connectivity before changing geometry.
     declaring a generated or rearranged schematic human-usable
 14. **Use real libraries first** — standard KiCad symbols beat local placeholder
     symbols for generic parts, connectors, and power symbols
-15. **Do not call `move_connected` in v0.10.0** — it still refuses because wire
+15. **Do not call `move_connected` in v0.11.0** — it still refuses because wire
     carrying is not implemented (#315). Ordinary component moves now reconcile
     affected junction dots, but they do not carry attached wires. Use a plain
     move, explicitly repair affected wires, then run ERC and connectivity

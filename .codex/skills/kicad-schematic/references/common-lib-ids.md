@@ -1,7 +1,7 @@
 # Common KiCAD Library Identifiers
 
 This is a non-exhaustive quick-start cache for generic symbols verified against
-the KiCad 10 library installed for the Konnect 0.10.0 companion release. It is
+the KiCad 10 library installed for the Konnect 0.11.0 companion release. It is
 not an allowlist and it must not contain personal favorites. Verify an ID with
 `search_symbols` against the active installation before use; search rather than
 guess whenever the required part is absent or its exact identity is uncertain.

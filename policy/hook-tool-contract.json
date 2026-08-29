@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.10.0",
-  "source": "Konnect v0.10.0 tool-directory.md and registered tool implementations at commit 866933e8aca1c115479963463cc7e34370b5822b",
+  "supported_konnect_version": "0.11.0",
+  "source": "Konnect v0.11.0 tool-directory.md and registered tool implementations at commit a22ad2153dcf45dbcf1cc63b5b0f1e40c93d7956",
   "tools": [
     {"name": "place_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
     {"name": "move_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
@@ -10,8 +10,10 @@
     {"name": "add_board_outline", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
     {"name": "add_zone", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
     {"name": "add_copper_pour", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
+    {"name": "delete_graphics", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
 
     {"name": "flip_component", "hook": "pre-pcb-closed", "mode": "closed-board-only"},
+    {"name": "set_predefined_sizes", "hook": "pre-pcb-closed", "mode": "closed-board-only"},
 
     {"name": "update_pcb_from_schematic", "hook": "pre-pcb-plan-apply", "mode": "dry-run-plan-live-apply"},
     {"name": "update_footprints_from_library", "hook": "pre-pcb-plan-apply", "mode": "dry-run-plan-live-apply"},
