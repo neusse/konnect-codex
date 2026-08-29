@@ -73,7 +73,7 @@ continuation.
 ## KiCAD 10 IPC API Reality
 
 **PCB Editor (pcbnew):** Most item-level mutation uses NNG + protobuf against a
-running KiCad instance. Konnect v0.10.0 also has narrow revision-aware
+running KiCad instance. Konnect v0.11.0 also has narrow revision-aware
 closed-board fallbacks for placement/move/rotation/batch placement and selected
 board operations, a closed-board-only footprint flip, and live-only trace,
 delete, refresh/apply, and zone-refill operations. Read the `kicad-pcb` skill

@@ -11,7 +11,7 @@
   <a href="https://github.com/neusse/konnect-codex/blob/main/LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-7c3aed.svg"></a>
   <img alt="Rust 1.85 or newer" src="https://img.shields.io/badge/Rust-1.85%2B-f97316.svg">
   <img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-10a37f.svg">
-  <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.10.0" src="https://img.shields.io/badge/Konnect-0.10.0-22d3ee.svg"></a>
+  <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.11.0" src="https://img.shields.io/badge/Konnect-0.11.0-22d3ee.svg"></a>
   <a href="https://github.com/neusse/konnect-codex/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/neusse/konnect-codex"></a>
 </p>
 
@@ -22,8 +22,8 @@ separate from Konnect so each release can preserve a known-good Codex workflow
 without changing Konnect itself.
 
 Release numbers identify the Konnect release reviewed by the plugin:
-`konnect-codex v0.10.0-codex.2` supports `Konnect v0.10.0`; the `codex.2`
-suffix is the second companion revision for that unchanged upstream release.
+`konnect-codex v0.11.0` supports `Konnect v0.11.0`. A later `-codex.N`
+suffix identifies a companion-only revision for that unchanged upstream release.
 The exact reviewed upstream
 commit and guidance fingerprints are recorded in
 [`compatibility.json`](compatibility.json).
@@ -79,10 +79,10 @@ release for the current operating system, verify it, install the plugin, and
 run its health check for you:
 
 ```text
-Install the konnect-codex v0.10.0 companion revision 2 plugin from
-https://github.com/neusse/konnect-codex/releases/tag/v0.10.0-codex.2 for this operating
+Install the konnect-codex v0.11.0 companion plugin from
+https://github.com/neusse/konnect-codex/releases/tag/v0.11.0 for this operating
 system. First locate the Konnect executable and run `konnect --version`. Stop
-without changing anything if Konnect is missing or is not exactly v0.10.0.
+without changing anything if Konnect is missing or is not exactly v0.11.0.
 Download SHA256SUMS.txt and verify the plugin archive before extracting it.
 Install the konnect-codex executable in a user-writable location on PATH. Do
 not run `konnect init --client codex`. If Konnect's native Codex guidance is
@@ -108,7 +108,7 @@ Then download the archive for your operating system from
 `konnect-codex` on `PATH`, and run:
 
 ```powershell
-konnect --version            # must report: konnect 0.10.0
+konnect --version            # must report: konnect 0.11.0
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -116,7 +116,7 @@ konnect-codex doctor
 You can also install the version-matched source release with Cargo:
 
 ```powershell
-cargo install --git https://github.com/neusse/konnect-codex --tag v0.10.0-codex.2
+cargo install --git https://github.com/neusse/konnect-codex --tag v0.11.0
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -163,12 +163,11 @@ DRC acceptance gate before adopting it.
 edited after installation, it stops and preserves the file. `--force` is
 available only for intentionally discarding those plugin-owned edits.
 
-While reviewed mode is enabled, the plugin maintains a reversible
-`~/.konnect/.installed-codex` suppression marker. Konnect 0.6.1 through 0.10.0
-otherwise silently reinstalls its six native Codex skills on every MCP start after an
-uninstall. The companion repairs the marker before launching Konnect and
-restores its prior state when disabled or uninstalled; it does not claim or
-delete native skill files.
+Konnect v0.11.0 makes MCP startup non-mutating; native guidance is installed
+only by explicit `konnect init`. The companion therefore no longer creates or
+repairs `~/.konnect/.installed-codex`. The first real v0.11 sync removes the
+legacy suppression guard and removes that marker only when an older companion
+recorded that it originally created it. Native skill files remain untouched.
 
 Each MCP launch owns its Konnect child process with an operating-system cleanup
 boundary on Windows. If Codex retains obsolete MCP connections, `sessions`

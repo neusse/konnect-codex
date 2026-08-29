@@ -28,7 +28,7 @@ offline Freerouting bridge requires none.
    path and plausible board inventory, board dimensions, layer count,
    fabrication limits, mechanical constraints, current requirements, net
    classes, and required manufacturing outputs. Save a checkpoint. If IPC is
-   lost or a mutator reports one of Konnect 0.10.0's closed-board file paths
+   lost or a mutator reports one of Konnect 0.11.0's closed-board file paths
    after this point, stop and restore a single live owner before continuing.
 2. Before schematic-to-PCB transfer, inventory every selected footprint's
    reference, expected pad count, supported graphic layers, graphic count, and
@@ -44,9 +44,9 @@ offline Freerouting bridge requires none.
 4. If a linked footprint library changed, run
    `update_footprints_from_library` as a live dry run and review status,
    coverage, changes, diagnostics, and plan revision. Apply only that exact
-   revision. Preserve a non-mutating conflict: v0.10.0 issue #331 blocks most
-   official footprints containing `fp_text user`, and removing unsupported
-   artwork to force a refresh is not acceptable.
+   revision. Konnect v0.11.0 preserves official footprint user text; verify
+   post-apply pad, graphic, metadata, and model invariants rather than assuming
+   refresh fidelity.
 5. Establish or verify the closed board outline, stackup, keepouts, mounting,
    design rules, and net classes before placement.
 6. Place by functional block. Start with `score_placement`, preserving the
@@ -54,6 +54,7 @@ offline Freerouting bridge requires none.
    `auto_place_from_schematic`, `refine_placement_force_directed`,
    `place_decoupling_caps`, or `plan_bga_fanout`. Lock connectors, mounting
    hardware, controls, displays, antennas, and all mechanical references.
+   Inspect the reported `held` set and reject any unexpected `held` reference.
    Reject a plan that introduces a hard failure, lowers the score without a
    documented engineering reason, or breaks a functional block. Apply only the
    exact reviewed plan under its live/offline rule, then independently run
@@ -74,7 +75,7 @@ offline Freerouting bridge requires none.
    checkpoint; do not route before this visible checkpoint is accepted.
 7. For a complete board or interacting nets, make Freerouting the default.
    Call `check_freerouting` only to inspect the engine installation. Konnect
-   v0.10.0 has no autoroute tool. Use `konnect-codex freerouting status` and its
+   v0.11.0 still has no released autoroute tool. Use `konnect-codex freerouting status` and its
    explicitly headless, non-overwriting offline `route` bridge when ready, or use the KiCad
    Freerouting ActionPlugin through an available desktop-control capability. If
    neither bridge is available, pause

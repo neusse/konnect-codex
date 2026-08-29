@@ -16,7 +16,7 @@ Most PCB layout operations require KiCAD to be running with the board file open.
 connection communicates with the running KiCAD instance in real-time.
 
 `place_component`, `move_component`, `rotate_component`, and `flip_component` are
-narrow closed-board exceptions in Konnect 0.10.0. Placement, move, and rotation can
+narrow closed-board exceptions in Konnect 0.11.0. Placement, move, and rotation can
 fall back when IPC is unreachable. Flip requires IPC to be unreachable because the
 typed KiCad IPC API has no native footprint-flip command. The file paths use
 revision-aware atomic writes and preserve or transform supported footprint children;
@@ -88,7 +88,10 @@ Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
 Follow this sequence for a clean PCB workflow:
 
-1. **Board outline** — `set_board_size` or draw Edge.Cuts geometry
+1. **Board outline** — inspect Edge.Cuts first. `set_board_size` appends; when
+   replacing a generated outline, dry-run a narrowly filtered
+   `delete_graphics(layer='Edge.Cuts')`, verify every match, delete it, then draw
+   the replacement. Never make an unfiltered delete.
 2. **PCB transfer integrity gate** — before transfer, inventory every selected
    footprint's reference, expected pad count, supported graphic layers, graphic
    count, and model associations with the available library/footprint queries.
@@ -114,10 +117,10 @@ Follow this sequence for a clean PCB workflow:
    open in live KiCad. This is distinct from schematic transfer: it replaces
    supported library-owned pads, graphics, attributes, metadata, and 3D models
    while preserving placed identity, position, rotation, side, instance
-   overrides, and pad nets. One apply is one undo entry and conflicts are
-   non-mutating. Konnect v0.10.0 issue #331 means most official footprints with
-   `fp_text user` are currently refused; do not remove that content or claim a
-   refresh succeeded. Preserve the placed footprint and report the conflict.
+   overrides, pad nets, user text, and three-dimensional models. One apply is
+   one undo entry and conflicts are non-mutating. Konnect v0.11.0 fixes the
+   official-footprint user-text rejection from #331; still require dry-run
+   coverage and post-apply pad/graphic/model invariants.
 6. **Place components** — position all footprints. For a reviewed batch, prefer
    one atomic `set_component_placements` call so the set has one commit, one
    undo entry, and post-commit readback. Review every stored position,
@@ -171,7 +174,7 @@ placement approval.
 
 ### Score-first automation
 
-For a new or substantially changed placement, use the v0.10 placement toolset
+For a new or substantially changed placement, use the v0.11 placement toolset
 as a measured planning loop, not as a substitute for engineering judgement or
 visible inspection:
 
@@ -182,7 +185,8 @@ visible inspection:
    `place_decoupling_caps`, or `plan_bga_fanout` in dry-run mode. Lock
    connectors, mounting hardware, controls, displays, antennas, and every other
    mechanically constrained reference before refinement.
-3. Reject a plan that introduces a hard failure, lowers the score without a
+3. Inspect the planner's `held` set. Reject any unexpected `held` reference and
+   reject a plan that introduces a hard failure, lowers the score without a
    documented electrical or mechanical reason, breaks a functional block, or
    violates the placement-acceptance reference. Determinism makes a plan
    reproducible; it does not make the plan correct.
@@ -280,13 +284,15 @@ create_netclass(board, name, trace_width?, clearance?, via_drill?, via_diameter?
 ```
 
 The class is written to the project's `.kicad_pro` file, which is where KiCad
-has kept netclasses since v7 — the board file is not modified.
+has kept netclasses since v7 — the board file is not modified. In Konnect
+v0.11.0, `get_netclasses` returns resolved values plus `inherits` and
+`missing_fields`. A `null` inherited field is not by itself a defect; reject a
+class when `missing_fields` remains non-empty. Keep `Default` complete, then
+reopen through KiCad and validate the affected connectivity after mutation.
 
-Konnect v0.10.0 issue #326: do not create or overwrite the `Default` netclass
-unless the returned/project data proves `wire_width` and the full KiCad default
-field set survived. An incomplete Default class can make Eeschema suppress or
-strip junction dots. After any netclass mutation, reopen through KiCad, run ERC,
-and inspect T-junction connectivity before continuing.
+Predefined Track/Via dropdown entries are a separate editor palette. With the
+board closed, use `set_predefined_sizes`, then confirm with
+`get_predefined_sizes`. They do not set DRC floors or netclass targets.
 
 Common netclass configurations:
 - Signal: 0.25mm track, 0.2mm clearance

@@ -38,11 +38,11 @@ INCOMPLETE rather than filling a success field from expectation.
 6. Inspect nearby pin endpoints before automatic stub placement. Choose
    directions that cannot meet or cross. Run `find_shorted_nets` immediately
    after automatic stub placement; a clean result completes that wiring step.
-   On bus sheets, treat Konnect v0.10.0 connectivity findings at bus
+   On bus sheets, treat Konnect v0.11.0 connectivity findings at bus
    entries as incomplete and use KiCad ERC plus exported connectivity before
    changing geometry. Do not call `move_connected`; it remains unavailable
    under #315. Use a plain move, repair attached wires explicitly, and rerun
-   ERC; v0.10.0 reconciles affected junction dots for ordinary moves.
+   ERC; v0.11.0 reconciles affected junction dots for ordinary moves.
 7. Annotate, then run ERC, wire validation, component validation, short
    detection, orphan detection, and exported-connectivity checks that are
    available.

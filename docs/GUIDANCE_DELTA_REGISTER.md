@@ -14,12 +14,12 @@ fail if either side loses an entry.
 
 ## Release review state
 
-- Supported Konnect: `0.10.0`, commit
-  `866933e8aca1c115479963463cc7e34370b5822b`
-- Companion release: `v0.10.0-codex.2` (`companion_revision = 2`)
-- Last full guidance review: 2026-08-28
+- Supported Konnect: `0.11.0`, commit
+  `a22ad2153dcf45dbcf1cc63b5b0f1e40c93d7956`
+- Companion release: `v0.11.0` (`companion_revision = 1`)
+- Last full guidance review: 2026-08-29
 - Upstream guidance issues reviewed: #356, #357, #358
-- Upstream issue #358 correction: Konnect v0.10.0 does register
+- Upstream issue #358 correction: Konnect v0.11.0 still registers
   `refill_zones` under `pcb_export`; the companion therefore keeps that real
   tool in the live-only hook class. The issue's broader structured-output and
   runtime-classification findings still apply.
@@ -35,7 +35,6 @@ fail if either side loses an entry.
 | `contradictory-verifier-gate` | Direct evidence outranks aggregate passes | Review/manufacture/agent assertions |
 | `requirements-based-review-defaults` | Datasheets and requirements control conditional design advice | Reviewer assertion |
 | `doctor-agent-reporting` | Report companion and native agents separately | Doctor tests |
-| `native-auto-install-suppression` | Prevent Konnect startup from reinstalling unwanted native guidance | Lifecycle tests; retire after verified non-mutating upstream startup |
 | `pcb-builder-delegation` | Give transfer/layout/routing to one PCB owner | Router/agent assertions |
 | `freerouting-first-routing` | Use Freerouting for complete boards; local segments only for repairs | PCB skill/reference/agent assertions and route benchmark |
 | `pcb-live-state-and-placement-gates` | Stop on IPC ownership loss and require visible placement acceptance | PCB/reviewer assertions and preflight tests |
@@ -48,12 +47,18 @@ fail if either side loses an entry.
 | `legacy-sourcing-and-review-evidence` | Track lifecycle/socket/manual-assembly risk and raw evidence packages | Manufacture/review references |
 | `evidence-grounded-review-methodology` | Record context, evidence basis, confidence, limits, and review delta | Review skill/reference/agent assertions |
 | `bom-lifecycle-workflow` | Qualify MPN/datasheet/alternate/lifecycle data and verify BOM export | BOM/router assertions |
-| `v0.10-feedback-acceptance-integration` | Convert placement scores and visual baselines into independent acceptance gates | v0.10 skill/agent assertions |
-| `v0.9-known-safety-gates` | Preserve workarounds for #315, #326, #328, and #331 | Release-specific assertions; retire issue by issue after benchmark proof |
-| `verified-symbol-and-pin-guidance` | Correct known KiCad 10 IDs/LED polarity and remove universal physical pin rules | Known-ID, LED, reference, skill, and library-agent tests; upstream #356 |
+| `v0.10-feedback-acceptance-integration` | Convert placement scores, v0.11 held sets, and visual baselines into independent acceptance gates | Skill/agent assertions and placement benchmark |
+| `v0.9-known-safety-gates` | Preserve the remaining #315 and #328 workarounds | Release-specific assertions; #326 and #331 retired in v0.11 |
 | `reference-reachability-and-evidence-contracts` | Link every reference, align agents with skills, correct manufacturing claims, and forbid invented evidence | Reachability and evidence-phrase tests; upstream #357 |
 | `codex-hook-contract` | Emit structured Codex context and classify each matched PCB tool by runtime ownership contract | Hook-policy/matcher/output tests; upstream #358 findings adapted for Codex |
 | `guidance-governance-register` | Require this living register and stable guidance standards on every release | Bidirectional policy/register test |
+
+## Retired decisions
+
+| Policy ID | Retirement evidence | Preserved behavior |
+|---|---|---|
+| `native-auto-install-suppression` | Konnect v0.11.0 startup is non-mutating and guidance installation requires explicit `konnect init` (#242) | A v0.11 sync removes the companion's legacy guard and only a marker it originally created. |
+| `verified-symbol-and-pin-guidance` | Konnect v0.11.0 corrected unsafe universal pin rules, known invalid library IDs, and LED polarity, with asset tests (#356) | The corrected text remains in the Codex translation; it is no longer counted as a companion-only delta. |
 
 ## Update procedure
 
