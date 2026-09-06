@@ -13,6 +13,7 @@
   <img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-10a37f.svg">
   <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.11.0" src="https://img.shields.io/badge/Konnect-0.11.0-22d3ee.svg"></a>
   <a href="https://github.com/neusse/konnect-codex/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/neusse/konnect-codex"></a>
+  <a href="https://discord.gg/NVp9RGMmDu"><img alt="Join the Konnect Discord" src="https://img.shields.io/badge/Discord-join%20the%20community-5865F2.svg?logo=discord&logoColor=white"></a>
 </p>
 
 `konnect-codex` is a standalone **Codex plugin** for the Konnect server. It
@@ -71,6 +72,18 @@ tool catalogue, file-safety model, and original hardware workflows on which
 this plugin depends. `konnect-codex` is an independent Codex plugin and
 does not replace or claim authorship of Konnect. Please report server and KiCad
 tool issues to the upstream project and support its development there.
+
+## Community and support
+
+Join the [Konnect Discord community](https://discord.gg/NVp9RGMmDu) for
+installation help, Codex and other AI-client setup, KiCad workflow discussion,
+project showcases, and contributor coordination. GitHub remains the source of
+truth for tracked work:
+
+- Konnect server, IPC, KiCad, and core-tool defects:
+  [mixelpixx/Konnect issues](https://github.com/mixelpixx/Konnect/issues)
+- Codex companion installation, guidance, lifecycle, and packaging defects:
+  [neusse/konnect-codex issues](https://github.com/neusse/konnect-codex/issues)
 
 ## Install with Codex
 
