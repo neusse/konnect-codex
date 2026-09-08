@@ -46,11 +46,32 @@ starting points only.
 
 ### Routing
 - [ ] No unrouted nets (ratsnest clear)
-- [ ] Power traces adequately sized for current
-- [ ] Differential pairs length-matched (USB, Ethernet)
+- [ ] Power traces, pours, pads, connectors, and via arrays satisfy current,
+      voltage-drop, copper-weight, and temperature-rise requirements
+- [ ] Differential interfaces use stackup-derived impedance, continuous
+      reference planes, controlled geometry, and an explicit skew budget
+- [ ] No critical signal crosses a reference-plane split, void, cutout, or
+      antipad field without an engineered return-current path
+- [ ] High-frequency edge clearance is derived from stackup and emissions risk,
+      not an unexplained fixed-distance heuristic
+- [ ] Stitching and layer-transition return vias are purposeful, appropriately
+      spaced, and kept out of RF, isolation, and mechanical keepouts
 - [ ] No acute angles on traces (acid traps)
-- [ ] Via-in-pad only where needed (adds cost)
-- [ ] Ground pour on back (or both sides)
+- [ ] Via-in-pad has an explicitly selected and quoted fill/cap/plate process;
+      thermal-pad vias follow the package land-pattern and stencil guidance
+- [ ] Copper planes and pours provide the required return and thermal paths
+
+### Placement physics
+- [ ] Each critical decoupling capacitor is mapped to its pin or rail group and
+      forms a short, low-inductance supply-return loop
+- [ ] Switching-converter hot loops and switch-node copper match the exact
+      device datasheet or evaluation-board evidence
+- [ ] Thermal paths are justified for package, copper, vias, ambient,
+      enclosure, and airflow
+- [ ] Antenna keepouts cover every required copper layer and nearby hardware or
+      enclosure material
+- [ ] Test access covers required rails, reset/programming, buses, and fault
+      nodes with realistic probe geometry and loading
 
 ### DFM (Design for Manufacturing)
 - [ ] All traces/spaces meet fab house minimums

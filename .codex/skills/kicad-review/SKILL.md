@@ -41,11 +41,21 @@ Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
 ### Reference routing
 
+- Read [references/workflows.md](references/workflows.md) for existing-project
+  intake, simulation-readiness, project-recovery, or complete design-review
+  workflows.
+- Read the shared
+  [process-lifecycle gate](../kicad-workflows/references/process-lifecycle.md)
+  for project recovery or whenever review launches or restarts an editor,
+  simulator, router, or external helper.
 - Read [references/review-methodology.md](references/review-methodology.md) for
   every comprehensive or readiness review.
 - Use [references/design-checklist.md](references/design-checklist.md) as a
   coverage prompt after requirements and exact component evidence are known;
   unchecked or inapplicable entries must not be reported as passed.
+- For every PCB readiness review, read the PCB skill's
+  [layout-physics acceptance gate](../kicad-pcb/references/pcb-layout-physics-acceptance.md)
+  and require its applicability matrix, direct evidence, and waivers.
 - Use [references/error-taxonomy.md](references/error-taxonomy.md) when
   classifying direct ERC/DRC/connectivity findings and known false positives.
 - Use [references/evidence-package.md](references/evidence-package.md) whenever

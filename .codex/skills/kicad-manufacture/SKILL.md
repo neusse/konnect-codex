@@ -33,11 +33,21 @@ Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
 ### Reference routing
 
+- Read
+  [references/manufacturing-release-workflow.md](references/manufacturing-release-workflow.md)
+  for every complete revision-bound fabrication release.
+- Read and close the shared
+  [process-lifecycle gate](../kicad-workflows/references/process-lifecycle.md)
+  whenever artifact generation launches KiCad, `kicad-cli`, a viewer, or
+  another external helper.
 - Read [references/gerber-layers.md](references/gerber-layers.md) when choosing
   fabrication layers or checking a Gerber/drill inventory.
 - Read [references/jlcpcb-rules.md](references/jlcpcb-rules.md) only when JLCPCB
   is the selected fabricator, then verify every time-sensitive field, fee,
   capability, and format against JLCPCB's current official order contract.
+- Before releasing any PCB, require the PCB skill's
+  [layout-physics acceptance gate](../kicad-pcb/references/pcb-layout-physics-acceptance.md)
+  from the frozen revision. Clean DRC is not a substitute for this evidence.
 - Read [references/legacy-through-hole.md](references/legacy-through-hole.md)
   for legacy, surplus, socketed, or manually assembled parts.
 
@@ -66,7 +76,7 @@ get_drc_violations()
 validate_for_manufacturing()
 ```
 
-In Konnect v0.11.0 this aggregate check confirms that Edge.Cuts content and
+In Konnect v0.11.1 this aggregate check confirms that Edge.Cuts content and
 footprints exist, evaluates configured minimum trace width, reports a coarse
 no-tracks heuristic, and incorporates direct KiCad DRC evidence. It does **not**
 prove that the outline is closed, every pad has copper, drills satisfy the
@@ -186,7 +196,7 @@ by the current uploader rather than normalizing to an old hard-coded spelling.
 estimate_cost(board, quantity?, layers?, fab_house?)
 ```
 
-In Konnect v0.11.0 this is a fixed rough heuristic, not a live quote. Label its
+In Konnect v0.11.1 this is a fixed rough heuristic, not a live quote. Label its
 result as an estimate and obtain a current vendor quote before making a cost or
 supplier decision.
 
@@ -251,3 +261,5 @@ Visual checks:
     override DRC errors, unrouted work, transfer corruption, or missing artifacts
 11. **Preserve review evidence** — include raw checks, route provenance, renders,
     artifact inventory, and waivers using the kicad-review evidence-package format
+12. **Close layout-physics acceptance** — every applicable row needs direct
+    evidence or an explicit engineering waiver from the frozen board revision

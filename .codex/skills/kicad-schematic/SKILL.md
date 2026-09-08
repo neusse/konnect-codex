@@ -31,6 +31,13 @@ load_toolset('sch_analysis')     # find components, get pin info, inspect nets
 
 Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
+For project bootstrap, requirements-to-schematic, or schematic-cleanup work,
+read [references/workflows.md](references/workflows.md) before the first
+mutation.
+When the work launches or restarts Schematic Editor, KiCad, or another helper,
+also read and close the shared
+[process-lifecycle gate](../kicad-workflows/references/process-lifecycle.md).
+
 ---
 
 ## Component Placement
@@ -161,7 +168,7 @@ connect_to_net(schematic, reference, pin_number, net)
   an electrically valid direct label solely to clear an orphan finding. Confirm
   it with ERC, exported connectivity or netlist evidence, and the short detector;
   record a contradictory orphan result as a verifier limitation.
-- Konnect v0.11.0 connectivity queries are not bus-aware (#328). On a bus sheet,
+- Konnect v0.11.1 connectivity queries are not bus-aware (#328). On a bus sheet,
   treat floating/orphan results at bus entries and bus labels as candidates and
   use KiCad ERC plus exported connectivity as authority before changing wiring.
 
@@ -313,7 +320,7 @@ connectivity before changing geometry.
     declaring a generated or rearranged schematic human-usable
 14. **Use real libraries first** — standard KiCad symbols beat local placeholder
     symbols for generic parts, connectors, and power symbols
-15. **Do not call `move_connected` in v0.11.0** — it still refuses because wire
+15. **Do not call `move_connected` in v0.11.1** — it still refuses because wire
     carrying is not implemented (#315). Ordinary component moves now reconcile
     affected junction dots, but they do not carry attached wires. Use a plain
     move, explicitly repair affected wires, then run ERC and connectivity

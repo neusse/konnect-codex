@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.11.0",
-  "source": "Konnect v0.11.0 tool-directory.md and registered tool implementations at commit a22ad2153dcf45dbcf1cc63b5b0f1e40c93d7956",
+  "supported_konnect_version": "0.11.1",
+  "source": "Konnect v0.11.1 tool-directory.md and registered tool implementations at commit eadbe451bb50eb51c6e42abcf6e0152f62bc1e13",
   "tools": [
     {"name": "place_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
     {"name": "move_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
@@ -31,6 +31,9 @@
     {"name": "delete_trace", "hook": "pre-pcb-live", "mode": "live-only"},
     {"name": "modify_trace", "hook": "pre-pcb-live", "mode": "live-only"},
     {"name": "route_differential_pair", "hook": "pre-pcb-live", "mode": "live-only"},
-    {"name": "refill_zones", "hook": "pre-pcb-live", "mode": "live-only"}
+    {"name": "refill_zones", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "export_specctra_dsn", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "plan_specctra_ses_import", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "apply_specctra_ses", "hook": "pre-pcb-live", "mode": "live-only"}
   ]
 }
