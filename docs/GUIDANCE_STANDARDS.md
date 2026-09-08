@@ -27,7 +27,21 @@ policy; it does not replace the exact upstream baseline or release tests.
 - Schematic completion includes functional blocks, group/region closure,
   label-inclusive overlap checks, page-boundary checks, and rendered visual
   inspection. PCB completion includes transfer invariants, visible placement,
-  route provenance, direct DRC, unrouted, and artifact checks.
+  route provenance, direct DRC, unrouted, artifact checks, and a
+  context-calibrated layout-physics applicability matrix with direct evidence
+  or explicit engineering waivers.
+- Multi-stage outcome requests route through `kicad-workflows`. Every workflow
+  states its trigger, required inputs, ordered phases, stop conditions, direct
+  evidence, and terminal outcome. Domain references own the detailed procedure;
+  the catalog only routes to them.
+- Missing a required workflow phase or its evidence makes the result
+  `INCOMPLETE`. Keep a simple one-tool inspection or edit in its domain skill
+  instead of adding unnecessary workflow ceremony.
+- Any workflow that launches or restarts an editor, router, simulator, Java
+  process, or helper records a pre-existing/task-owned ownership baseline and
+  closes a bounded lifecycle cleanup gate. Completion evidence names what was
+  closed, what exact orphan was terminated, and what current-session or
+  pre-existing infrastructure was deliberately preserved.
 
 ## Agents
 

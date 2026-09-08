@@ -15,13 +15,20 @@ ALL modifications go through MCP tools — never edit .kicad_pcb files directly.
 Most PCB layout operations require KiCAD to be running with the board file open. The IPC
 connection communicates with the running KiCAD instance in real-time.
 
-`place_component`, `move_component`, `rotate_component`, and `flip_component` are
-narrow closed-board exceptions in Konnect 0.11.0. Placement, move, and rotation can
-fall back when IPC is unreachable. Flip requires IPC to be unreachable because the
-typed KiCad IPC API has no native footprint-flip command. The file paths use
-revision-aware atomic writes and preserve or transform supported footprint children;
-unsupported flip geometry is refused. If KiCad is reachable and rejects a request,
-the fallback stays disabled to avoid racing a live editor.
+Some board-construction and component tools have guarded closed-board paths in
+Konnect 0.11.1. IPC-first tools fall back only when the transport is unreachable
+and the board has not been observed live during the current server session.
+File-only operations such as `flip_component` proceed only when KiCad does not
+hold the target board open. The paths use revision-aware atomic writes and
+preserve or transform supported footprint children; unsupported geometry is
+refused. A reachable KiCad rejection stays closed instead of racing the editor.
+
+`unsafe_file_fallback` is a stop condition. Konnect reached this board live
+earlier but IPC is now unavailable, so the saved file may be older than editor
+state. Do not retry-loop, restart automatically, or edit the board directly.
+Ask the user to recover/reconcile and save in KiCad, then continue through live
+IPC. A deliberate new closed-board session is allowed only after the user
+confirms a clean close and authoritative saved file.
 
 If connection fails, open the target `.kicad_pcb` in one PCB Editor and retry
 the readiness query once. After a live PCB phase begins, an IPC failure or an
@@ -32,9 +39,8 @@ or routing sequence.
 
 Before a live mutation phase, run
 `konnect-codex pcb-preflight --board <path> --mode live` when the companion CLI
-is available, then confirm Konnect reports the same active board path. For the
-companion Freerouting bridge, close PCB Editor and use `--mode offline`; the
-bridge refuses to race a live editor and writes a separate routed board.
+is available, then confirm Konnect reports the same active board path. The native
+Freerouting pipeline also remains revision-bound to that live board.
 
 ---
 
@@ -66,6 +72,13 @@ Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
 ### Reference routing
 
+- Read [references/workflows.md](references/workflows.md) first when the request
+  is a complete transfer, constraint, placement, routing, or engineering-change
+  workflow.
+- Read the shared
+  [process-lifecycle gate](../kicad-workflows/references/process-lifecycle.md)
+  before launching or restarting PCB Editor, Freerouting, Java, or another
+  helper, and close that gate before reporting completion.
 - Read [references/placement-acceptance.md](references/placement-acceptance.md)
   before routing any newly placed or substantially rearranged board.
 - Read [references/freerouting-workflow.md](references/freerouting-workflow.md)
@@ -74,6 +87,11 @@ Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
   an existing board with accepted placement or routing.
 - Read [references/power-layout.md](references/power-layout.md) for power,
   thermal, high-current, motor, converter, or noisy-load work.
+- Read
+  [references/pcb-layout-physics-acceptance.md](references/pcb-layout-physics-acceptance.md)
+  before accepting a new route, substantial PCB change, or manufacturing
+  release. Complete its applicability matrix instead of applying every concern
+  as a universal rule.
 - Read [references/design-rules.md](references/design-rules.md) and
   [references/trace-width-table.md](references/trace-width-table.md) only as
   non-authoritative starting references; the selected fabricator's current
@@ -118,7 +136,7 @@ Follow this sequence for a clean PCB workflow:
    supported library-owned pads, graphics, attributes, metadata, and 3D models
    while preserving placed identity, position, rotation, side, instance
    overrides, pad nets, user text, and three-dimensional models. One apply is
-   one undo entry and conflicts are non-mutating. Konnect v0.11.0 fixes the
+   one undo entry and conflicts are non-mutating. Konnect v0.11.1 includes the
    official-footprint user-text rejection from #331; still require dry-run
    coverage and post-apply pad/graphic/model invariants.
 6. **Place components** — position all footprints. For a reviewed batch, prefer
@@ -127,16 +145,24 @@ Follow this sequence for a clean PCB workflow:
    rotation, and side before continuing.
 7. **Placement gate** — follow
    [references/placement-acceptance.md](references/placement-acceptance.md),
+   apply the placement-dependent checks in
+   [references/pcb-layout-physics-acceptance.md](references/pcb-layout-physics-acceptance.md),
    save, produce a visible 2D checkpoint, verify pad, hole, courtyard, edge,
    connector, and mounting clearances; record component positions, pad
    inventory, trace count, unrouted count, and direct DRC baseline
 8. **Select the router** — use Freerouting by default for a complete board or
    interacting nets; read [references/freerouting-workflow.md](references/freerouting-workflow.md)
 9. **Route acceptance gate** — verify unchanged placement/inventory, plausible
-   traces, no shorts, clean direct DRC, and no required unrouted connection
+   traces, no shorts, clean direct DRC, no required unrouted connection, and a
+   completed PCB-physics applicability/evidence matrix
 10. **Copper pour** — add ground/power zones after route acceptance
-11. **Final DRC** — refill zones, run direct DRC, and reconcile live queries
+11. **Final DRC and physics gate** — refill zones, run direct DRC, reconcile
+    live queries, and recheck reference planes, keepouts, thermal/current paths,
+    process-sensitive vias, and test access against the accepted evidence
 12. **Save** — `save_project`, then re-query final state
+13. **Lifecycle cleanup** — close task-owned editors and router/helper windows,
+    verify their child processes exited, preserve pre-existing/current-session
+    infrastructure, and report the cleanup evidence
 
 Do NOT add copper pours before routing is complete — they interfere with interactive routing.
 
@@ -155,6 +181,9 @@ placement approval.
 - Group components by functional block (power, digital, analog, connectors)
 - Place ICs first, then their associated passives
 - Decoupling caps: within 2mm of their IC power pins, on same layer
+- Cable/EMI filter capacitors belong at the connector pins they protect. Do not
+  move a verified interface filter toward an IC merely because it resembles a
+  decoupling capacitor; reconcile `interface_filter_caps` from placement scoring.
 - Connectors: at board edges, accessible for cables
 - High-frequency components: minimize trace lengths between them
 - Thermal considerations: power components away from sensitive analog
@@ -285,7 +314,7 @@ create_netclass(board, name, trace_width?, clearance?, via_drill?, via_diameter?
 
 The class is written to the project's `.kicad_pro` file, which is where KiCad
 has kept netclasses since v7 — the board file is not modified. In Konnect
-v0.11.0, `get_netclasses` returns resolved values plus `inherits` and
+v0.11.1, `get_netclasses` returns resolved values plus `inherits` and
 `missing_fields`. A `null` inherited field is not by itself a defect; reject a
 class when `missing_fields` remains non-empty. Keep `Default` complete, then
 reopen through KiCad and validate the affected connectivity after mutation.

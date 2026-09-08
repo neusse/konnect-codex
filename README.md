@@ -11,8 +11,9 @@
   <a href="https://github.com/neusse/konnect-codex/blob/main/LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-7c3aed.svg"></a>
   <img alt="Rust 1.85 or newer" src="https://img.shields.io/badge/Rust-1.85%2B-f97316.svg">
   <img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-10a37f.svg">
-  <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.11.0" src="https://img.shields.io/badge/Konnect-0.11.0-22d3ee.svg"></a>
+  <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.11.1" src="https://img.shields.io/badge/Konnect-0.11.1-22d3ee.svg"></a>
   <a href="https://github.com/neusse/konnect-codex/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/neusse/konnect-codex"></a>
+  <a href="https://discord.gg/NVp9RGMmDu"><img alt="Join the Konnect Discord" src="https://img.shields.io/badge/Discord-join%20the%20community-5865F2.svg?logo=discord&logoColor=white"></a>
 </p>
 
 `konnect-codex` is a standalone **Codex plugin** for the Konnect server. It
@@ -22,7 +23,7 @@ separate from Konnect so each release can preserve a known-good Codex workflow
 without changing Konnect itself.
 
 Release numbers identify the Konnect release reviewed by the plugin:
-`konnect-codex v0.11.0` supports `Konnect v0.11.0`. A later `-codex.N`
+`konnect-codex v0.11.1` supports `Konnect v0.11.1`. A later `-codex.N`
 suffix identifies a companion-only revision for that unchanged upstream release.
 The exact reviewed upstream
 commit and guidance fingerprints are recorded in
@@ -30,15 +31,20 @@ commit and guidance fingerprints are recorded in
 
 The plugin supplies:
 
-- eight independently reviewed Codex skills plus the execution router,
-  including dedicated BOM qualification and lifecycle guidance;
+- nine independently reviewed domain/workflow skills plus the execution router,
+  including dedicated workflow selection, BOM qualification, and lifecycle
+  guidance;
 - a Codex execution-router skill that makes the eager-tool profile and safe
   KiCad workflow explicit;
+- a discoverable [multi-stage workflow catalog](docs/KONNECT_WORKFLOW_SKILLS.md)
+  for custom parts, schematic construction, PCB transfer, placement, routing,
+  recovery, review, manufacturing, and bring-up;
 - five reviewed Codex agents for custom libraries, schematic construction, PCB
   layout, independent design review, and firmware/bring-up handoff, without a
   hard-coded model;
-- a Freerouting-first PCB workflow with placement, IPC ownership, route-import,
-  and direct DRC acceptance gates;
+- a Freerouting-first PCB workflow that drives Konnect's native
+  DSN/MCP/SES pipeline with placement, revision, route-import, and direct DRC
+  acceptance gates;
 - Codex-native hooks, relevant-prompt guidance, and a live-KiCad IPC fallback;
 - a private Konnect configuration with `eager_toolsets = true` so clients that
   cache the first MCP tool list can see the complete tool catalogue;
@@ -72,6 +78,18 @@ this plugin depends. `konnect-codex` is an independent Codex plugin and
 does not replace or claim authorship of Konnect. Please report server and KiCad
 tool issues to the upstream project and support its development there.
 
+## Community and support
+
+Join the [Konnect Discord community](https://discord.gg/NVp9RGMmDu) for
+installation help, Codex and other AI-client setup, KiCad workflow discussion,
+project showcases, and contributor coordination. GitHub remains the source of
+truth for tracked work:
+
+- Konnect server, IPC, KiCad, and core-tool defects:
+  [mixelpixx/Konnect issues](https://github.com/mixelpixx/Konnect/issues)
+- Codex companion installation, guidance, lifecycle, and packaging defects:
+  [neusse/konnect-codex issues](https://github.com/neusse/konnect-codex/issues)
+
 ## Install with Codex
 
 Open a Codex task and paste the following request. Codex can select the correct
@@ -79,10 +97,10 @@ release for the current operating system, verify it, install the plugin, and
 run its health check for you:
 
 ```text
-Install the konnect-codex v0.11.0 companion plugin from
-https://github.com/neusse/konnect-codex/releases/tag/v0.11.0 for this operating
+Install the konnect-codex v0.11.1 companion plugin from
+https://github.com/neusse/konnect-codex/releases/tag/v0.11.1 for this operating
 system. First locate the Konnect executable and run `konnect --version`. Stop
-without changing anything if Konnect is missing or is not exactly v0.11.0.
+without changing anything if Konnect is missing or is not exactly v0.11.1.
 Download SHA256SUMS.txt and verify the plugin archive before extracting it.
 Install the konnect-codex executable in a user-writable location on PATH. Do
 not run `konnect init --client codex`. If Konnect's native Codex guidance is
@@ -108,7 +126,7 @@ Then download the archive for your operating system from
 `konnect-codex` on `PATH`, and run:
 
 ```powershell
-konnect --version            # must report: konnect 0.11.0
+konnect --version            # must report: konnect 0.11.1
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -116,7 +134,7 @@ konnect-codex doctor
 You can also install the version-matched source release with Cargo:
 
 ```powershell
-cargo install --git https://github.com/neusse/konnect-codex --tag v0.11.0
+cargo install --git https://github.com/neusse/konnect-codex --tag v0.11.1
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -146,24 +164,22 @@ konnect-codex audit         # verify installed Claude-side assets still match th
 konnect-codex native-status # compare native Konnect coverage with the plugin
 konnect-codex sessions      # list active companion -> Konnect MCP process pairs
 konnect-codex stop-sessions # retire those pairs before an upgrade or after a stale task
-konnect-codex freerouting status # inspect KiCad Python, Java, and router bridge
 konnect-codex pcb-preflight --board C:\path\board.kicad_pcb --mode live
 konnect-codex uninstall     # remove only plugin-owned files and marketplace entry
 ```
 
-For a complete-board route, close PCB Editor and run
-`konnect-codex freerouting route --board C:\path\board.kicad_pcb`. The bridge
-uses KiCad's native DSN/SES Python API and launches the installed Freerouting
-engine headlessly, then
-writes `board.freerouted.kicad_pcb`; it never overwrites the source board. Open
-the generated board and pass the plugin's inventory, unrouted, short, and direct
-DRC acceptance gate before adopting it.
+For a complete-board route, use Konnect's native MCP sequence:
+`check_freerouting`, `export_specctra_dsn`, `route_specctra_dsn`,
+`plan_specctra_ses_import`, then `apply_specctra_ses`. The companion no longer
+ships a separate Python/JAR router bridge. Its PCB guidance preserves the route
+checkpoint and requires revision, inventory, unrouted, short, and direct DRC
+acceptance after apply.
 
 `uninstall` verifies hashes before removing anything. If a managed file was
 edited after installation, it stops and preserves the file. `--force` is
 available only for intentionally discarding those plugin-owned edits.
 
-Konnect v0.11.0 makes MCP startup non-mutating; native guidance is installed
+Konnect v0.11.1 keeps MCP startup non-mutating; native guidance is installed
 only by explicit `konnect init`. The companion therefore no longer creates or
 repairs `~/.konnect/.installed-codex`. The first real v0.11 sync removes the
 legacy suppression guard and removes that marker only when an older companion

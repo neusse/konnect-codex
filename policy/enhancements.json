@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.11.0",
+  "supported_konnect_version": "0.11.1",
   "companion_revision": 1,
   "enhancements": [
     {
@@ -149,10 +149,10 @@
     {
       "id": "freerouting-first-routing",
       "status": "active",
-      "reason": "Konnect's local L-bend and segment tools do not provide global obstacle avoidance, rip-up and retry, or congestion management; using them as a whole-board fallback generated an unusable 1,332-segment route.",
-      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18", "Konnect issue #253", "Konnect v0.10.0 roadmap Freerouting bridge direction"],
+      "reason": "Whole-board routing needs global obstacle avoidance, rip-up and retry, congestion management, and strict post-import acceptance; Konnect v0.11.1 now supplies the native DSN/MCP/SES pipeline, while Codex guidance must select and validate it.",
+      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18", "Konnect issue #337", "Konnect v0.11.1 native Freerouting release"],
       "introduced_for": "0.6.1",
-      "retire_when": "Konnect supplies and documents an end-to-end KiCad DSN/SES bridge or an equivalent verified global router, and its native PCB guidance selects it before local segment tools.",
+      "retire_when": "Konnect supplies equivalent first-class Codex guidance that selects the native pipeline and enforces route, revision, inventory, DRC, and cleanup acceptance gates.",
       "assertions": [
         {
           "target": "skills/kicad-pcb/SKILL.md",
@@ -216,15 +216,12 @@
     },
     {
       "id": "offline-freerouting-bridge",
-      "status": "active",
-      "reason": "Konnect detects Freerouting but does not bridge KiCad DSN export and SES import; the companion can use KiCad 10's bundled pcbnew Python API without racing the editor.",
-      "evidence": ["KiCad 10.0.5 pcbnew ExportSpecctraDSN/ImportSpecctraSES API", "Installed Freerouting ActionPlugin 2.3.0"],
+      "status": "retired",
+      "reason": "The companion's Python/JAR bridge duplicated functionality now released natively by Konnect.",
+      "evidence": ["Konnect v0.11.1 native export_specctra_dsn, route_specctra_dsn, plan_specctra_ses_import, and apply_specctra_ses tools", "Konnect PRs #338, #339, #340, #342, and #367"],
       "introduced_for": "0.6.1",
-      "retire_when": "Konnect supplies a verified non-destructive DSN/SES bridge with route acceptance evidence.",
-      "assertions": [
-        {"target": "skills/kicad-pcb/SKILL.md", "contains": "companion Freerouting bridge"},
-        {"target": "agents/konnect_pcb_builder.toml", "contains": "non-overwriting offline `route` bridge"}
-      ]
+      "retire_when": "Satisfied by Konnect v0.11.1; the companion retains the stronger Codex workflow and acceptance guidance but no longer ships routing execution code.",
+      "assertions": []
     },
     {
       "id": "pcb-ownership-preflight",
@@ -309,10 +306,10 @@
     {
       "id": "v0.10-feedback-acceptance-integration",
       "status": "active",
-      "reason": "Konnect v0.11.0 supplies placement scores, explicit held-footprint feedback, and schematic visual baselines, but safe Codex execution still needs mechanical-lock planning, rejection of unexpected held sets, independent post-apply scoring, actual inline image inspection, and interpretation of intended visual drift.",
+      "reason": "Konnect v0.11.1 supplies placement scores, explicit held-footprint feedback, and schematic visual baselines, but safe Codex execution still needs mechanical-lock planning, rejection of unexpected held sets, independent post-apply scoring, actual inline image inspection, and interpretation of intended visual drift.",
       "evidence": [
-        "Konnect v0.11.0 kicad-pcb score-first and held-footprint guidance",
-        "Konnect v0.11.0 kicad-schematic visual feedback loop",
+        "Konnect v0.11.1 kicad-pcb score-first and held-footprint guidance",
+        "Konnect v0.11.1 kicad-schematic visual feedback loop",
         "konnect-codex placement and schematic readability acceptance gates"
       ],
       "introduced_for": "0.10.0",
@@ -327,7 +324,7 @@
     {
       "id": "v0.9-known-safety-gates",
       "status": "active",
-      "reason": "Konnect v0.11.0 still reports incomplete connectivity on bus entries and safely refuses connected moves. The v0.11 release fixed incomplete Default-netclass serialization and official footprint refresh.",
+      "reason": "Konnect v0.11.1 still reports incomplete connectivity on bus entries and safely refuses connected moves. The v0.11 line fixed incomplete Default-netclass serialization and official footprint refresh.",
       "evidence": [
         "Konnect issues #315 and #328",
         "Konnect v0.11.0 release notes and exact-tag source audit"
@@ -337,7 +334,7 @@
       "assertions": [
         {"target": "skills/kicad-schematic/SKILL.md", "contains": "#328"},
         {"target": "skills/kicad-schematic/SKILL.md", "contains": "Do not call `move_connected`"},
-        {"target": "agents/konnect_schematic_builder.toml", "contains": "v0.11.0 connectivity"}
+        {"target": "agents/konnect_schematic_builder.toml", "contains": "v0.11.1 connectivity"}
       ]
     },
     {
@@ -374,7 +371,7 @@
       "reason": "Codex PreToolUse guidance must be structured, safely installed, and accurate for live-only, fallback-capable, closed-board-only, and plan/apply PCB operations.",
       "evidence": [
         "Konnect issue #358 findings adapted to the Codex hook contract",
-        "Konnect v0.11.0 tool-directory runtime classifications",
+        "Konnect v0.11.1 tool-directory runtime classifications",
         "delete_graphics is live-or-closed fallback; set_predefined_sizes is closed-board-only"
       ],
       "introduced_for": "0.10.0",
@@ -389,7 +386,7 @@
       "status": "active",
       "reason": "Companion-only safety fixes and workflow improvements need an explicit retain/revise/retire decision on every Konnect release instead of relying on memory or blind prose merges.",
       "evidence": [
-        "Konnect release-refresh history through v0.11.0",
+        "Konnect release-refresh history through v0.11.1",
         "User requirement for a durable living change document on 2026-08-28"
       ],
       "introduced_for": "0.10.0",
@@ -397,6 +394,57 @@
       "assertions": [
         {"target": "docs/GUIDANCE_DELTA_REGISTER.md", "contains": "The required decision set is"},
         {"target": "docs/GUIDANCE_STANDARDS.md", "contains": "This is the acceptance standard"}
+      ]
+    },
+    {
+      "id": "explicit-workflow-routing",
+      "status": "active",
+      "reason": "Konnect exposes capable operations, but multi-stage success otherwise depends on prompt wording and the model independently reconstructing prerequisites, ordered phases, stop conditions, evidence, and handoffs.",
+      "evidence": [
+        "Custom-part and global-library workflow analysis on 2026-09-01",
+        "Repeated schematic-to-PCB, placement, routing, and manufacturing benchmark gaps"
+      ],
+      "introduced_for": "0.11.0",
+      "retire_when": "Konnect supplies equivalent Codex-native discoverable workflow routing with ordered phases, stop conditions, direct evidence, and explicit completion outcomes.",
+      "assertions": [
+        {"target": "skills/kicad-workflows/SKILL.md", "contains": "Workflow selection gate"},
+        {"target": "skills/konnect-codex/SKILL.md", "contains": "`kicad-workflows`"},
+        {"target": "docs/GUIDANCE_DELTA_REGISTER.md", "contains": "`explicit-workflow-routing`"}
+      ]
+    },
+    {
+      "id": "owned-process-lifecycle-cleanup",
+      "status": "active",
+      "reason": "KiCad, Freerouting, Java probes, and external helpers can survive a completed or failed workflow, block later IPC ownership, and tempt unsafe broad process termination unless ownership and cleanup are explicit.",
+      "evidence": [
+        "PIC16F88/HDLG-2416 PCB correction on 2026-09-01 left Freerouting windows and a headless Java --version child after the accepted board was saved",
+        "Repeated stale-process and duplicate-editor recovery during Konnect PCB benchmarks"
+      ],
+      "introduced_for": "0.11.0",
+      "retire_when": "Konnect and the companion provide equivalent process ownership, bounded child cleanup, editor-session preservation, and end-of-workflow cleanup evidence across every external-tool path.",
+      "assertions": [
+        {"target": "skills/kicad-workflows/references/process-lifecycle.md", "contains": "Completion cleanup gate"},
+        {"target": "skills/kicad-workflows/SKILL.md", "contains": "process-lifecycle.md"},
+        {"target": "agents/konnect_pcb_builder.toml", "contains": "task-owned orphan"},
+        {"target": "docs/GUIDANCE_DELTA_REGISTER.md", "contains": "`owned-process-lifecycle-cleanup`"}
+      ]
+    },
+    {
+      "id": "pcb-layout-physics-acceptance",
+      "status": "active",
+      "reason": "DRC and autorouter completion do not establish return-plane continuity, critical-loop geometry, current or thermal capacity, RF clearance, process-sensitive via feasibility, or production test access.",
+      "evidence": [
+        "11 PCB Layout Rules to NEVER Break transcript reviewed and calibrated against component, stackup, and fabricator requirements on 2026-09-03",
+        "Existing companion checks covered several individual concerns but did not require a routed-board applicability matrix or direct evidence package"
+      ],
+      "introduced_for": "0.11.0",
+      "retire_when": "Konnect provides equivalent stackup-, datasheet-, and process-aware checks with direct evidence for every applicable layout-physics concern.",
+      "assertions": [
+        {"target": "skills/kicad-pcb/references/pcb-layout-physics-acceptance.md", "contains": "Reference-plane continuity"},
+        {"target": "skills/kicad-pcb/SKILL.md", "contains": "completed PCB-physics applicability/evidence matrix"},
+        {"target": "agents/konnect_pcb_builder.toml", "contains": "Every applicable PCB-layout-physics row"},
+        {"target": "agents/konnect_design_reviewer.toml", "contains": "PCB-layout-physics applicability matrix"},
+        {"target": "docs/GUIDANCE_DELTA_REGISTER.md", "contains": "`pcb-layout-physics-acceptance`"}
       ]
     }
   ]

@@ -14,12 +14,12 @@ fail if either side loses an entry.
 
 ## Release review state
 
-- Supported Konnect: `0.11.0`, commit
-  `a22ad2153dcf45dbcf1cc63b5b0f1e40c93d7956`
-- Companion release: `v0.11.0` (`companion_revision = 1`)
-- Last full guidance review: 2026-08-29
+- Supported Konnect: `0.11.1`, commit
+  `eadbe451bb50eb51c6e42abcf6e0152f62bc1e13`
+- Companion release: `v0.11.1` (`companion_revision = 1`)
+- Last full guidance review: 2026-09-08
 - Upstream guidance issues reviewed: #356, #357, #358
-- Upstream issue #358 correction: Konnect v0.11.0 still registers
+- Upstream issue #358 correction: Konnect v0.11.1 still registers
   `refill_zones` under `pcb_export`; the companion therefore keeps that real
   tool in the live-only hook class. The issue's broader structured-output and
   runtime-classification findings still apply.
@@ -40,7 +40,6 @@ fail if either side loses an entry.
 | `pcb-live-state-and-placement-gates` | Stop on IPC ownership loss and require visible placement acceptance | PCB/reviewer assertions and preflight tests |
 | `custom-part-physical-pin-acceptance` | Require view-aware datasheet lead-to-pad proof | Library reference/agent assertions |
 | `visual-placement-checkpoint` | Require a reviewed 2D placement artifact before routing | PCB reference/agent assertions |
-| `offline-freerouting-bridge` | Retain non-overwriting offline DSN/SES bridge until upstream equivalent passes | CLI/route tests and PCB assertions |
 | `pcb-ownership-preflight` | Check process ownership before live/offline work | CLI and PCB skill assertion |
 | `eco-and-power-layout-branches` | Preserve accepted ECO state and calculate power/thermal constraints | PCB references and benchmark |
 | `firmware-bringup-handoff` | Provide read-only firmware and staged first-power handoff | Bring-up skill/agent assertions |
@@ -52,6 +51,9 @@ fail if either side loses an entry.
 | `reference-reachability-and-evidence-contracts` | Link every reference, align agents with skills, correct manufacturing claims, and forbid invented evidence | Reachability and evidence-phrase tests; upstream #357 |
 | `codex-hook-contract` | Emit structured Codex context and classify each matched PCB tool by runtime ownership contract | Hook-policy/matcher/output tests; upstream #358 findings adapted for Codex |
 | `guidance-governance-register` | Require this living register and stable guidance standards on every release | Bidirectional policy/register test |
+| `explicit-workflow-routing` | Route multi-stage outcomes through a discoverable catalog with ordered phases, stop conditions, direct evidence, and explicit outcomes | Skill/reference reachability, policy assertions, and workflow benchmarks |
+| `owned-process-lifecycle-cleanup` | Baseline pre-existing versus task-owned applications, prevent duplicate restarts, and close or terminate only verified task-owned editors and helpers before completion | Shared lifecycle reference, PCB/Freerouting/recovery agent assertions, and orphan-process regression scenarios |
+| `pcb-layout-physics-acceptance` | Require context-calibrated evidence for return planes, critical loops, thermal/current paths, RF/edge/stitching constraints, via process, and DFT access beyond DRC | PCB reference, builder, reviewer, release, and routed-board benchmarks |
 
 ## Retired decisions
 
@@ -59,6 +61,7 @@ fail if either side loses an entry.
 |---|---|---|
 | `native-auto-install-suppression` | Konnect v0.11.0 startup is non-mutating and guidance installation requires explicit `konnect init` (#242) | A v0.11 sync removes the companion's legacy guard and only a marker it originally created. |
 | `verified-symbol-and-pin-guidance` | Konnect v0.11.0 corrected unsafe universal pin rules, known invalid library IDs, and LED polarity, with asset tests (#356) | The corrected text remains in the Codex translation; it is no longer counted as a companion-only delta. |
+| `offline-freerouting-bridge` | Konnect v0.11.1 released native DSN export, local Freerouting MCP routing, dry-run SES planning, and revision-bound apply (#337) | The stronger Codex routing and acceptance workflow remains, while duplicate companion Python/JAR execution is removed. |
 
 ## Update procedure
 

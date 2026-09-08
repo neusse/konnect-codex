@@ -1,50 +1,52 @@
-# konnect-codex plugin v0.11.0 — companion revision 1
+# konnect-codex plugin v0.11.1 — companion revision 1
 
 This release is reviewed specifically for
-[Konnect v0.11.0](https://github.com/mixelpixx/Konnect/releases/tag/v0.11.0) at
-commit `a22ad2153dcf45dbcf1cc63b5b0f1e40c93d7956`.
+[Konnect v0.11.1](https://github.com/mixelpixx/Konnect/releases/tag/v0.11.1) at
+commit `eadbe451bb50eb51c6e42abcf6e0152f62bc1e13`.
 
-## Upstream integration
+## Native Freerouting integration
 
-- Integrated `delete_graphics` into the PCB outline-replacement workflow and
-  classified it as a live-or-revision-aware-closed-board mutation.
-- Integrated `set_predefined_sizes` / `get_predefined_sizes` while keeping the
-  editor palette distinct from DRC floors and netclass targets.
-- Updated netclass guidance for resolved values, `inherits`, and
-  `missing_fields`.
-- Added explicit placement `held`-set inspection and rejection of unexpected
-  held references while retaining independent post-apply scoring.
-- Removed the #331 official-footprint-refresh workaround and the #326 incomplete
-  Default-netclass workaround; both are fixed in v0.11.0.
-- Retained the #328 bus-connectivity and #315 `move_connected` safety gates.
+- Replaced the companion-owned Python/JAR router with Konnect's native sequence:
+  `check_freerouting`, `export_specctra_dsn`, `route_specctra_dsn`,
+  `plan_specctra_ses_import`, and `apply_specctra_ses`.
+- Retired the `offline-freerouting-bridge` companion delta and removed its CLI,
+  process discovery, KiCad Python scripts, and tests.
+- Retained Freerouting-first Codex guidance and strengthened its board-revision,
+  manifest, supported-geometry, checkpoint, DRC, and cleanup gates.
+- Added the live-board hook classification for native DSN export, SES planning,
+  and SES apply.
 
-## Retired companion deltas
+## Workflow and guidance improvements
 
-- `native-auto-install-suppression` is retired. Konnect v0.11.0 MCP startup is
-  non-mutating and guidance installation requires explicit `konnect init`.
-  Sync migrates old installations by removing the companion-owned guard and
-  only the synthetic marker that guard recorded as companion-created.
-- `verified-symbol-and-pin-guidance` is retired as a companion-only correction.
-  Upstream v0.11.0 corrected unsafe universal pin rules, known invalid library
-  IDs, and LED polarity examples and added asset tests. The safe wording remains
-  in the Codex translation.
+- Added the discoverable `kicad-workflows` router and domain-owned workflows for
+  custom libraries, schematic construction and cleanup, PCB transfer,
+  constraints, placement, routing, ECOs, recovery, simulation readiness,
+  manufacturing release, and bring-up.
+- Added an owned-process lifecycle gate for KiCad editors, Freerouting, Java,
+  simulators, and external helpers. It distinguishes pre-existing processes from
+  task-owned children and requires verified cleanup without broad termination.
+- Added a routed-board physics acceptance gate covering return planes, critical
+  loops, power and thermal paths, differential and RF constraints, stitching,
+  via process, edge clearance, and production test access.
+- Preserved the existing Codex-specific delegation, schematic readability,
+  transfer integrity, evidence honesty, placement, BOM, manufacturing, review,
+  and bring-up controls.
 
-## Deliberately retained
+## Upstream v0.11.1 review
 
-- The offline Freerouting bridge and Freerouting-first workflow remain active.
-  The native DSN/SES/MCP stack in Konnect PRs #338, #339, #340, and #342 has not
-  shipped in v0.11.0.
-- Codex-native delegation, schematic readability, transfer-integrity,
-  evidence-honesty, placement, contradictory-verdict, BOM, manufacturing,
-  review, and bring-up gates remain active.
-- The Codex hook contract remains active. It now covers `delete_graphics` and
-  `set_predefined_sizes`; upstream Claude issues #357 and #358 remain open.
+- Rebased the exact upstream skill and agent baseline on the v0.11.1 tag and
+  recorded all normalized file hashes plus aggregate guidance and hook
+  fingerprints.
+- Integrated upstream physical pin-map, schematic evidence, manufacturing, and
+  native Freerouting guidance without copying Claude-only frontmatter or model
+  settings into Codex agents.
+- Retained the documented #315 connected-move and #328 bus-connectivity safety
+  boundaries where the upstream release still requires them.
 
 ## Compatibility evidence
 
-- Exact Konnect version, tag commit, aggregate guidance fingerprint, unchanged
-  hook fingerprint, and all 17 normalized upstream asset hashes are pinned.
-- Policy assertions cover 24 active enhancements and record two retired
-  decisions in the living delta register.
-- Release validation includes source audit, formatting, tests, Clippy,
-  lifecycle migration, plugin sync/doctor, and platform packaging.
+- Exact Konnect version, tag commit, per-file upstream asset hashes, aggregate
+  guidance fingerprint, and hook fingerprint are pinned.
+- Policy assertions cover 26 active enhancements and three retired decisions.
+- Release validation includes source audit, formatting, tests, Clippy, plugin
+  sync/doctor, local process cleanup, and platform packaging.

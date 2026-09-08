@@ -27,6 +27,12 @@ load_toolset('pcb_components') # update_footprints_from_library for placed insta
 
 Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
 
+For a complete custom-part or library-update propagation request, read
+[references/workflows.md](references/workflows.md) before the first mutation.
+When the work launches or restarts Symbol Editor, Footprint Editor, KiCad, or
+another helper, also read and close the shared
+[process-lifecycle gate](../kicad-workflows/references/process-lifecycle.md).
+
 ---
 
 ## Refresh Placed Footprints
@@ -47,7 +53,7 @@ successful apply is one undo entry; a stale plan, unresolved library, removed
 connected pad, or unsupported content is a non-mutating conflict for the full
 selection.
 
-Konnect v0.11.0 preserves official KiCad `fp_text user` during library refresh,
+Konnect v0.11.1 preserves official KiCad `fp_text user` during library refresh,
 closing the common #331 rejection. Do not remove user text to force a refresh;
 preserve the placed instance and report any remaining exact
 conflict until the server supports lossless refresh.

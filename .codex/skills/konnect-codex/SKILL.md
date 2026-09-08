@@ -11,12 +11,16 @@ performing the work.
 ## Start
 
 1. Confirm the `konnect` MCP tools are available.
-2. Select the domain skill: `konnect`, `kicad-library`, `kicad-schematic`,
+2. For a multi-stage outcome, select `kicad-workflows` first. Then select the
+   owning domain skill: `konnect`, `kicad-library`, `kicad-schematic`,
    `kicad-bom`, `kicad-pcb`, `kicad-review`, `kicad-manufacture`, or
    `kicad-bringup`.
-3. Inspect the project and requirements before changing the design.
-4. Perform every KiCad-source mutation through Konnect MCP tools.
-5. Validate the result with the strongest available ERC, DRC, connectivity, or
+3. If the task launches or restarts a KiCad application, router, simulator, or
+   helper, apply `kicad-workflows/references/process-lifecycle.md` from baseline
+   through final cleanup.
+4. Inspect the project and requirements before changing the design.
+5. Perform every KiCad-source mutation through Konnect MCP tools.
+6. Validate the result with the strongest available ERC, DRC, connectivity, or
    manufacturing checks before declaring completion.
 
 ## Codex execution profile
