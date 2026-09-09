@@ -24,7 +24,9 @@ constraint, placement, routing, or engineering-change procedure in bundled
 `kicad-workflows/references/process-lifecycle.md` before launching or restarting
 PCB Editor, Freerouting, Java, or another helper. Run `konnect-codex pcb-preflight` when
 the companion CLI is available; live work requires one PCB Editor. Konnect
-v0.11.1 owns DSN export, local Freerouting MCP routing, SES planning, and apply.
+v0.11.1 supplies a narrow revision-bound native route path; the companion
+supplies the KiCad-native compatibility route when that profile rejects the
+actual board.
 
 ## Build workflow
 
@@ -88,12 +90,13 @@ v0.11.1 owns DSN export, local Freerouting MCP routing, SES planning, and apply.
    hot loops, thermal paths, antenna keepouts, edge constraints, and test
    access; do not route before this visible checkpoint is accepted.
 7. For a complete board or interacting nets, make Freerouting the default.
-   Run the native sequence `check_freerouting` -> `export_specctra_dsn` ->
-   `route_specctra_dsn` -> `plan_specctra_ses_import` ->
-   `apply_specctra_ses`. Review the manifest and exact board revision at every
-   boundary; never bypass a structured conflict or unsupported-geometry result.
-   The KiCad ActionPlugin is a manual fallback for a documented native boundary,
-   not the normal path. Never replace a missing bridge with repeated
+   Run `check_freerouting`, then use `export_specctra_dsn` as an executable
+   compatibility preflight. Complete the native route/plan/apply sequence when
+   export succeeds. When Konnect v0.11.1 rejects ordinary supported KiCad
+   geometry such as unnumbered NPTH or roundrect pads, preserve the diagnostic,
+   close PCB Editor, verify offline ownership, and use the non-overwriting
+   `konnect-codex freerouting route` compatibility bridge. If neither path is
+   ready, return `INCOMPLETE`; never replace a whole-board route with repeated
    `route_pad_to_pad` calls or unconstrained generated segments.
 8. After SES apply, save and compare placement, inventory, traces by net and
    layer, and unrouted count with the checkpoint. Run direct DRC and short

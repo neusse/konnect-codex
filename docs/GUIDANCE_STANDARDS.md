@@ -37,6 +37,10 @@ policy; it does not replace the exact upstream baseline or release tests.
 - Missing a required workflow phase or its evidence makes the result
   `INCOMPLETE`. Keep a simple one-tool inspection or edit in its domain skill
   instead of adding unnecessary workflow ceremony.
+- A benchmark keeps a durable project-local ledger through every major gate.
+  It records failed and unsupported calls, manual recovery, requested artifacts
+  present and missing, cleanup, and one terminal verdict. A transcript or
+  partial artifact is not a completed benchmark record.
 - Any workflow that launches or restarts an editor, router, simulator, Java
   process, or helper records a pre-existing/task-owned ownership baseline and
   closes a bounded lifecycle cleanup gate. Completion evidence names what was

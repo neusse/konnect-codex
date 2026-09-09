@@ -41,12 +41,13 @@ of the parent device's group. Pin labels placed on a large IC are part of that
 IC's group.
 
 When Konnect exposes grouping tools that include every closure item, create a
-real schematic group for all of them. If Konnect exposes only
-`group_components`, that is component-only metadata, not full grouping. In that
-case the block is accepted only when all non-component closure items are inside
-the same bounded region, the report lists the missing label/wire/text grouping
-capability, and moving the region with `move_region` would carry the complete
-block. Do not report component-only grouping as satisfying full grouping.
+real schematic group for all of them. In Konnect v0.11.1,
+`group_components` adds component metadata only and `move_region` moves symbols
+only. Neither carries labels, wires, notes, graphics, or no-connect markers.
+Bounded placement remains useful for readability, but it does not satisfy the
+movable-group requirement. Complete and render the best coherent layout, then
+return `INCOMPLETE` for movable grouping until a real closure-capable operation
+has been run and verified. Do not accept metadata or proximity as full grouping.
 
 Grouping is accepted only when a human can identify and move the complete block
 without hunting for scattered support parts. Decoupling capacitors, pull-ups,

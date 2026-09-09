@@ -50,7 +50,8 @@ page-frame overlap before completion.
 Use available standard KiCad symbols for generic parts before creating local
 symbols. Component-only grouping is not full grouping: labels, wires,
 no-connects, text notes, and support parts must stay in the same movable block
-region or the missing grouping capability must be reported as a blocker/waiver.
+region for readability, but missing closure-capable grouping is `INCOMPLETE`,
+not a waiver. Konnect v0.11.1 `move_region` moves symbols only.
 
 ### Workflow
 

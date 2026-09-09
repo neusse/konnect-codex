@@ -42,9 +42,9 @@ The plugin supplies:
 - five reviewed Codex agents for custom libraries, schematic construction, PCB
   layout, independent design review, and firmware/bring-up handoff, without a
   hard-coded model;
-- a Freerouting-first PCB workflow that drives Konnect's native
-  DSN/MCP/SES pipeline with placement, revision, route-import, and direct DRC
-  acceptance gates;
+- a Freerouting-first PCB workflow that capability-tests Konnect's native
+  DSN/MCP/SES path and retains a non-overwriting KiCad-native compatibility
+  route with placement, route-import, and direct DRC acceptance gates;
 - Codex-native hooks, relevant-prompt guidance, and a live-KiCad IPC fallback;
 - a private Konnect configuration with `eager_toolsets = true` so clients that
   cache the first MCP tool list can see the complete tool catalogue;
@@ -165,15 +165,18 @@ konnect-codex native-status # compare native Konnect coverage with the plugin
 konnect-codex sessions      # list active companion -> Konnect MCP process pairs
 konnect-codex stop-sessions # retire those pairs before an upgrade or after a stale task
 konnect-codex pcb-preflight --board C:\path\board.kicad_pcb --mode live
+konnect-codex freerouting status # verify the compatibility route prerequisites
 konnect-codex uninstall     # remove only plugin-owned files and marketplace entry
 ```
 
-For a complete-board route, use Konnect's native MCP sequence:
-`check_freerouting`, `export_specctra_dsn`, `route_specctra_dsn`,
-`plan_specctra_ses_import`, then `apply_specctra_ses`. The companion no longer
-ships a separate Python/JAR router bridge. Its PCB guidance preserves the route
-checkpoint and requires revision, inventory, unrouted, short, and direct DRC
-acceptance after apply.
+For a complete-board route, first test Konnect's native MCP sequence on the
+actual board: `check_freerouting`, `export_specctra_dsn`,
+`route_specctra_dsn`, `plan_specctra_ses_import`, then
+`apply_specctra_ses`. Konnect v0.11.1's Rust exporter rejects common legal
+geometry including roundrect and unnumbered NPTH pads. For those boards, close
+PCB Editor and use `konnect-codex freerouting route --board <path>`, which uses
+KiCad's own DSN/SES APIs and writes a separate routed board. Both paths require
+inventory, unrouted, short, visual, physics, and direct DRC acceptance.
 
 `uninstall` verifies hashes before removing anything. If a managed file was
 edited after installation, it stops and preserves the file. `--force` is
@@ -224,3 +227,5 @@ Every Konnect release is handled as a compatibility review under the
    classification, skill frontmatter, agent TOML, lifecycle
    safety, tests, Clippy, and packaging on Windows, Linux, and macOS.
 6. Run the end-to-end KiCad benchmark before publishing matching artifacts.
+   Preserve its gate-by-gate ledger, failures, recovery, final artifact
+   inventory, cleanup result, and terminal verdict in the benchmark project.

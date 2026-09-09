@@ -1,10 +1,30 @@
-# konnect-codex plugin v0.11.1 — companion revision 1
+# konnect-codex plugin v0.11.1 - companion revision 2
 
 This release is reviewed specifically for
 [Konnect v0.11.1](https://github.com/mixelpixx/Konnect/releases/tag/v0.11.1) at
 commit `eadbe451bb50eb51c6e42abcf6e0152f62bc1e13`.
 
-## Native Freerouting integration
+## Revision 2 corrective release
+
+- Restored the non-overwriting KiCad-native Python/JAR Freerouting bridge after
+  the representative v0.11.1 benchmark proved that the native Rust DSN
+  preflight rejects standard roundrect and unnumbered NPTH pads before its
+  optional ActionPlugin bridge can be selected.
+- Changed routing selection from an assumed native default to an executable
+  actual-board preflight, native route when supported, companion route fallback
+  when needed, and explicit `INCOMPLETE` when neither path works.
+- Made closure-capable schematic grouping a hard completion requirement.
+  Component metadata, bounded proximity, and symbol-only `move_region` no longer
+  satisfy movable grouping.
+- Added regression assertions for route fallback availability, known v0.11.1
+  compatibility boundaries, grouping truthfulness, and contradictory guidance.
+- Made benchmark ledgers durable completion evidence: every gate, failure,
+  recovery, missing artifact, cleanup result, and terminal verdict is required.
+
+## Revision 1 native integration
+
+This historical section describes revision 1. Its router-retirement decisions
+are superseded by the corrective release above.
 
 - Replaced the companion-owned Python/JAR router with Konnect's native sequence:
   `check_freerouting`, `export_specctra_dsn`, `route_specctra_dsn`,

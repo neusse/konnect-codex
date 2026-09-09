@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "supported_konnect_version": "0.11.1",
-  "companion_revision": 1,
+  "companion_revision": 2,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -149,8 +149,8 @@
     {
       "id": "freerouting-first-routing",
       "status": "active",
-      "reason": "Whole-board routing needs global obstacle avoidance, rip-up and retry, congestion management, and strict post-import acceptance; Konnect v0.11.1 now supplies the native DSN/MCP/SES pipeline, while Codex guidance must select and validate it.",
-      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18", "Konnect issue #337", "Konnect v0.11.1 native Freerouting release"],
+      "reason": "Whole-board routing needs global obstacle avoidance, rip-up and retry, congestion management, and strict post-import acceptance; the selected route path must pass an executable compatibility preflight on the actual board.",
+      "evidence": ["DR2000 clock PCB benchmark on 2026-08-18", "Konnect v0.11.1 JLCPCB blinker benchmark on 2026-09-08", "Konnect issue #337"],
       "introduced_for": "0.6.1",
       "retire_when": "Konnect supplies equivalent first-class Codex guidance that selects the native pipeline and enforces route, revision, inventory, DRC, and cleanup acceptance gates.",
       "assertions": [
@@ -160,7 +160,7 @@
         },
         {
           "target": "skills/kicad-pcb/references/freerouting-workflow.md",
-          "contains": "Import acceptance gate"
+          "contains": "Route acceptance"
         },
         {
           "target": "agents/konnect_pcb_builder.toml",
@@ -216,12 +216,15 @@
     },
     {
       "id": "offline-freerouting-bridge",
-      "status": "retired",
-      "reason": "The companion's Python/JAR bridge duplicated functionality now released natively by Konnect.",
-      "evidence": ["Konnect v0.11.1 native export_specctra_dsn, route_specctra_dsn, plan_specctra_ses_import, and apply_specctra_ses tools", "Konnect PRs #338, #339, #340, #342, and #367"],
+      "status": "active",
+      "reason": "Konnect v0.11.1 exposes a revision-bound native route pipeline, but its Rust DSN preflight rejects common KiCad roundrect and unnumbered NPTH pads before the optional native bridge is selected. The companion fallback preserves whole-board routing through KiCad's own DSN/SES APIs.",
+      "evidence": ["Konnect v0.11.1 JLCPCB blinker benchmark on 2026-09-08", "Konnect v0.11.1 specctra.rs supported pad profile", "Konnect v0.11.1 pcb_export.rs bridge-selection order"],
       "introduced_for": "0.6.1",
-      "retire_when": "Satisfied by Konnect v0.11.1; the companion retains the stronger Codex workflow and acceptance guidance but no longer ships routing execution code.",
-      "assertions": []
+      "retire_when": "A released Konnect route passes a representative whole-board benchmark containing standard roundrect pads, unnumbered NPTH mechanical pads, official footprints, DSN export, routing, SES plan/apply, unchanged inventory, and direct DRC evidence.",
+      "assertions": [
+        {"target": "skills/kicad-pcb/references/freerouting-workflow.md", "contains": "konnect-codex freerouting route"},
+        {"target": "agents/konnect_pcb_builder.toml", "contains": "compatibility bridge"}
+      ]
     },
     {
       "id": "pcb-ownership-preflight",
@@ -445,6 +448,18 @@
         {"target": "agents/konnect_pcb_builder.toml", "contains": "Every applicable PCB-layout-physics row"},
         {"target": "agents/konnect_design_reviewer.toml", "contains": "PCB-layout-physics applicability matrix"},
         {"target": "docs/GUIDANCE_DELTA_REGISTER.md", "contains": "`pcb-layout-physics-acceptance`"}
+      ]
+    },
+    {
+      "id": "benchmark-ledger-completeness",
+      "status": "active",
+      "reason": "The v0.11.1 JLCPCB benchmark continued through routing failures while its durable ledger stopped at schematic acceptance, leaving the project record unable to establish the terminal outcome.",
+      "evidence": ["Konnect v0.11.1 JLCPCB blinker benchmark on 2026-09-08"],
+      "introduced_for": "0.11.1",
+      "retire_when": "The workflow runtime emits and validates equivalent gate-by-gate benchmark evidence and a terminal artifact inventory automatically.",
+      "assertions": [
+        {"target": "skills/kicad-workflows/SKILL.md", "contains": "Benchmark evidence"},
+        {"target": "docs/GUIDANCE_DELTA_REGISTER.md", "contains": "`benchmark-ledger-completeness`"}
       ]
     }
   ]

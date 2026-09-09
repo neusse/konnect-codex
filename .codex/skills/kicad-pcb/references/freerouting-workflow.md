@@ -1,100 +1,94 @@
-# Native Freerouting workflow
+# Whole-board Freerouting workflow
 
-Use this branch for a complete board or any layout with interacting nets where
-independent L-bends would cross copper, pads, courtyards, or board features.
-Konnect v0.11.1 owns the complete Specctra pipeline; the companion supplies
-workflow guidance and acceptance gates, not a second router implementation.
+Use this branch for a complete board or interacting nets that require global
+obstacle avoidance, rip-up/retry, and congestion management. Konnect v0.11.1's
+native Specctra path is preferred when it accepts the actual board. The
+companion KiCad-native bridge is the compatibility fallback for ordinary KiCad
+geometry outside that first native profile.
 
 ## Route gate
 
-Enter autorouting only after all of these are true:
+Enter routing only after all of these are true:
 
-- The intended `.kicad_pcb` is open in exactly one responsive PCB Editor and a
-  live Konnect query returns a plausible component and pad inventory.
-- The board is saved through Konnect. Record component positions, footprint and
-  pad counts, trace count, unrouted count, and direct DRC summary.
-- Placement has no pad-to-pad shorts, hole or copper overlaps, blocking
-  courtyard conflicts, connector interference, or mounting interference.
-- Board outline, keepouts, stackup, net classes, differential-pair constraints,
-  locked routes, and mechanical features are final enough to route.
+- The intended `.kicad_pcb` is saved and its component, pad, trace, unrouted,
+  rule, and direct-DRC inventory is recorded.
+- Placement has no pad, hole, copper, courtyard, connector, mounting, or edge
+  conflict that blocks routing or assembly.
+- Board outline, keepouts, stackup, net classes, locked routing, and mechanical
+  features are final enough to route.
 - Copper zones are absent or intentionally unfilled until routing is accepted.
+- The visible placement and applicable pre-route physics gates are closed.
 
-The recorded inventory and board revision are the checkpoint. A missing or
-implausible value keeps the route gate closed.
+This inventory and board revision are the checkpoint. A missing or implausible
+value keeps the gate closed.
 
-## Native pipeline
+## Select the route path
 
-Run these Konnect MCP tools in order:
+1. With exactly one responsive PCB Editor owning the target board, call
+   `check_freerouting`. Record the JAR, Java, MCP capability, version result,
+   and diagnostics. A timed-out or unverified version is a warning, not proof
+   that routing works.
+2. Try `export_specctra_dsn` to new DSN and manifest paths. Use the default Rust
+   exporter. This is the executable compatibility preflight for the board.
+3. When export succeeds, complete the revision-bound native sequence:
+   `route_specctra_dsn` -> `plan_specctra_ses_import` ->
+   `apply_specctra_ses`. Review the manifest, plan, rejected items, warnings,
+   and exact board revision at every boundary.
+4. When native export rejects supported KiCad content, preserve the rejection
+   as evidence, save the checkpoint, close PCB Editor, verify offline ownership,
+   and run `konnect-codex freerouting status`. If ready, run
+   `konnect-codex freerouting route --board <path> --passes <n>`. This uses
+   KiCad's own DSN/SES APIs and writes a separate
+   `<name>.freerouted.kicad_pcb`; it never overwrites the checkpoint.
+5. If both paths are unavailable, return `INCOMPLETE` with both diagnostics and
+   the smallest manual option. A whole board is not rerouted with local segment
+   tools.
 
-1. `check_freerouting` — record the detected local Freerouting MCP endpoint,
-   version, capabilities, and diagnostics. This is a readiness check only.
-2. `export_specctra_dsn` — export the saved live board. Use Konnect's Rust
-   exporter by default. Use `native_bridge_mode: prefer` only when the installed
-   KiCad 10 ActionPlugin bridge is authenticated and its native exporter is
-   useful; use `require` only for an explicit compatibility test. Record the
-   returned board identity, revision, DSN path, manifest, warnings, and preserved
-   locked routing.
-3. `route_specctra_dsn` — submit that exact DSN to the detected local
-   Freerouting MCP server with explicit limits. Require a successful `.ses`
-   result tied to the exported artifact.
-4. `plan_specctra_ses_import` — validate the SES against the exact live board
-   and export manifest. Review the proposed operations, supported geometry,
-   rejected items, warnings, and expected revision. Planning must not mutate the
-   board.
-5. `apply_specctra_ses` — apply only the reviewed plan to the unchanged board
-   revision. Stop on revision drift, unsupported geometry, unlocked pre-existing
-   routing, arcs, zones, or any structured conflict.
+Konnect v0.11.1's Rust exporter has an intentionally narrow first profile. It
+rejects common constructs including unnumbered NPTH pads and `roundrect` pads,
+as well as unsupported layer counts, zones/rule areas, custom DRC rules, arcs,
+and unlocked existing routing. `native_bridge_mode` does not widen this profile
+in v0.11.1 because the restricted Rust baseline is constructed before the
+optional ActionPlugin export is selected. Treat these as compatibility results,
+not defects to remove from the board merely to satisfy the exporter.
 
-The first supported native profile is intentionally narrow: straight tracks and
-through vias, with locked existing straight routing preserved. Treat a rejected
-construct as a boundary to resolve, not permission to bypass validation or edit
-KiCad files as text.
+`route_pad_to_pad`, `route_trace`, and generated segments are limited to an
+intentional isolated connection or a small understood repair after a global
+route. They are not a whole-board fallback.
 
-Do not fall back to the removed `konnect-codex freerouting` command. Do not
-substitute repeated `route_pad_to_pad` calls or unconstrained generated segments
-for a failed whole-board route. The KiCad Freerouting ActionPlugin remains a
-manual fallback only when the native Konnect pipeline reports a documented
-unsupported case.
+## Route acceptance
 
-## Import acceptance gate
+After either route path:
 
-After apply:
+1. For native apply, save and re-query the live board. For companion output,
+   open only the generated board in one PCB Editor, then save and query it.
+2. Compare component positions, footprints, pads, graphics, models, outline,
+   rules, and locked geometry with the checkpoint.
+3. Record traces by net and layer, unrouted count, shorts, and direct DRC.
+   Contradictory live and file evidence invalidates the route.
+4. Inspect the rendered routed board. Reject no-net copper, dangling vias,
+   implausible segment growth, broken planes, and geometry not represented by
+   aggregate DRC counts.
+5. Accept only with no required unrouted connection, no unwaived DRC error or
+   short, plausible route inventory, unchanged placement, and completed
+   layout-physics evidence.
+6. Add/refill zones only after route acceptance, rerun DRC and inventory, and
+   save the accepted board.
 
-1. Save through Konnect and re-query component positions, footprint and pad
-   inventory, traces by net and layer, and unrouted count.
-2. Compare placement, inventory, graphics, models, outline, rules, and locked
-   routing with the checkpoint and export manifest.
-3. Treat zero traces on a visibly routed board, a large unexplained segment
-   increase, no-net copper, or disagreement between a live query and direct DRC
-   as stale state. Stop, reopen the target board once, and re-query.
-4. Run direct DRC and short detection before repairing anything. Inspect exact
-   items and nets for every short, clearance, edge, hole, and unrouted finding.
-5. Accept the route only when no required connection is unrouted, no unwaived
-   DRC error or short remains, trace counts are plausible, and checkpoint
-   inventory and locked geometry are unchanged.
-6. Add or refill zones only after route acceptance, run DRC again, save, and
-   re-query the final state.
+If acceptance fails broadly, reject the generated board or reverse the single
+native apply. Preserve the checkpoint; repair only a small, understood set of
+local violations.
 
-If acceptance fails broadly, reverse the single apply in KiCad when safe or
-restore the saved checkpoint. Repair only a small, understood set of local
-violations with Konnect segment tools or KiCad's interactive router.
-
-## IPC loss
-
-Every board-sensitive stage must remain tied to the same exact live board. If
-KiCad closes, crashes, IPC refuses a connection, the active path changes, or the
-board revision drifts between export, plan, and apply, stop. Reopen one target
-board, verify identity and inventory, and restart from the saved route gate.
-
-## Process cleanup gate
+## Process ownership
 
 Apply the shared
 [process-lifecycle gate](../../kicad-workflows/references/process-lifecycle.md)
-to PCB Editor, Konnect, Freerouting, Java, and bridge/helper processes. Capture
-the baseline before readiness or routing launches anything and use bounded
-timeouts.
+to PCB Editor, Konnect, Freerouting, Java, and bridge/helper processes. A
+Konnect server started before KiCad may retain an unresolved v0.11.1 IPC
+endpoint. If a live query still cannot see a newly opened editor, preserve the
+current task server, report the startup-order limitation, and restart only a
+verified task-owned secondary server or task from the saved checkpoint.
 
-After route acceptance is saved, close task-owned secondary windows and router
-processes normally. Verify exact children exited. Terminate only a verified
-task-owned orphan and preserve the Konnect MCP/companion process serving the
-current Codex task.
+After acceptance, close task-owned secondary windows and router children.
+Terminate only verified task-owned orphans and report every process deliberately
+left running.

@@ -32,10 +32,11 @@ procedure in bundled `kicad-schematic/references/workflows.md`.
 4. Place functional blocks on the schematic grid with explicit references,
    values, footprints, and required support components. Group or tag each block's
    symbols, local labels, local wires, no-connect markers, text notes, and
-   boundary graphics when the tools support it. If only `group_components` is
-   available, treat it as component-only metadata; keep every label/wire/note
-   inside the block's bounded region, verify `move_region` would carry the whole
-   closure, and report the missing full-group capability.
+   boundary graphics when the tools support it. In Konnect v0.11.1,
+   `group_components` is component-only metadata and `move_region` moves symbols
+   only. Keep closure items in the bounded region for readability, but return
+   `INCOMPLETE` for movable grouping until a real closure-capable operation has
+   been run and verified.
 5. Wire power with `add_power_symbol` at exact pin endpoints, direct local
    signals with `connect_pins`, and named or distant signals with net labels.
 6. Inspect nearby pin endpoints before automatic stub placement. Choose

@@ -16,7 +16,7 @@ fail if either side loses an entry.
 
 - Supported Konnect: `0.11.1`, commit
   `eadbe451bb50eb51c6e42abcf6e0152f62bc1e13`
-- Companion release: `v0.11.1` (`companion_revision = 1`)
+- Companion release: `v0.11.1` (`companion_revision = 2`)
 - Last full guidance review: 2026-09-08
 - Upstream guidance issues reviewed: #356, #357, #358
 - Upstream issue #358 correction: Konnect v0.11.1 still registers
@@ -37,6 +37,7 @@ fail if either side loses an entry.
 | `doctor-agent-reporting` | Report companion and native agents separately | Doctor tests |
 | `pcb-builder-delegation` | Give transfer/layout/routing to one PCB owner | Router/agent assertions |
 | `freerouting-first-routing` | Use Freerouting for complete boards; local segments only for repairs | PCB skill/reference/agent assertions and route benchmark |
+| `offline-freerouting-bridge` | Use KiCad-native DSN/SES as a non-overwriting fallback when the v0.11.1 native profile rejects common legal board geometry | CLI tests, actual-board export/route benchmark, and post-route acceptance |
 | `pcb-live-state-and-placement-gates` | Stop on IPC ownership loss and require visible placement acceptance | PCB/reviewer assertions and preflight tests |
 | `custom-part-physical-pin-acceptance` | Require view-aware datasheet lead-to-pad proof | Library reference/agent assertions |
 | `visual-placement-checkpoint` | Require a reviewed 2D placement artifact before routing | PCB reference/agent assertions |
@@ -54,6 +55,7 @@ fail if either side loses an entry.
 | `explicit-workflow-routing` | Route multi-stage outcomes through a discoverable catalog with ordered phases, stop conditions, direct evidence, and explicit outcomes | Skill/reference reachability, policy assertions, and workflow benchmarks |
 | `owned-process-lifecycle-cleanup` | Baseline pre-existing versus task-owned applications, prevent duplicate restarts, and close or terminate only verified task-owned editors and helpers before completion | Shared lifecycle reference, PCB/Freerouting/recovery agent assertions, and orphan-process regression scenarios |
 | `pcb-layout-physics-acceptance` | Require context-calibrated evidence for return planes, critical loops, thermal/current paths, RF/edge/stitching constraints, via process, and DFT access beyond DRC | PCB reference, builder, reviewer, release, and routed-board benchmarks |
+| `benchmark-ledger-completeness` | Keep a gate-by-gate project-local record of failures, recovery, artifacts, cleanup, and terminal outcome | Workflow assertion and completed benchmark artifact inventory |
 
 ## Retired decisions
 
@@ -61,7 +63,6 @@ fail if either side loses an entry.
 |---|---|---|
 | `native-auto-install-suppression` | Konnect v0.11.0 startup is non-mutating and guidance installation requires explicit `konnect init` (#242) | A v0.11 sync removes the companion's legacy guard and only a marker it originally created. |
 | `verified-symbol-and-pin-guidance` | Konnect v0.11.0 corrected unsafe universal pin rules, known invalid library IDs, and LED polarity, with asset tests (#356) | The corrected text remains in the Codex translation; it is no longer counted as a companion-only delta. |
-| `offline-freerouting-bridge` | Konnect v0.11.1 released native DSN export, local Freerouting MCP routing, dry-run SES planning, and revision-bound apply (#337) | The stronger Codex routing and acceptance workflow remains, while duplicate companion Python/JAR execution is removed. |
 
 ## Update procedure
 
