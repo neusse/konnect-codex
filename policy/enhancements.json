@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.11.1",
-  "companion_revision": 2,
+  "supported_konnect_version": "0.12.0",
+  "companion_revision": 1,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -217,7 +217,7 @@
     {
       "id": "offline-freerouting-bridge",
       "status": "active",
-      "reason": "Konnect v0.11.1 exposes a revision-bound native route pipeline, but its Rust DSN preflight rejects common KiCad roundrect and unnumbered NPTH pads before the optional native bridge is selected. The companion fallback preserves whole-board routing through KiCad's own DSN/SES APIs.",
+      "reason": "Konnect v0.12.0 exposes a revision-bound native route pipeline, but its Rust DSN preflight still rejects common KiCad roundrect and unnumbered NPTH pads before the optional native bridge is selected. The companion fallback preserves whole-board routing through KiCad's own DSN/SES APIs.",
       "evidence": ["Konnect v0.11.1 JLCPCB blinker benchmark on 2026-09-08", "Konnect v0.11.1 specctra.rs supported pad profile", "Konnect v0.11.1 pcb_export.rs bridge-selection order"],
       "introduced_for": "0.6.1",
       "retire_when": "A released Konnect route passes a representative whole-board benchmark containing standard roundrect pads, unnumbered NPTH mechanical pads, official footprints, DSN export, routing, SES plan/apply, unchanged inventory, and direct DRC evidence.",
@@ -309,7 +309,7 @@
     {
       "id": "v0.10-feedback-acceptance-integration",
       "status": "active",
-      "reason": "Konnect v0.11.1 supplies placement scores, explicit held-footprint feedback, and schematic visual baselines, but safe Codex execution still needs mechanical-lock planning, rejection of unexpected held sets, independent post-apply scoring, actual inline image inspection, and interpretation of intended visual drift.",
+      "reason": "Konnect v0.12.0 supplies placement scores, explicit held-footprint feedback, and schematic visual baselines, but safe Codex execution still needs mechanical-lock planning, rejection of unexpected held sets, independent post-apply scoring, actual inline image inspection, and interpretation of intended visual drift.",
       "evidence": [
         "Konnect v0.11.1 kicad-pcb score-first and held-footprint guidance",
         "Konnect v0.11.1 kicad-schematic visual feedback loop",
@@ -327,7 +327,7 @@
     {
       "id": "v0.9-known-safety-gates",
       "status": "active",
-      "reason": "Konnect v0.11.1 still reports incomplete connectivity on bus entries and safely refuses connected moves. The v0.11 line fixed incomplete Default-netclass serialization and official footprint refresh.",
+      "reason": "Konnect v0.12.0 still reports incomplete connectivity on bus entries and safely refuses connected moves. The v0.11 line fixed incomplete Default-netclass serialization and official footprint refresh.",
       "evidence": [
         "Konnect issues #315 and #328",
         "Konnect v0.11.0 release notes and exact-tag source audit"
@@ -337,7 +337,7 @@
       "assertions": [
         {"target": "skills/kicad-schematic/SKILL.md", "contains": "#328"},
         {"target": "skills/kicad-schematic/SKILL.md", "contains": "Do not call `move_connected`"},
-        {"target": "agents/konnect_schematic_builder.toml", "contains": "v0.11.1 connectivity"}
+        {"target": "agents/konnect_schematic_builder.toml", "contains": "v0.12.0 connectivity"}
       ]
     },
     {
@@ -389,7 +389,7 @@
       "status": "active",
       "reason": "Companion-only safety fixes and workflow improvements need an explicit retain/revise/retire decision on every Konnect release instead of relying on memory or blind prose merges.",
       "evidence": [
-        "Konnect release-refresh history through v0.11.1",
+        "Konnect release-refresh history through v0.12.0",
         "User requirement for a durable living change document on 2026-08-28"
       ],
       "introduced_for": "0.10.0",

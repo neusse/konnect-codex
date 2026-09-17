@@ -51,7 +51,7 @@ Use available standard KiCad symbols for generic parts before creating local
 symbols. Component-only grouping is not full grouping: labels, wires,
 no-connects, text notes, and support parts must stay in the same movable block
 region for readability, but missing closure-capable grouping is `INCOMPLETE`,
-not a waiver. Konnect v0.11.1 `move_region` moves symbols only.
+not a waiver. Konnect v0.12.0 `move_region` moves symbols only.
 
 ### Workflow
 
@@ -160,6 +160,9 @@ connect_to_net(schematic, reference, pin_number, net)
 - Placing a label by hand with `add_schematic_net_label` instead? Take its
   rotation from `orientation_degrees` in `get_schematic_pin_locations`, or the
   text reads back across the symbol's pin names.
+- These labels are sheet-local. In a repeated sheet, each instance receives an
+  independent net. Use `label_type: global_label` or `add_power_symbol` only
+  when every sheet instance must share the same rail.
 - Before creating stubs for nearby pins, inspect their endpoints and choose
   directions that cannot meet or cross. Adjacent vertical passive pins can
   otherwise produce coincident stub endpoints and merge different nets.
@@ -169,7 +172,7 @@ connect_to_net(schematic, reference, pin_number, net)
   an electrically valid direct label solely to clear an orphan finding. Confirm
   it with ERC, exported connectivity or netlist evidence, and the short detector;
   record a contradictory orphan result as a verifier limitation.
-- Konnect v0.11.1 connectivity queries are not bus-aware (#328). On a bus sheet,
+- Konnect v0.12.0 connectivity queries are not bus-aware (#328). On a bus sheet,
   treat floating/orphan results at bus entries and bus labels as candidates and
   use KiCad ERC plus exported connectivity as authority before changing wiring.
 
@@ -191,6 +194,8 @@ add_power_symbol(schematic, power_net, x, y, rotation?)
 - A power pin landing mid-segment on a wire gets its junction dot
   automatically, in either order: symbol onto an existing wire, or a wire
   routed across an already-placed symbol.
+- Power symbols are global across sheets and instances. A rail that must remain
+  separate for each repeated-sheet instance requires a local net label instead.
 
 ---
 
@@ -253,7 +258,12 @@ Crystal (Device:Crystal) between XI and XO pins. Two load capacitors from each c
 After placing components and wiring, always run these checks:
 
 ### annotate_schematic
-Assigns reference designators (R1, C1, U1, etc.) to all unannotated components. Run after all placement is complete.
+Run first with `dry_run: true`. It numbers `?` designators using the project
+sheet tree and preserves the shared designator of a multi-unit package. Read
+`outcome` and `unresolved`: `partial` means duplicate or unprovable designators
+remain. Use `resolve_duplicates: true` only for separate parts, correct
+ambiguous multi-unit cases manually, then run ERC. Run after placement is
+complete.
 
 ### validate_wire_connections
 Checks that all wires connect properly to pins. Reports:
@@ -321,7 +331,7 @@ connectivity before changing geometry.
     declaring a generated or rearranged schematic human-usable
 14. **Use real libraries first** — standard KiCad symbols beat local placeholder
     symbols for generic parts, connectors, and power symbols
-15. **Do not call `move_connected` in v0.11.1** — it still refuses because wire
+15. **Do not call `move_connected` in v0.12.0** — it still refuses because wire
     carrying is not implemented (#315). Ordinary component moves now reconcile
     affected junction dots, but they do not carry attached wires. Use a plain
     move, explicitly repair affected wires, then run ERC and connectivity

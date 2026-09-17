@@ -53,7 +53,7 @@ successful apply is one undo entry; a stale plan, unresolved library, removed
 connected pad, or unsupported content is a non-mutating conflict for the full
 selection.
 
-Konnect v0.11.1 preserves official KiCad `fp_text user` during library refresh,
+Konnect v0.12.0 preserves official KiCad `fp_text user` during library refresh,
 closing the common #331 rejection. Do not remove user text to force a refresh;
 preserve the placed instance and report any remaining exact
 conflict until the server supports lossless refresh.
@@ -267,7 +267,10 @@ set_footprint_graphics(
   do not work around this by editing the file.
 - Polygons close automatically. Supply at least three distinct points; repeating the
   first point at the end is optional.
-- Use `get_footprint_info` with graphics inclusion enabled and a layer filter to verify
+- Use `get_footprint_info` with `include_pads=true`, graphics inclusion enabled,
+  and a layer filter to verify pads and graphics. Returned pad geometry is
+  footprint-local; board-space routing geometry comes from
+  `get_component_pads` after placement.
   the resulting type, geometry, stroke width, fill, and item ID.
 
 ### Existing Footprint Metadata

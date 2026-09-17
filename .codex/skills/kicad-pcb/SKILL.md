@@ -16,7 +16,7 @@ Most PCB layout operations require KiCAD to be running with the board file open.
 connection communicates with the running KiCAD instance in real-time.
 
 Some board-construction and component tools have guarded closed-board paths in
-Konnect 0.11.1. IPC-first tools fall back only when the transport is unreachable
+Konnect 0.12.0. IPC-first tools fall back only when the transport is unreachable
 and the board has not been observed live during the current server session.
 File-only operations such as `flip_component` proceed only when KiCad does not
 hold the target board open. The paths use revision-aware atomic writes and
@@ -136,7 +136,7 @@ Follow this sequence for a clean PCB workflow:
    supported library-owned pads, graphics, attributes, metadata, and 3D models
    while preserving placed identity, position, rotation, side, instance
    overrides, pad nets, user text, and three-dimensional models. One apply is
-   one undo entry and conflicts are non-mutating. Konnect v0.11.1 includes the
+   one undo entry and conflicts are non-mutating. Konnect v0.12.0 includes the
    official-footprint user-text rejection from #331; still require dry-run
    coverage and post-apply pad/graphic/model invariants.
 6. **Place components** — position all footprints. For a reviewed batch, prefer
@@ -152,6 +152,10 @@ Follow this sequence for a clean PCB workflow:
    inventory, trace count, unrouted count, and direct DRC baseline
 8. **Select the router** — use Freerouting by default for a complete board or
    interacting nets; read [references/freerouting-workflow.md](references/freerouting-workflow.md)
+   Before choosing trace approach points, call `get_component_pads` for every
+   participating footprint. Use its board-space position, effective rotation,
+   shape, size, drill, and per-copper-layer geometry. A null geometry field is
+   unavailable evidence, never a zero-size pad.
 9. **Route acceptance gate** — verify unchanged placement/inventory, plausible
    traces, no shorts, clean direct DRC, no required unrouted connection, and a
    completed PCB-physics applicability/evidence matrix
@@ -314,7 +318,7 @@ create_netclass(board, name, trace_width?, clearance?, via_drill?, via_diameter?
 
 The class is written to the project's `.kicad_pro` file, which is where KiCad
 has kept netclasses since v7 — the board file is not modified. In Konnect
-v0.11.1, `get_netclasses` returns resolved values plus `inherits` and
+v0.12.0, `get_netclasses` returns resolved values plus `inherits` and
 `missing_fields`. A `null` inherited field is not by itself a defect; reject a
 class when `missing_fields` remains non-empty. Keep `Default` complete, then
 reopen through KiCad and validate the affected connectivity after mutation.
@@ -368,6 +372,14 @@ add_zone(board, net_name, layer, points, clearance?, min_width?,
 - After changing design rules
 
 Zones do not auto-update — stale fills cause DRC errors.
+
+When a DRC item concerns board-edge geometry, read `owner` and
+`ownership_status` before proposing a repair. `owner.kind: "footprint"` means
+the offending geometry belongs to `owner.reference`; moving the component
+cannot change the pad-to-cutout relationship, so review the footprint or rule.
+`owner.kind: "board"` identifies board-owned geometry. If ownership is
+unresolved and `owner` is null, corroborate with
+`list_board_footprint_graphics` instead of assuming.
 
 ### Zone Tips
 
