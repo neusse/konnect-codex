@@ -35,7 +35,10 @@ return INCOMPLETE rather than filling a success field from expectation.
 3. Run direct PCB checks: DRC with exact items, unrouted count, traces by net
    and layer, footprint/pad inventory, board outline, zones, layer use, and
    transfer invariants where a schematic-to-PCB update occurred. Record routing
-   provenance when Freerouting or another importer was used.
+   provenance when Freerouting or another importer was used. Read every DRC
+   item's `owner` and `ownership_status`: footprint-owned edge geometry needs a
+   footprint or rule decision, not a placement move. Corroborate unresolved
+   ownership with `list_board_footprint_graphics`.
 4. Complete the PCB-layout-physics applicability matrix against the actual
    routed layers and filled planes. Verify reference-plane continuity,
    decoupling and switcher loops, current and thermal paths, differential and RF

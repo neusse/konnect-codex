@@ -24,7 +24,9 @@ constraint, placement, routing, or engineering-change procedure in bundled
 `kicad-workflows/references/process-lifecycle.md` before launching or restarting
 PCB Editor, Freerouting, Java, or another helper. Run `konnect-codex pcb-preflight` when
 the companion CLI is available; live work requires one PCB Editor. Konnect
-v0.11.1 owns DSN export, local Freerouting MCP routing, SES planning, and apply.
+v0.12.0 supplies a narrow revision-bound native route path; the companion
+supplies the KiCad-native compatibility route when that profile rejects the
+actual board.
 
 ## Build workflow
 
@@ -32,7 +34,7 @@ v0.11.1 owns DSN export, local Freerouting MCP routing, SES planning, and apply.
    path and plausible board inventory, board dimensions, layer count,
    fabrication limits, mechanical constraints, current requirements, net
    classes, and required manufacturing outputs. Save a checkpoint. If IPC is
-   lost or a mutator reports one of Konnect 0.11.1's closed-board file paths
+   lost or a mutator reports one of Konnect 0.12.0's closed-board file paths
    after this point, stop and restore a single live owner before continuing.
    Treat `unsafe_file_fallback` as a human recovery boundary: do not retry-loop,
    restart Konnect, or mutate the file until the user confirms the saved board
@@ -51,7 +53,7 @@ v0.11.1 owns DSN export, local Freerouting MCP routing, SES planning, and apply.
 4. If a linked footprint library changed, run
    `update_footprints_from_library` as a live dry run and review status,
    coverage, changes, diagnostics, and plan revision. Apply only that exact
-   revision. Konnect v0.11.1 preserves official footprint user text; verify
+   revision. Konnect v0.12.0 preserves official footprint user text; verify
    post-apply pad, graphic, metadata, and model invariants rather than assuming
    refresh fidelity.
 5. Establish or verify the closed board outline, stackup, keepouts, mounting,
@@ -88,12 +90,16 @@ v0.11.1 owns DSN export, local Freerouting MCP routing, SES planning, and apply.
    hot loops, thermal paths, antenna keepouts, edge constraints, and test
    access; do not route before this visible checkpoint is accepted.
 7. For a complete board or interacting nets, make Freerouting the default.
-   Run the native sequence `check_freerouting` -> `export_specctra_dsn` ->
-   `route_specctra_dsn` -> `plan_specctra_ses_import` ->
-   `apply_specctra_ses`. Review the manifest and exact board revision at every
-   boundary; never bypass a structured conflict or unsupported-geometry result.
-   The KiCad ActionPlugin is a manual fallback for a documented native boundary,
-   not the normal path. Never replace a missing bridge with repeated
+   Before selecting trace approach points, use `get_component_pads` and its
+   returned board-space position, effective rotation, shape, size, drill, and
+   per-layer geometry. Null geometry is unavailable evidence, not zero size.
+   Run `check_freerouting`, then use `export_specctra_dsn` as an executable
+   compatibility preflight. Complete the native route/plan/apply sequence when
+   export succeeds. When Konnect v0.12.0 rejects ordinary supported KiCad
+   geometry such as unnumbered NPTH or roundrect pads, preserve the diagnostic,
+   close PCB Editor, verify offline ownership, and use the non-overwriting
+   `konnect-codex freerouting route` compatibility bridge. If neither path is
+   ready, return `INCOMPLETE`; never replace a whole-board route with repeated
    `route_pad_to_pad` calls or unconstrained generated segments.
 8. After SES apply, save and compare placement, inventory, traces by net and
    layer, and unrouted count with the checkpoint. Run direct DRC and short
@@ -112,7 +118,9 @@ v0.11.1 owns DSN export, local Freerouting MCP routing, SES planning, and apply.
    their nets, clearances, thermal behavior, and board-edge relationship.
 11. Run direct DRC, unrouted, clearance, footprint/pad inventory, outline, zone,
    and available 3D/model checks. Reconcile aggregate results with these direct
-   checks, fix confirmed defects, save through Konnect, and re-query the final
+   checks. Read DRC `owner` and `ownership_status`; do not prescribe a placement
+   move for footprint-owned geometry, and corroborate unresolved ownership.
+   Fix confirmed defects, save through Konnect, and re-query the final
    board state.
 12. After the accepted board is saved, close task-owned secondary windows and
     applications normally, verify their child processes exited, terminate only

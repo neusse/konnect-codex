@@ -138,6 +138,12 @@ Checks PCB-level rules:
 
 **Every DRC error must be resolved or explicitly justified before manufacturing.**
 
+Each violation carries `owner` and `ownership_status`. Treat a resolved
+`owner.kind: "footprint"` as direct evidence that the geometry belongs to the
+named footprint: the finding remains real, but the remedy is a footprint or
+rule change rather than placement. When ownership is unresolved and `owner` is
+null, corroborate with `list_board_footprint_graphics` before advising a move.
+
 For a routed board, also query traces by net and layer and record the unrouted
 count. A zero trace result on a visibly routed board, no-net copper, a large
 unexplained segment increase, changed placement after route import, or a live

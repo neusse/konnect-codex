@@ -98,7 +98,7 @@ Cross-cutting controls:
 | Domain skills | Define the technical procedure and acceptance evidence for one domain | They do not authorize unrelated phases |
 | Specialist agents | Own a substantial delegated phase and return evidence to the parent task | They are not automatically running merely because a skill exists |
 | Hooks | Add context and classify tool ownership requirements before matched calls | They do not replace server-side validation or supervise every child process |
-| Companion CLI | Installs guidance, checks compatibility, and preflights ownership | It is not a second PCB engine or router; Konnect owns native Freerouting execution |
+| Companion CLI | Installs guidance, checks compatibility, preflights ownership, and supplies the KiCad-native whole-board compatibility route | It preserves the source board and does not replace Konnect's revision-bound native path |
 
 ## How skills and agents are invoked
 
@@ -297,7 +297,7 @@ a source and observation date. Distributor inventory does not prove active
 manufacturer lifecycle. A family datasheet or wrong package does not qualify
 an exact part.
 
-Current limitation: Konnect 0.11.1 does not expose a dedicated mutation for
+Current limitation: Konnect 0.12.0 does not expose a dedicated mutation for
 KiCad's native DNP attribute. A custom text field named `DNP` must not be
 treated as equivalent. When native DNP state must change, the workflow reports
 the smallest manual KiCad step and verifies the resulting export.
@@ -338,11 +338,12 @@ obstacle avoidance, rip-up/retry, and congestion management. Segment tools are
 for deliberate isolated work or a small understood repair, not a substitute
 whole-board autorouter.
 
-The companion's current offline bridge saves the checkpoint, closes PCB
-Editor, exports DSN, runs Freerouting headlessly, imports SES, and writes a
-separate routed board. The KiCad ActionPlugin is the alternate bridge when
-desktop control is available. A standalone JAR without working DSN export and
-SES import is not a complete workflow.
+The route workflow first tests Konnect's revision-bound native export on the
+actual board. When the v0.12.0 profile rejects common legal KiCad geometry, the
+companion offline bridge saves the checkpoint, requires PCB Editor to be
+closed, exports with KiCad's own DSN API, runs Freerouting headlessly, imports
+SES, and writes a separate routed board. A standalone JAR without working DSN
+export and SES import is not a complete workflow.
 
 Route acceptance requires unchanged placement and footprint inventory,
 plausible trace counts by net/layer, no shorts, direct DRC, no required
@@ -378,7 +379,7 @@ locks, autosaves, backups, and timestamps before stopping a proven stale
 session or reopening a recovered design.
 
 Simulation readiness is intentionally bounded. It identifies models, sources,
-parameters, pin mappings, observables, and unsupported devices. Konnect 0.11.1
+parameters, pin mappings, observables, and unsupported devices. Konnect 0.12.0
 does not prove that a simulation ran; model presence cannot be reported as a
 simulation result.
 
@@ -559,9 +560,9 @@ missing requested artifact, or unresolved process ownership.
 
 ## Current known boundaries
 
-- The companion is reviewed for Konnect 0.11.1. A new Konnect release requires
+- The companion is reviewed for Konnect 0.12.0. A new Konnect release requires
   a compatibility and guidance-delta review.
-- Konnect 0.11.1 has no dedicated native-DNP mutation.
+- Konnect 0.12.0 has no dedicated native-DNP mutation.
 - The companion's offline DSN/SES bridge remains necessary until an equivalent
   released Konnect path passes the route benchmark.
 - A standalone Freerouting JAR is insufficient without DSN export and SES import.

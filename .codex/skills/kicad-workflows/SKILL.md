@@ -37,3 +37,12 @@ also incomplete until the process-lifecycle cleanup gate is evidenced.
 
 Keep a simple one-tool inspection or edit in its domain skill. Do not turn every
 KiCad action into a multi-stage workflow.
+
+## Benchmark evidence
+
+When the request is a benchmark, create or update its durable ledger at every
+major gate, including failed calls, unsupported capabilities, manual recovery,
+and process cleanup. The ledger must finish with one terminal verdict and list
+the requested artifacts that exist and those that are missing. A transcript,
+partial board, clean intermediate check, or later recollection does not replace
+the project-local ledger. An unfinished ledger is an `INCOMPLETE` benchmark.

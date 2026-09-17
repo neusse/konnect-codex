@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.11.1",
-  "source": "Konnect v0.11.1 tool-directory.md and registered tool implementations at commit eadbe451bb50eb51c6e42abcf6e0152f62bc1e13",
+  "supported_konnect_version": "0.12.0",
+  "source": "Konnect v0.12.0 tool-directory.md and registered tool implementations at commit 37cfa434848120321906e87bd30553c4f0f08244",
   "tools": [
     {"name": "place_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
     {"name": "move_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},

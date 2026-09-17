@@ -32,21 +32,28 @@ procedure in bundled `kicad-schematic/references/workflows.md`.
 4. Place functional blocks on the schematic grid with explicit references,
    values, footprints, and required support components. Group or tag each block's
    symbols, local labels, local wires, no-connect markers, text notes, and
-   boundary graphics when the tools support it. If only `group_components` is
-   available, treat it as component-only metadata; keep every label/wire/note
-   inside the block's bounded region, verify `move_region` would carry the whole
-   closure, and report the missing full-group capability.
+   boundary graphics when the tools support it. In Konnect v0.12.0,
+   `group_components` is component-only metadata and `move_region` moves symbols
+   only. Keep closure items in the bounded region for readability, but return
+   `INCOMPLETE` for movable grouping until a real closure-capable operation has
+   been run and verified.
 5. Wire power with `add_power_symbol` at exact pin endpoints, direct local
    signals with `connect_pins`, and named or distant signals with net labels.
 6. Inspect nearby pin endpoints before automatic stub placement. Choose
    directions that cannot meet or cross. Run `find_shorted_nets` immediately
    after automatic stub placement; a clean result completes that wiring step.
-   On bus sheets, treat Konnect v0.11.1 connectivity findings at bus
+   Local labels remain separate per repeated-sheet instance; global labels and
+   power symbols join every instance. Choose the scope deliberately.
+   On bus sheets, treat Konnect v0.12.0 connectivity findings at bus
    entries as incomplete and use KiCad ERC plus exported connectivity before
    changing geometry. Do not call `move_connected`; it remains unavailable
    under #315. Use a plain move, repair attached wires explicitly, and rerun
-   ERC; v0.11.1 reconciles affected junction dots for ordinary moves.
-7. Annotate, then run ERC, wire validation, component validation, short
+   ERC; v0.12.0 reconciles affected junction dots for ordinary moves.
+7. Run `annotate_schematic` as a dry run, then apply and inspect `outcome` and
+   `unresolved`. A `partial` outcome remains incomplete; use
+   `resolve_duplicates: true` only for separate parts and correct ambiguous
+   multi-unit references manually. Then run ERC, wire validation, component
+   validation, short
    detection, orphan detection, and exported-connectivity checks that are
    available.
 8. Call `render_schematic_png` with `inline: true` for every schematic sheet and

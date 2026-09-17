@@ -12,6 +12,12 @@ use std::thread;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod freerouting;
+pub use freerouting::{
+    export as freerouting_export, import as freerouting_import, route as freerouting_route,
+    status as freerouting_status,
+};
+
 #[cfg(windows)]
 use std::os::windows::io::AsRawHandle;
 #[cfg(windows)]
@@ -1180,13 +1186,13 @@ fn pcb_hook_context(name: &str, input: &JsonValue, editors: usize) -> String {
     let common = "Confirm the exact target-board path and a plausible component/pad inventory before mutation. Server-side board identity, liveness, revision, and conflict checks remain authoritative.";
     match name {
         "pre-pcb-live" => format!(
-            "`{tool}` is live-IPC-only in reviewed Konnect v0.11.1. Detected pcbnew process count: {detected}. Require exactly one responsive PCB Editor with the target board open; otherwise stop and run `konnect-codex pcb-preflight --board <path> --mode live`. {common}"
+            "`{tool}` is live-IPC-only in reviewed Konnect v0.12.0. Detected pcbnew process count: {detected}. Require exactly one responsive PCB Editor with the target board open; otherwise stop and run `konnect-codex pcb-preflight --board <path> --mode live`. {common}"
         ),
         "pre-pcb-fallback" => format!(
-            "`{tool}` supports live IPC or a deliberate revision-aware closed-board fallback in reviewed Konnect v0.11.1. Detected pcbnew process count: {detected}. With one editor, confirm it owns the target and remain live. With zero editors, the closed-file fallback may be used, but keep the board closed and verify the returned source/revision. More than one editor or an ownership change is unsafe. Never mix live and fallback mutations in one phase. {common}"
+            "`{tool}` supports live IPC or a deliberate revision-aware closed-board fallback in reviewed Konnect v0.12.0. Detected pcbnew process count: {detected}. With one editor, confirm it owns the target and remain live. With zero editors, the closed-file fallback may be used, but keep the board closed and verify the returned source/revision. More than one editor or an ownership change is unsafe. Never mix live and fallback mutations in one phase. {common}"
         ),
         "pre-pcb-closed" => format!(
-            "`{tool}` is closed-board-only in reviewed Konnect v0.11.1. Detected pcbnew process count: {detected}. Close every PCB Editor holding the board, confirm zero pcbnew processes, and run `konnect-codex pcb-preflight --board <path> --mode offline` before mutation. {common}"
+            "`{tool}` is closed-board-only in reviewed Konnect v0.12.0. Detected pcbnew process count: {detected}. Close every PCB Editor holding the board, confirm zero pcbnew processes, and run `konnect-codex pcb-preflight --board <path> --mode offline` before mutation. {common}"
         ),
         "pre-pcb-plan-apply" => {
             let applying = input
@@ -1232,7 +1238,7 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
     .iter()
     .any(|term| lower.contains(term));
     relevant.then(|| {
-        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. For a multi-stage outcome, use kicad-workflows to select the ordered workflow and its evidence gates before the first mutation. When the workflow launches or restarts an editor, router, simulator, Java process, or helper, baseline pre-existing versus task-owned instances and close the shared process-lifecycle cleanup gate before completion. Use kicad-bom for MPN, datasheet, lifecycle, sourcing, DNP, alternate, or assembly-BOM work. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable work sequentially in library -> schematic -> BOM -> PCB -> review -> bring-up order. Use Konnect v0.11.1 score-first placement as a dry-run planning loop with locked mechanical references, an expected held set, and independent post-apply scoring. Render schematics inline and inspect them; visual-baseline drift focuses review and is not automatic failure. The PCB builder must close the visible placement gate before routing and use Konnect's native Freerouting DSN/MCP/SES pipeline by default for a complete board, with revision, inventory, and direct DRC acceptance before zones or manufacturing."
+        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. For a multi-stage outcome, use kicad-workflows to select the ordered workflow and its evidence gates before the first mutation. When the workflow launches or restarts an editor, router, simulator, Java process, or helper, baseline pre-existing versus task-owned instances and close the shared process-lifecycle cleanup gate before completion. Use kicad-bom for MPN, datasheet, lifecycle, sourcing, DNP, alternate, or assembly-BOM work. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable work sequentially in library -> schematic -> BOM -> PCB -> review -> bring-up order. Use Konnect v0.12.0 score-first placement as a dry-run planning loop with locked mechanical references, an expected held set, and independent post-apply scoring. Render schematics inline and inspect them; movable schematic grouping requires closure-capable grouping and is INCOMPLETE when only component metadata or symbol-only movement exists. The PCB builder must close the visible placement gate before routing, preflight the native Freerouting path on the actual board, use the companion KiCad-native route fallback for unsupported v0.12.0 geometry, and stop INCOMPLETE rather than route a whole board with local segments."
             .to_string()
     })
 }
@@ -2197,7 +2203,7 @@ mod tests {
             .iter()
             .filter(|enhancement| enhancement.status == "active")
             .collect();
-        assert_eq!(active.len(), 26);
+        assert_eq!(active.len(), 28);
 
         let expected_ids = BTreeSet::from([
             "agent-delegation",
@@ -2212,6 +2218,7 @@ mod tests {
             "pcb-live-state-and-placement-gates",
             "custom-part-physical-pin-acceptance",
             "visual-placement-checkpoint",
+            "offline-freerouting-bridge",
             "pcb-ownership-preflight",
             "eco-and-power-layout-branches",
             "firmware-bringup-handoff",
@@ -2226,6 +2233,7 @@ mod tests {
             "explicit-workflow-routing",
             "owned-process-lifecycle-cleanup",
             "pcb-layout-physics-acceptance",
+            "benchmark-ledger-completeness",
         ]);
         let actual_ids: BTreeSet<_> = active
             .iter()
@@ -2247,6 +2255,31 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn compatibility_routing_and_real_grouping_contracts_do_not_regress() {
+        let routing =
+            reviewed_asset_content("skills/kicad-pcb/references/freerouting-workflow.md").unwrap();
+        let routing = std::str::from_utf8(routing).unwrap();
+        assert!(routing.contains("konnect-codex freerouting route"));
+        assert!(routing.contains("unnumbered NPTH pads"));
+        assert!(routing.contains("`roundrect` pads"));
+        assert!(routing.contains("return `INCOMPLETE`"));
+        assert!(!routing.contains("Do not fall back to the removed"));
+
+        let grouping = reviewed_asset_content(
+            "skills/kicad-schematic/references/schematic-layout-acceptance.md",
+        )
+        .unwrap();
+        let grouping = std::str::from_utf8(grouping).unwrap();
+        assert!(grouping.contains("`move_region` moves symbols"));
+        assert!(grouping.contains("return `INCOMPLETE` for movable grouping"));
+        assert!(!grouping.contains("moving the region with `move_region` would carry"));
+
+        let workflow_doc = include_str!("../docs/KONNECT_WORKFLOW_SKILLS.md");
+        assert!(workflow_doc.contains("companion offline bridge"));
+        assert!(!workflow_doc.contains("Konnect owns native Freerouting execution"));
     }
 
     #[test]
@@ -2558,7 +2591,8 @@ mod tests {
         assert!(context.contains("Freerouting"));
         assert!(context.contains("placement gate"));
         assert!(context.contains("score-first placement"));
-        assert!(context.contains("visual-baseline drift"));
+        assert!(context.contains("closure-capable grouping"));
+        assert!(context.contains("companion KiCad-native route fallback"));
         assert!(user_prompt_context("Use Freerouting for this board").is_some());
         assert!(user_prompt_context("Check MPN and BOM lifecycle risk").is_some());
         assert!(user_prompt_context("Refactor my web API").is_none());

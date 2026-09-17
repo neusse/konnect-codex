@@ -76,7 +76,7 @@ get_drc_violations()
 validate_for_manufacturing()
 ```
 
-In Konnect v0.11.1 this aggregate check confirms that Edge.Cuts content and
+In Konnect v0.12.0 this aggregate check confirms that Edge.Cuts content and
 footprints exist, evaluates configured minimum trace width, reports a coarse
 no-tracks heuristic, and incorporates direct KiCad DRC evidence. It does **not**
 prove that the outline is closed, every pad has copper, drills satisfy the
@@ -108,7 +108,7 @@ height, orientation, hand-solder access, attrition, and alternate risk.
 ### One-Shot Export (Convenience)
 
 ```
-export_manufacturing_package(board, output_dir, fab_house?, schematic?)
+export_manufacturing_package(board, output_dir, fab_house?, schematic?, jlcpcb_cpl_corrections_path?)
 ```
 
 `fab_house` selects the house profile (there is no `format` argument). Pass
@@ -129,6 +129,22 @@ set contains only the intended production layers, drill counts are plausible,
 and assembly CSV files state or unambiguously use the intended units and origin.
 Exclude mounting holes, fiducials, and other non-placeable footprints from the
 CPL unless the assembly contract explicitly requires them.
+
+For `fab_house="jlcpcb"`, keep the default millimetre units and supply the BOM
+fields, labels, and grouping required by the current JLCPCB upload contract.
+Konnect applies its verified built-in CPL correction policy; pass a checked-in
+project policy through `jlcpcb_cpl_corrections_path` for unmatched footprints
+or exact-designator overrides. Inspect
+`placement_orientation.applied_corrections` and
+`placement_orientation.unmatched_footprints`. A structurally complete package
+still requires `placement_orientation.status == "PREVIEW_REQUIRED"` to be
+discharged by inspecting every component in JLCPCB Component Placements.
+Automated export never proves physical orientation.
+
+Treat `files` as the verified regular, non-empty artifact manifest and
+`files_generated` as the successful export operations. Neither proves vendor
+acceptance, correct rotations, or that unrelated stale files in a reused
+directory are safe to upload.
 
 ### Manual Export (When You Need Control)
 
@@ -196,7 +212,7 @@ by the current uploader rather than normalizing to an old hard-coded spelling.
 estimate_cost(board, quantity?, layers?, fab_house?)
 ```
 
-In Konnect v0.11.1 this is a fixed rough heuristic, not a live quote. Label its
+In Konnect v0.12.0 this is a fixed rough heuristic, not a live quote. Label its
 result as an estimate and obtain a current vendor quote before making a cost or
 supplier decision.
 
