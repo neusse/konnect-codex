@@ -14,13 +14,13 @@ fail if either side loses an entry.
 
 ## Release review state
 
-- Supported Konnect: `0.12.0`, commit
-  `37cfa434848120321906e87bd30553c4f0f08244`
-- Companion release: `v0.12.0` (`companion_revision = 1`)
+- Supported Konnect: `0.12.1`, commit
+  `fa62e1ccb9eba359519bf8e3eab53a6cffeee33c`
+- Companion release: `v0.12.1` (`companion_revision = 1`)
 - Last full guidance review: 2026-09-17
-- Upstream guidance issues reviewed: #356, #357, #358 and the v0.12.0
+- Upstream guidance issues reviewed: #356, #357, #358 and the v0.12.1
   guidance delta
-- Upstream issue #358 correction: Konnect v0.12.0 still registers
+- Upstream issue #358 correction: Konnect v0.12.1 still registers
   `refill_zones` under `pcb_export`; the companion therefore keeps that real
   tool in the live-only hook class. The issue's broader structured-output and
   runtime-classification findings still apply.
@@ -38,7 +38,7 @@ fail if either side loses an entry.
 | `doctor-agent-reporting` | Report companion and native agents separately | Doctor tests |
 | `pcb-builder-delegation` | Give transfer/layout/routing to one PCB owner | Router/agent assertions |
 | `freerouting-first-routing` | Use Freerouting for complete boards; local segments only for repairs | PCB skill/reference/agent assertions and route benchmark |
-| `offline-freerouting-bridge` | Use KiCad-native DSN/SES as a non-overwriting fallback when the v0.12.0 native profile rejects common legal board geometry | CLI tests, actual-board export/route benchmark, and post-route acceptance |
+| `offline-freerouting-bridge` | Use KiCad-native DSN/SES as a non-overwriting fallback when the v0.12.1 native profile rejects common legal board geometry | CLI tests, actual-board export/route benchmark, and post-route acceptance |
 | `pcb-live-state-and-placement-gates` | Stop on IPC ownership loss and require visible placement acceptance | PCB/reviewer assertions and preflight tests |
 | `custom-part-physical-pin-acceptance` | Require view-aware datasheet lead-to-pad proof | Library reference/agent assertions |
 | `visual-placement-checkpoint` | Require a reviewed 2D placement artifact before routing | PCB reference/agent assertions |
@@ -57,6 +57,24 @@ fail if either side loses an entry.
 | `owned-process-lifecycle-cleanup` | Baseline pre-existing versus task-owned applications, prevent duplicate restarts, and close or terminate only verified task-owned editors and helpers before completion | Shared lifecycle reference, PCB/Freerouting/recovery agent assertions, and orphan-process regression scenarios |
 | `pcb-layout-physics-acceptance` | Require context-calibrated evidence for return planes, critical loops, thermal/current paths, RF/edge/stitching constraints, via process, and DFT access beyond DRC | PCB reference, builder, reviewer, release, and routed-board benchmarks |
 | `benchmark-ledger-completeness` | Keep a gate-by-gate project-local record of failures, recovery, artifacts, cleanup, and terminal outcome | Workflow assertion and completed benchmark artifact inventory |
+
+## v0.12.1 review decisions
+
+- **Retain** the active companion delta set. The Specctra exporter and
+  bridge-selection code did not expand to the legal roundrect and unnumbered
+  NPTH geometry covered by the compatibility bridge.
+- **Revise** PCB guidance and hooks for native live-IPC `flip_component` on
+  KiCad 10.0.6+, while retaining the guarded closed-board fallback when no live
+  editor owns the board.
+- **Revise** placement guidance: the force-directed planner is deprecated and
+  diagnostic-only; decoupling plans require exact references and must remain
+  blocked when out of bounds or non-improving.
+- **Revise** schematic guidance to verify atomic junction reconciliation for
+  batch symbol placement.
+- **Resolve the upstream packaging gap** recorded for v0.12.0: Konnect v0.12.1
+  now ships the linked reliability-contract reference. The companion retains
+  its broader Codex evidence contract as an intentional independent review
+  path, not as a workaround for a missing upstream file.
 
 ## v0.12.0 review decisions
 
