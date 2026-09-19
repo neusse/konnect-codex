@@ -16,12 +16,14 @@ Most PCB layout operations require KiCAD to be running with the board file open.
 connection communicates with the running KiCAD instance in real-time.
 
 Some board-construction and component tools have guarded closed-board paths in
-Konnect 0.12.0. IPC-first tools fall back only when the transport is unreachable
-and the board has not been observed live during the current server session.
-File-only operations such as `flip_component` proceed only when KiCad does not
-hold the target board open. The paths use revision-aware atomic writes and
-preserve or transform supported footprint children; unsupported geometry is
-refused. A reachable KiCad rejection stays closed instead of racing the editor.
+Konnect 0.12.1. IPC-first tools fall back only when the transport is unreachable
+and the board has not been observed live during the current server session. The
+paths use revision-aware atomic writes and preserve or transform supported
+footprint children; unsupported geometry is refused. On KiCad 10.0.6 or newer,
+`flip_component` prefers KiCad's native live-IPC flip, including its 3D-model
+transform. Its guarded file fallback is used only when no live KiCad owns the
+board and refuses 3D models it cannot transform. A reachable older endpoint
+returns `unsupported_capability` instead of racing the editor with a file edit.
 
 `unsafe_file_fallback` is a stop condition. Konnect reached this board live
 earlier but IPC is now unavailable, so the saved file may be older than editor
@@ -136,7 +138,7 @@ Follow this sequence for a clean PCB workflow:
    supported library-owned pads, graphics, attributes, metadata, and 3D models
    while preserving placed identity, position, rotation, side, instance
    overrides, pad nets, user text, and three-dimensional models. One apply is
-   one undo entry and conflicts are non-mutating. Konnect v0.12.0 includes the
+   one undo entry and conflicts are non-mutating. Konnect v0.12.1 includes the
    official-footprint user-text rejection from #331; still require dry-run
    coverage and post-apply pad/graphic/model invariants.
 6. **Place components** — position all footprints. For a reviewed batch, prefer
@@ -201,7 +203,7 @@ placement approval.
 | `update_footprints_from_library` | Refresh supported placed definitions from linked libraries |
 | `move_component`          | Relocate a footprint via IPC or safe file fallback |
 | `rotate_component`        | Rotate a footprint via IPC or safe file fallback |
-| `flip_component`          | Set F.Cu/B.Cu on a closed board with geometry mirroring |
+| `flip_component`          | Set F.Cu/B.Cu via native IPC (KiCad 10.0.6+) or safe file fallback |
 | `align_components`        | Align multiple components (top/bottom/left/right/center) |
 | `place_component_array`   | Grid placement for repeated elements        |
 
@@ -214,10 +216,14 @@ visible inspection:
 1. Run `score_placement` before planning. Preserve its score, deductions, and
    hard failures as the baseline. A missing outline, courtyard overlap, or part
    outside the outline prevents acceptance regardless of the numeric score.
-2. Run `auto_place_from_schematic`, `refine_placement_force_directed`,
-   `place_decoupling_caps`, or `plan_bga_fanout` in dry-run mode. Lock
-   connectors, mounting hardware, controls, displays, antennas, and every other
-   mechanically constrained reference before refinement.
+2. Run `auto_place_from_schematic`, an explicit bounded placement plan, or
+   `plan_bga_fanout` in dry-run mode. `refine_placement_force_directed` is
+   deprecated because global rails can pull unrelated blocks together; use its
+   blocked diagnostic plan only for evidence, never as a default bulk-cleanup
+   step. `place_decoupling_caps` requires exact caller-supplied capacitor
+   references and must remain blocked when its plan is out of bounds or does
+   not improve the score. Lock connectors, mounting hardware, controls,
+   displays, antennas, and every other mechanically constrained reference.
 3. Inspect the planner's `held` set. Reject any unexpected `held` reference and
    reject a plan that introduces a hard failure, lowers the score without a
    documented electrical or mechanical reason, breaks a functional block, or
@@ -318,7 +324,7 @@ create_netclass(board, name, trace_width?, clearance?, via_drill?, via_diameter?
 
 The class is written to the project's `.kicad_pro` file, which is where KiCad
 has kept netclasses since v7 — the board file is not modified. In Konnect
-v0.12.0, `get_netclasses` returns resolved values plus `inherits` and
+v0.12.1, `get_netclasses` returns resolved values plus `inherits` and
 `missing_fields`. A `null` inherited field is not by itself a defect; reject a
 class when `missing_fields` remains non-empty. Keep `Default` complete, then
 reopen through KiCad and validate the affected connectivity after mutation.

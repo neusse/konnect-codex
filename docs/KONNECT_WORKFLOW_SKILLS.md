@@ -297,7 +297,7 @@ a source and observation date. Distributor inventory does not prove active
 manufacturer lifecycle. A family datasheet or wrong package does not qualify
 an exact part.
 
-Current limitation: Konnect 0.12.0 does not expose a dedicated mutation for
+Current limitation: Konnect 0.12.1 does not expose a dedicated mutation for
 KiCad's native DNP attribute. A custom text field named `DNP` must not be
 treated as equivalent. When native DNP state must change, the workflow reports
 the smallest manual KiCad step and verifies the resulting export.
@@ -339,7 +339,7 @@ for deliberate isolated work or a small understood repair, not a substitute
 whole-board autorouter.
 
 The route workflow first tests Konnect's revision-bound native export on the
-actual board. When the v0.12.0 profile rejects common legal KiCad geometry, the
+actual board. When the v0.12.1 profile rejects common legal KiCad geometry, the
 companion offline bridge saves the checkpoint, requires PCB Editor to be
 closed, exports with KiCad's own DSN API, runs Freerouting headlessly, imports
 SES, and writes a separate routed board. A standalone JAR without working DSN
@@ -379,7 +379,7 @@ locks, autosaves, backups, and timestamps before stopping a proven stale
 session or reopening a recovered design.
 
 Simulation readiness is intentionally bounded. It identifies models, sources,
-parameters, pin mappings, observables, and unsupported devices. Konnect 0.12.0
+parameters, pin mappings, observables, and unsupported devices. Konnect 0.12.1
 does not prove that a simulation ran; model presence cannot be reported as a
 simulation result.
 
@@ -560,9 +560,9 @@ missing requested artifact, or unresolved process ownership.
 
 ## Current known boundaries
 
-- The companion is reviewed for Konnect 0.12.0. A new Konnect release requires
+- The companion is reviewed for Konnect 0.12.1. A new Konnect release requires
   a compatibility and guidance-delta review.
-- Konnect 0.12.0 has no dedicated native-DNP mutation.
+- Konnect 0.12.1 has no dedicated native-DNP mutation.
 - The companion's offline DSN/SES bridge remains necessary until an equivalent
   released Konnect path passes the route benchmark.
 - A standalone Freerouting JAR is insufficient without DSN export and SES import.

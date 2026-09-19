@@ -51,7 +51,7 @@ Use available standard KiCad symbols for generic parts before creating local
 symbols. Component-only grouping is not full grouping: labels, wires,
 no-connects, text notes, and support parts must stay in the same movable block
 region for readability, but missing closure-capable grouping is `INCOMPLETE`,
-not a waiver. Konnect v0.12.0 `move_region` moves symbols only.
+not a waiver. Konnect v0.12.1 `move_region` moves symbols only.
 
 ### Workflow
 
@@ -172,7 +172,7 @@ connect_to_net(schematic, reference, pin_number, net)
   an electrically valid direct label solely to clear an orphan finding. Confirm
   it with ERC, exported connectivity or netlist evidence, and the short detector;
   record a contradictory orphan result as a verifier limitation.
-- Konnect v0.12.0 connectivity queries are not bus-aware (#328). On a bus sheet,
+- Konnect v0.12.1 connectivity queries are not bus-aware (#328). On a bus sheet,
   treat floating/orphan results at bus entries and bus labels as candidates and
   use KiCad ERC plus exported connectivity as authority before changing wiring.
 
@@ -206,6 +206,11 @@ Load `sch_batch` toolset when placing 3 or more components or making bulk connec
 ### batch_place_components
 
 Place multiple components in one call. Provide `schematic` and a `components` array of `{lib_id, x, y, rotation?, reference?, value?, unit?}` objects. Pass `reference` explicitly for each component -- it is not auto-assigned.
+
+The batch commits all symbols once, then reconciles every new pin endpoint in
+that same atomic write. Verify `junctions_added_count` and
+`junctions_pruned_count`; a pin placed mid-segment on an existing wire is not
+connected in KiCad unless the required junction was added.
 
 ### batch_connect_to_net
 
@@ -331,7 +336,7 @@ connectivity before changing geometry.
     declaring a generated or rearranged schematic human-usable
 14. **Use real libraries first** — standard KiCad symbols beat local placeholder
     symbols for generic parts, connectors, and power symbols
-15. **Do not call `move_connected` in v0.12.0** — it still refuses because wire
+15. **Do not call `move_connected` in v0.12.1** — it still refuses because wire
     carrying is not implemented (#315). Ordinary component moves now reconcile
     affected junction dots, but they do not carry attached wires. Use a plain
     move, explicitly repair affected wires, then run ERC and connectivity
