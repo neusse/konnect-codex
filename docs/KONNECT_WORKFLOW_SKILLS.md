@@ -265,11 +265,17 @@ Readable layout is a hard acceptance gate, not decoration. A complete
 schematic must:
 
 - group symbols and their support parts by functional block;
+- hand-wire local passive networks so timing, feedback, filtering, pull,
+  decoupling, drive, and indicator topology is visible;
 - keep local wires where they communicate circuit behavior;
 - use labels at meaningful block, repeated-signal, or hierarchy boundaries;
 - keep labels, fields, notes, no-connects, and wires within block closure;
+- relocate existing wired blocks through a complete closure manifest,
+  reconstructed geometry, cleared source region, and equivalence checks;
 - fit the page frame without visible overlaps; and
-- render every affected sheet for actual visual inspection.
+- render every affected sheet for actual visual inspection;
+- return the structured schematic acceptance record rather than a prose-only
+  claim that the sheet looks good.
 
 Electrical validation includes ERC, short detection, wire and component
 connection checks, exported connectivity when needed, and reconciliation of
@@ -492,7 +498,7 @@ existing-project intake
 | Agent | Owns | Required handoff evidence | Explicit boundary |
 |---|---|---|---|
 | `konnect_library_builder` | Custom symbol/footprint creation or correction | Exact datasheet identity, lead-to-pin-to-pad table, readback, visible numbering, registration | Does not build the rest of the circuit unless separately delegated |
-| `konnect_schematic_builder` | Complete schematic build or substantial cleanup | Functional blocks, grouping/regions, renders, ERC, shorts, connectivity, waivers | Does not overlap another mutation owner |
+| `konnect_schematic_builder` | Complete schematic build or substantial cleanup | Functional blocks, hand-wired local passives, grouping/regions, acceptance record, renders, ERC, shorts, connectivity, waivers | Does not overlap another mutation owner |
 | `konnect_pcb_builder` | Transfer, constraints, placement, routing, zones, PCB ECO | Transfer invariants, placement checkpoint, router provenance, trace/unrouted/DRC evidence, cleanup | Does not hide schematic/library defects with board-only workarounds |
 | `konnect_design_reviewer` | Comprehensive independent review | Raw direct checks, findings, evidence basis, confidence, limitations, verdict | Read-only unless fixes are separately authorized |
 | `konnect_bringup_planner` | Firmware and first-power planning | GPIO/test-point tables, staged limits and pass/fail evidence | Does not mutate the design or touch physical hardware |

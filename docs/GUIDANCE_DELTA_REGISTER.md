@@ -16,8 +16,8 @@ fail if either side loses an entry.
 
 - Supported Konnect: `0.12.1`, commit
   `fa62e1ccb9eba359519bf8e3eab53a6cffeee33c`
-- Companion release: `v0.12.1` (`companion_revision = 1`)
-- Last full guidance review: 2026-09-17
+- Companion release: `v0.12.1-codex.2` (`companion_revision = 2`)
+- Last full guidance review: 2026-09-29
 - Upstream guidance issues reviewed: #356, #357, #358 and the v0.12.1
   guidance delta
 - Upstream issue #358 correction: Konnect v0.12.1 still registers
@@ -31,7 +31,7 @@ fail if either side loses an entry.
 |---|---|---|
 | `agent-delegation` | Deterministic Codex specialist handoffs | Router assertion; retire for equivalent native Codex routing |
 | `schematic-evidence-and-collision-gate` | Reconcile orphan false positives and block stub-created shorts | Skill/agent assertions and schematic benchmark |
-| `schematic-layout-readability-gate` | Functional blocks, group closure, label-inclusive visual gate | Skill/reference/agent assertions and rendered benchmark |
+| `schematic-layout-readability-gate` | Functional blocks, hand-wired local passive topology, native-or-managed closure status, manifest-driven block relocation, structured acceptance record, label-inclusive visual gate, and independent schematic review | Skill/reference/builder/reviewer assertions and rendered benchmark |
 | `pcb-transfer-integrity` | Preserve pad/graphic/layer/model invariants across transfer | PCB skill assertion and transfer benchmark |
 | `contradictory-verifier-gate` | Direct evidence outranks aggregate passes | Review/manufacture/agent assertions |
 | `requirements-based-review-defaults` | Datasheets and requirements control conditional design advice | Reviewer assertion |
@@ -60,6 +60,14 @@ fail if either side loses an entry.
 
 ## v0.12.1 review decisions
 
+- **Revise** schematic readability guidance for companion revision 2: local
+  passive networks must be visibly hand-wired inside their parent blocks, the
+  builder must return a structured acceptance record, and the independent
+  reviewer must render and apply the same layout gate rather than relying on ERC.
+- **Revise** block-movement guidance after upstream #315 was dispositioned
+  `wontfix`: retain honest native-group limitations, but make agent-operated
+  relocation executable through a complete closure manifest, bounded
+  reconstruction, cleared-source check, and electrical/visual equivalence gate.
 - **Retain** the active companion delta set. The Specctra exporter and
   bridge-selection code did not expand to the legal roundrect and unnumbered
   NPTH geometry covered by the compatibility bridge.

@@ -35,6 +35,18 @@ starting points only.
 - [ ] All nets have at least 2 connections (no single-pin nets)
 - [ ] No shorted nets (distinct nets accidentally merged)
 
+### Human readability
+- [ ] Functional blocks have explicit sheet or bounded-region ownership
+- [ ] Local passive networks are placed with their parent device and visibly
+      hand-wired; labels do not hide timing, feedback, filtering, pull,
+      decoupling, drive, or indicator topology
+- [ ] Symbols, fields, labels, wires, notes, and no-connects do not overlap
+- [ ] Every sheet fits its page frame and has been rendered and inspected
+- [ ] Group closure or the exact missing grouping capability is recorded
+- [ ] Every relocated wired block has a complete closure manifest, cleared
+      source region, reconstructed geometry, and equivalent connectivity
+- [ ] The schematic acceptance record is complete and evidence-backed
+
 ## PCB Review
 
 ### Mechanical

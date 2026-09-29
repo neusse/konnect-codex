@@ -32,38 +32,53 @@ return INCOMPLETE rather than filling a success field from expectation.
 2. Run direct schematic checks: shorts, single-pin nets, orphan candidates,
    exported connectivity, and ERC. Correlate pin-end orphan findings before
    classifying them as defects.
-3. Run direct PCB checks: DRC with exact items, unrouted count, traces by net
+3. For every complete schematic or readiness review, read and apply bundled
+   `kicad-schematic/references/schematic-layout-acceptance.md`. Call
+   `render_schematic_png` with `inline: true` for every sheet and inspect the
+   returned image. Verify functional blocks, page fit, group closure, fields,
+   labels, notes, wires, no-connects, and overlap. Confirm that local passive
+   networks are visibly hand-wired around their parent device instead of being
+   scattered and connected only by matching labels. Require the schematic
+   acceptance record; missing render, local-wiring, or record evidence is
+   `INCOMPLETE` even when ERC passes.
+   For every relocated wired block, read
+   `kicad-schematic/references/functional-block-relocation.md` and verify the
+   closure manifest, exact translation, cleared source region, reconstructed
+   geometry, electrical equivalence, overlap result, and inspected render.
+   Reject a symbol-only move whose wires, labels, notes, or graphics stayed
+   behind.
+4. Run direct PCB checks: DRC with exact items, unrouted count, traces by net
    and layer, footprint/pad inventory, board outline, zones, layer use, and
    transfer invariants where a schematic-to-PCB update occurred. Record routing
    provenance when Freerouting or another importer was used. Read every DRC
    item's `owner` and `ownership_status`: footprint-owned edge geometry needs a
    footprint or rule decision, not a placement move. Corroborate unresolved
    ownership with `list_board_footprint_graphics`.
-4. Complete the PCB-layout-physics applicability matrix against the actual
+5. Complete the PCB-layout-physics applicability matrix against the actual
    routed layers and filled planes. Verify reference-plane continuity,
    decoupling and switcher loops, current and thermal paths, differential and RF
    constraints, purposeful stitching, edge clearance, via-in-pad process, and
    test access where applicable.
-5. Review component data and requirements for decoupling, rail capacity,
+6. Review component data and requirements for decoupling, rail capacity,
    voltage limits, terminations, thermal needs, and interface protection.
-6. Review manufacturing concerns: footprint assignment, pad geometry,
+7. Review manufacturing concerns: footprint assignment, pad geometry,
    courtyards, silkscreen, mechanical clearances, models, assembly exclusions,
    and artifact availability.
    For custom parts, require the datasheet lead -> symbol pin -> footprint pad
    evidence table and verify physical viewing direction, polarity, and pin-one
    marks. For legacy/manual parts, review sourcing, socket, height, and assembly
    evidence rather than assuming catalogue availability.
-7. Compare live PCB queries with direct DRC. Zero traces on a visibly routed
+8. Compare live PCB queries with direct DRC. Zero traces on a visibly routed
    board, no-net copper, a large unexplained segment count, changed component
    positions after routing, or disagreement about shorts/unrouted work is a
    stale-state contradiction. Reopen the target board once and repeat the
    direct queries before classifying it.
-8. Run aggregate design-review and manufacturing checks, then reconcile them
+9. Run aggregate design-review and manufacturing checks, then reconcile them
    with every direct result.
-9. Apply the datasheet trust gate to critical and package-sensitive parts.
+10. Apply the datasheet trust gate to critical and package-sensitive parts.
    Internal schematic/PCB/library agreement proves consistency, not physical
    correctness. Mark unavailable exact-part checks unverified.
-10. Require a revisioned evidence package containing raw direct checks,
+11. Require a revisioned evidence package containing raw direct checks,
    placement render, inventory, route provenance, artifact list, finding
    ledger, review limits, prior-review delta, and waivers.
 
@@ -94,4 +109,7 @@ INCOMPLETE. READY FOR FAB requires zero unwaived critical findings, clean direct
 DRC/ERC gates as applicable, no unrouted work, consistent inventory, and every
 requested artifact verified. Every applicable PCB-layout-physics row also
 requires direct evidence or an explicit engineering waiver.
+For schematic scope, include the acceptance record's block inventory, local
+wiring evidence, group closure, overlap/page result, inspected renders, waivers,
+and verdict.
 """

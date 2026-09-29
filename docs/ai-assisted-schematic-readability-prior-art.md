@@ -215,6 +215,8 @@ Apply to Konnect:
 - Require a block inventory before symbols are placed.
 - Assign each block to a sheet or bounded region.
 - Place support parts with their parent device, not from a flat component list.
+- Hand-wire local passive networks so the functional topology remains visible;
+  reserve labels for interfaces, rails, shared nets, and distant connections.
 
 ### Hierarchical sheets as the real grouping mechanism
 
@@ -268,6 +270,8 @@ A schematic creation task should not be complete until all of these are true:
 6. Exported netlist/connectivity matches intended connections.
 7. Every sheet has been rendered to PNG/SVG/PDF and inspected.
 8. If readability fails, the repair step moves blocks/regions first, then local support parts, then labels/wires.
+9. Local passive networks are visibly wired inside their parent block rather
+   than represented as disconnected-looking parts joined only by labels.
 
 ## Gaps in the Prior Art
 

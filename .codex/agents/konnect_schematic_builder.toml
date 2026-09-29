@@ -33,12 +33,21 @@ procedure in bundled `kicad-schematic/references/workflows.md`.
    values, footprints, and required support components. Group or tag each block's
    symbols, local labels, local wires, no-connect markers, text notes, and
    boundary graphics when the tools support it. In Konnect v0.12.1,
-   `group_components` is component-only metadata and `move_region` moves symbols
-   only. Keep closure items in the bounded region for readability, but return
-   `INCOMPLETE` for movable grouping until a real closure-capable operation has
-   been run and verified.
-5. Wire power with `add_power_symbol` at exact pin endpoints, direct local
-   signals with `connect_pins`, and named or distant signals with net labels.
+   `group_components` is component-only metadata. `move_region` moves symbol
+   units, carries pin-owned no-connect intent, and reconciles junctions, but it
+   does not carry wires, labels, notes, or graphics. Keep closure items in the
+   bounded region for readability. For any wired block relocation, follow
+   `kicad-schematic/references/functional-block-relocation.md`; do not leave
+   closure items at the source location.
+5. Hand-wire the passive networks that make each block function. Use short,
+   deliberate orthogonal wires for decoupling branches, pull networks, timing
+   and oscillator parts, feedback/sense dividers, compensation and filters,
+   bootstrap paths, gate/base resistors, and LED/current-limit chains. Keep
+   those passives beside their parent device and make series, shunt, and junction
+   topology visible. A label on every local pin is not a substitute for this
+   wiring. Use `add_power_symbol` at exact rail endpoints, `connect_pins` or
+   explicit schematic-wire segments for local relationships, and labels for
+   block interfaces, shared nets, or distant signals where they improve clarity.
 6. Inspect nearby pin endpoints before automatic stub placement. Choose
    directions that cannot meet or cross. Run `find_shorted_nets` immediately
    after automatic stub placement; a clean result completes that wiring step.
@@ -66,7 +75,9 @@ procedure in bundled `kicad-schematic/references/workflows.md`.
    exported connectivity; preserve electrically valid direct labels rather than
    rewiring solely to satisfy a contradictory orphan result.
    If readability fails, move whole blocks or regions first, then support parts,
-   then labels and wires.
+   then labels and wires. An existing wired block move is a managed
+   reconstruction with a closure manifest and equivalence evidence, not a
+   symbol-only move.
 10. Re-run the affected checks, re-render each affected sheet, and verify the requested project artifacts exist.
     ERC off-grid warnings, rendered text collisions, clipped notes, labels over
     pin names, or support parts separated from their parent block are layout
@@ -88,6 +99,14 @@ procedure in bundled `kicad-schematic/references/workflows.md`.
   unresolved symbol/field/label/wire/note/page-frame overlap remains; generic
   parts use available standard KiCad symbols; and every sheet has been rendered
   or captured for inspection.
+- Every local passive network is visibly hand-wired inside its functional block,
+  or its acceptance record names the exact justified exception.
+- The handoff contains the required schematic acceptance record fields:
+  `blocks`, `local_wiring`, `group_closure`, `overlap_and_page`,
+  `electrical_checks`, `renders_inspected`, `waivers`, and `verdict`.
+- Every moved wired block also reports the relocation record required by
+  `functional-block-relocation.md`. A symbol-only move with abandoned wires,
+  labels, notes, graphics, or old-region remnants fails completion.
 - Contradictory or unsupported checks are reported explicitly; they are not
   silently converted into design changes or a passing verdict.
 

@@ -9,6 +9,12 @@ Include when available:
 - design-context profile, requirements, and design revision/commit identity;
 - raw ERC and item-level DRC output;
 - schematic connectivity, shorts, single-pin, and orphan results;
+- the schematic acceptance record: block inventory, local passive wiring,
+  group closure, overlap/page checks, inspected sheet renders, waivers, and
+  verdict;
+- each executed wired-block relocation record: closure manifest, translation,
+  cleared source region, reconstructed items, connectivity equivalence, and
+  inspected post-move render;
 - footprint/pad/component inventory and transfer comparison;
 - placement checkpoint and 2D/3D renders;
 - trace/via inventory by net and layer, unrouted count, routing provenance, and

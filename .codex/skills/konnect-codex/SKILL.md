@@ -53,7 +53,12 @@ When agent delegation is available, make these handoffs deterministic:
   IPC session.
 
 If delegation is unavailable, execute the matching workflow in the current task
-and state that no custom agent ran.
+and state that no custom agent ran. A complete schematic build still applies the
+same layout acceptance record: local passive networks are visibly hand-wired,
+every sheet is rendered and inspected, and group closure status remains
+explicit. Existing wired blocks move through the schematic skill's
+manifest-driven managed reconstruction workflow; native grouping and managed
+closure must not be reported as the same capability.
 
 ## Capability discipline
 

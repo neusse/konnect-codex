@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "supported_konnect_version": "0.12.1",
-  "companion_revision": 1,
+  "companion_revision": 2,
   "enhancements": [
     {
       "id": "agent-delegation",
@@ -38,13 +38,13 @@
     {
       "id": "schematic-layout-readability-gate",
       "status": "active",
-      "reason": "Generated schematics can be electrically valid but unusable by humans when components, labels, fields, and support parts are scattered or overlapping.",
+      "reason": "Generated schematics can be electrically valid but unusable by humans when components, labels, fields, and support parts are scattered, overlapping, or connected only by labels that hide local passive topology.",
       "evidence": [
         "AI-assisted schematic readability prior-art research on 2026-08-21",
         "User-reported Konnect schematic readability failures on 2026-08-21"
       ],
       "introduced_for": "0.7.0",
-      "retire_when": "Konnect supplies an equivalent schematic layout/readability gate with block grouping, label-inclusive overlap checks, rendered inspection, and block-level re-layout.",
+      "retire_when": "Konnect supplies an equivalent schematic layout/readability gate with block grouping, visible local passive wiring, label-inclusive overlap checks, structured acceptance evidence, independent review, rendered inspection, and block-level re-layout.",
       "assertions": [
         {
           "target": "skills/kicad-schematic/SKILL.md",
@@ -55,8 +55,32 @@
           "contains": "Component-only grouping is not full grouping"
         },
         {
+          "target": "skills/kicad-schematic/references/schematic-layout-acceptance.md",
+          "contains": "Local passive networks must visibly explain"
+        },
+        {
+          "target": "skills/kicad-schematic/references/functional-block-relocation.md",
+          "contains": "Treat block movement as a managed reconstruction"
+        },
+        {
+          "target": "skills/kicad-schematic/references/functional-block-relocation.md",
+          "contains": "MANAGED_CLOSURE"
+        },
+        {
           "target": "agents/konnect_schematic_builder.toml",
           "contains": "group-closure evidence"
+        },
+        {
+          "target": "agents/konnect_schematic_builder.toml",
+          "contains": "Hand-wire the passive networks"
+        },
+        {
+          "target": "agents/konnect_design_reviewer.toml",
+          "contains": "Require the schematic"
+        },
+        {
+          "target": "skills/kicad-review/references/design-checklist.md",
+          "contains": "Local passive networks are placed"
         }
       ]
     },

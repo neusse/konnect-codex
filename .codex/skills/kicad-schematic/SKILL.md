@@ -50,8 +50,11 @@ page-frame overlap before completion.
 Use available standard KiCad symbols for generic parts before creating local
 symbols. Component-only grouping is not full grouping: labels, wires,
 no-connects, text notes, and support parts must stay in the same movable block
-region for readability, but missing closure-capable grouping is `INCOMPLETE`,
-not a waiver. Konnect v0.12.1 `move_region` moves symbols only.
+region for readability. Konnect v0.12.1 has no native complete-group move;
+`move_region` moves symbol units, carries pin-owned no-connect intent, and
+reconciles junctions, but it does not move wires, labels, notes, or graphics.
+For an existing wired block relocation, read and follow
+[references/functional-block-relocation.md](references/functional-block-relocation.md).
 
 ### Workflow
 
@@ -62,7 +65,9 @@ not a waiver. Konnect v0.12.1 `move_region` moves symbols only.
 4. Assign each part, label, note, and support component to a functional block
    before placement
 5. Place on the 1.27mm grid (KiCAD default schematic grid)
-6. Verify placement with `list_schematic_components`
+6. Arrange required passives around the device or interface they support so the
+   local circuit topology can be read before any labels are added
+7. Verify placement with `list_schematic_components`
 
 ### Common Library IDs
 
@@ -127,6 +132,23 @@ Power symbols: GND uses 0 (arrow points down), VCC/VDD/+3V3/+5V use 0 (arrow poi
 | Bus signals (D0-D7)                     | `connect_to_net`        | Net labels with bus naming               |
 | Cross-sheet signal                      | Global label            | Connects across schematic sheets         |
 | Multiple pins to same net (3+)          | `batch_connect_to_net`  | Efficient bulk operation                 |
+| Passive network inside one block        | explicit local wires    | Shows the circuit's functional topology  |
+
+### Functional-block local wiring
+
+Hand-wire the passives that make a functional block work. Use short,
+deliberately routed orthogonal segments through `connect_pins` or
+`add_schematic_wire`; use explicit segments when automatic routing would hide,
+cross, or merge the intended topology. A net label on every pin is not a
+readable substitute for local circuit wiring.
+
+This applies to decoupling and bulk-capacitor branches, pull-up and pull-down
+networks, timing and oscillator parts, feedback and sense dividers,
+compensation and filter networks, bootstrap parts, gate/base resistors, and
+LED/current-limit chains. Keep the passives beside the parent device, align
+series and shunt paths consistently, and make junctions visible. Use labels at
+block boundaries, for shared or distant signals, and for rails where a direct
+wire would reduce clarity.
 
 ### connect_pins
 
@@ -294,25 +316,27 @@ connectivity before changing geometry.
    batch of edits. No stored baseline is a normal state; a baseline from a
    different renderer is stale evidence and must not be silently trusted.
 3. Place and group/tag all block members.
-4. Complete all wiring.
-5. Run `annotate_schematic`.
-6. Run `validate_wire_connections`.
-7. Run `validate_component_connections`.
-8. Run `find_shorted_nets`.
-9. Run `find_orphan_items` and reconcile it with ERC/connectivity evidence.
-10. Call `render_schematic_png` with `inline: true` and actually inspect the
+4. Hand-wire each block's local passive networks so the rendered topology is
+   understandable without following repeated net labels.
+5. Complete block interfaces, rails, and distant wiring.
+6. Run `annotate_schematic`.
+7. Run `validate_wire_connections`.
+8. Run `validate_component_connections`.
+9. Run `find_shorted_nets`.
+10. Run `find_orphan_items` and reconcile it with ERC/connectivity evidence.
+11. Call `render_schematic_png` with `inline: true` and actually inspect the
     returned image. Use `get_schematic_view` or a sheet capture as an additional
     artifact when its structured SVG is useful. Inspect every sheet for symbol,
     label, field, wire, group, and page-frame overlap.
-11. After editing an established baseline, call `compare_visual_baseline`.
+12. After editing an established baseline, call `compare_visual_baseline`.
     Treat DRIFT and its changed-region bounding box as a direction for visual
     review, not as automatic failure: an intended edit should drift.
-12. Treat rendered text collisions, clipped notes, labels over pin names,
+13. Treat rendered text collisions, clipped notes, labels over pin names,
     off-grid warnings, and support parts outside their parent block as layout
     defects even if the numeric overlap checker is clean
-13. Fix confirmed issues; preserve electrically valid geometry reported only by
+14. Fix confirmed issues; preserve electrically valid geometry reported only by
    a contradictory orphan check
-14. Re-render the affected sheet and save with `save_project`.
+15. Re-render the affected sheet and save with `save_project`.
 
 ---
 
@@ -343,4 +367,7 @@ connectivity before changing geometry.
     checks.
 16. **Require full group closure** — a block is not movable until its labels,
     notes, wires, no-connects, and support parts move with it by real grouping
-    or a bounded-region workflow
+    or the verified managed-reconstruction workflow
+17. **Show local function with wires** — hand-wire passive networks inside their
+    parent block; reserve labels for rails, interfaces, shared nets, and distant
+    connections where they improve rather than replace readable topology

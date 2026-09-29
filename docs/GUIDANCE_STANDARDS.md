@@ -24,8 +24,10 @@ policy; it does not replace the exact upstream baseline or release tests.
 - Completion requires direct evidence, contradiction reconciliation, and
   explicit `INCOMPLETE` handling. Aggregate or heuristic output cannot outrank
   requirements, datasheets, ERC/DRC, connectivity, inventory, or artifacts.
-- Schematic completion includes functional blocks, group/region closure,
-  label-inclusive overlap checks, page-boundary checks, and rendered visual
+- Schematic completion includes functional blocks, native-or-managed closure,
+  manifest-driven wired-block relocation when movement is requested, visibly
+  hand-wired local passive networks, label-inclusive overlap checks,
+  page-boundary checks, a structured acceptance record, and rendered visual
   inspection. PCB completion includes transfer invariants, visible placement,
   route provenance, direct DRC, unrouted, artifact checks, and a
   context-calibrated layout-physics applicability matrix with direct evidence

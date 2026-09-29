@@ -1238,7 +1238,7 @@ fn user_prompt_context(prompt: &str) -> Option<String> {
     .iter()
     .any(|term| lower.contains(term));
     relevant.then(|| {
-        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. For a multi-stage outcome, use kicad-workflows to select the ordered workflow and its evidence gates before the first mutation. When the workflow launches or restarts an editor, router, simulator, Java process, or helper, baseline pre-existing versus task-owned instances and close the shared process-lifecycle cleanup gate before completion. Use kicad-bom for MPN, datasheet, lifecycle, sourcing, DNP, alternate, or assembly-BOM work. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable work sequentially in library -> schematic -> BOM -> PCB -> review -> bring-up order. Use Konnect v0.12.1 score-first placement as a dry-run planning loop with locked mechanical references, an expected held set, and independent post-apply scoring; do not use the deprecated force-directed planner as bulk cleanup. Render schematics inline and inspect them; movable schematic grouping requires closure-capable grouping and is INCOMPLETE when only component metadata or symbol-only movement exists. The PCB builder must close the visible placement gate before routing, preflight the native Freerouting path on the actual board, use the companion KiCad-native route fallback for unsupported v0.12.1 geometry, and stop INCOMPLETE rather than route a whole board with local segments."
+        "This is a Konnect/KiCad task. Use the konnect-codex router and the matching bundled domain skill. For a multi-stage outcome, use kicad-workflows to select the ordered workflow and its evidence gates before the first mutation. When the workflow launches or restarts an editor, router, simulator, Java process, or helper, baseline pre-existing versus task-owned instances and close the shared process-lifecycle cleanup gate before completion. Use kicad-bom for MPN, datasheet, lifecycle, sourcing, DNP, alternate, or assembly-BOM work. Make every KiCad-source change through Konnect MCP tools, use the visible eager tool catalogue directly, and finish with the strongest available validation. When delegation is available, hand custom library work to konnect_library_builder, a complete schematic build to konnect_schematic_builder, substantial PCB transfer/layout work to konnect_pcb_builder, a comprehensive final review to konnect_design_reviewer, and a read-only firmware/first-power handoff to konnect_bringup_planner. Run applicable work sequentially in library -> schematic -> BOM -> PCB -> review -> bring-up order. Use Konnect v0.12.1 score-first placement as a dry-run planning loop with locked mechanical references, an expected held set, and independent post-apply scoring; do not use the deprecated force-directed planner as bulk cleanup. Hand-wire local passive networks inside their functional blocks instead of hiding topology behind repeated labels. Render schematics inline, inspect them, and return the structured schematic acceptance record. Konnect has no complete native schematic-group move: relocate an existing wired block through the manifest-driven managed reconstruction workflow, and stop INCOMPLETE when any closure item cannot be moved or recreated safely. The independent reviewer must apply the same schematic readability and relocation-equivalence gates; clean ERC alone is insufficient. The PCB builder must close the visible placement gate before routing, preflight the native Freerouting path on the actual board, use the companion KiCad-native route fallback for unsupported v0.12.1 geometry, and stop INCOMPLETE rather than route a whole board with local segments."
             .to_string()
     })
 }
@@ -2258,7 +2258,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_routing_and_real_grouping_contracts_do_not_regress() {
+    fn routing_and_schematic_readability_contracts_do_not_regress() {
         let routing =
             reviewed_asset_content("skills/kicad-pcb/references/freerouting-workflow.md").unwrap();
         let routing = std::str::from_utf8(routing).unwrap();
@@ -2273,9 +2273,31 @@ mod tests {
         )
         .unwrap();
         let grouping = std::str::from_utf8(grouping).unwrap();
-        assert!(grouping.contains("`move_region` moves symbols"));
-        assert!(grouping.contains("return `INCOMPLETE` for movable grouping"));
+        assert!(grouping.contains("`move_region` moves symbol"));
+        assert!(grouping.contains("`MANAGED_CLOSURE`"));
+        assert!(grouping.contains("Local passive networks must visibly explain"));
+        assert!(grouping.contains("schematic acceptance record"));
         assert!(!grouping.contains("moving the region with `move_region` would carry"));
+
+        let relocation = reviewed_asset_content(
+            "skills/kicad-schematic/references/functional-block-relocation.md",
+        )
+        .unwrap();
+        let relocation = std::str::from_utf8(relocation).unwrap();
+        assert!(relocation.contains("managed reconstruction"));
+        assert!(relocation.contains("old_region_clear"));
+        assert!(relocation.contains("Only `NATIVE_GROUP` is directly movable"));
+
+        let builder = reviewed_asset_content("agents/konnect_schematic_builder.toml").unwrap();
+        let builder = std::str::from_utf8(builder).unwrap();
+        assert!(builder.contains("Hand-wire the passive networks"));
+        assert!(builder.contains("`local_wiring`"));
+
+        let reviewer = reviewed_asset_content("agents/konnect_design_reviewer.toml").unwrap();
+        let reviewer = std::str::from_utf8(reviewer).unwrap();
+        assert!(reviewer.contains("render_schematic_png"));
+        assert!(reviewer.contains("local passive"));
+        assert!(reviewer.contains("acceptance record"));
 
         let workflow_doc = include_str!("../docs/KONNECT_WORKFLOW_SKILLS.md");
         assert!(workflow_doc.contains("companion offline bridge"));
@@ -2591,7 +2613,10 @@ mod tests {
         assert!(context.contains("Freerouting"));
         assert!(context.contains("placement gate"));
         assert!(context.contains("score-first placement"));
-        assert!(context.contains("closure-capable grouping"));
+        assert!(context.contains("manifest-driven managed reconstruction"));
+        assert!(context.contains("Hand-wire local passive networks"));
+        assert!(context.contains("structured schematic acceptance record"));
+        assert!(context.contains("clean ERC alone is insufficient"));
         assert!(context.contains("companion KiCad-native route fallback"));
         assert!(user_prompt_context("Use Freerouting for this board").is_some());
         assert!(user_prompt_context("Check MPN and BOM lifecycle risk").is_some());

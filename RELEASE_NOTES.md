@@ -1,8 +1,27 @@
-# konnect-codex plugin v0.12.1 - companion revision 1
+# konnect-codex plugin v0.12.1-codex.2 - companion revision 2
 
 This release is reviewed specifically for
 [Konnect v0.12.1](https://github.com/mixelpixx/Konnect/releases/tag/v0.12.1) at
 commit `fa62e1ccb9eba359519bf8e3eab53a6cffeee33c`.
+
+## Companion revision 2
+
+- Require functional-block passives to be placed with their parent device and
+  hand-wired with visible local topology instead of connected only by repeated
+  labels.
+- Require a structured schematic acceptance record covering blocks, local
+  wiring, group closure, overlap/page checks, electrical checks, inspected
+  renders, waivers, and verdict.
+- Apply the full schematic readability gate independently in
+  `konnect_design_reviewer`; clean ERC alone cannot approve a visually unusable
+  schematic.
+- Extend prompt-hook and release regression coverage so later refreshes cannot
+  silently drop local-wiring or schematic-review acceptance.
+- Add a managed functional-block relocation protocol for Konnect 0.12.1:
+  inventory the complete closure, preflight expanded bounds, move exact symbols,
+  reconstruct wires/labels/notes/graphics at one offset, clear the source
+  region, and prove electrical and visual equivalence. Native one-object KiCad
+  grouping remains unavailable and is reported distinctly.
 
 ## Upstream v0.12.1 integration
 

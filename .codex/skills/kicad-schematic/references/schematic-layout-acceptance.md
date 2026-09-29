@@ -42,12 +42,16 @@ IC's group.
 
 When Konnect exposes grouping tools that include every closure item, create a
 real schematic group for all of them. In Konnect v0.12.1,
-`group_components` adds component metadata only and `move_region` moves symbols
-only. Neither carries labels, wires, notes, graphics, or no-connect markers.
-Bounded placement remains useful for readability, but it does not satisfy the
-movable-group requirement. Complete and render the best coherent layout, then
-return `INCOMPLETE` for movable grouping until a real closure-capable operation
-has been run and verified. Do not accept metadata or proximity as full grouping.
+`group_components` adds component metadata only. `move_region` moves symbol
+units, carries pin-owned no-connect intent, and reconciles junctions; it does
+not carry wires, labels, notes, or graphics.
+
+For a requested relocation, apply
+[functional-block-relocation.md](functional-block-relocation.md). A verified
+`MANAGED_CLOSURE` may satisfy agent-operated relocation even though it is not a
+native GUI group. A merely bounded layout remains `BOUNDED_LAYOUT_ONLY` and is
+`INCOMPLETE` when the user requested one-object human movement. Do not accept
+metadata or proximity as full grouping.
 
 Grouping is accepted only when a human can identify and move the complete block
 without hunting for scattered support parts. Decoupling capacitors, pull-ups,
@@ -70,6 +74,22 @@ Use direct wires for short local relationships. Use named labels for distant or
 shared signals. Avoid long cross-page wires through unrelated blocks. Sheet pins
 are the preferred interface for hierarchical blocks; global labels should be
 reserved for true global rails or intentional cross-sheet signals.
+
+## Local functional wiring
+
+Local passive networks must visibly explain how their functional block works.
+Hand-wire decoupling branches, pull networks, timing and oscillator components,
+feedback and sense dividers, compensation and filters, bootstrap paths,
+gate/base resistors, and LED/current-limit chains with short orthogonal wires.
+Place their parts beside the parent device or interface and show series paths,
+shunt paths, and junctions directly. Do not replace these local relationships
+with disconnected-looking symbols joined only by repeated net labels.
+
+Labels remain appropriate at block boundaries, on shared or distant signals,
+and on power rails when a long direct wire would make the sheet worse. A local
+wire may carry a useful net label, but the label does not replace the visible
+topology. The rendered block must be understandable without searching the rest
+of the sheet for matching label text.
 
 ## Overlap and page checks
 
@@ -102,6 +122,7 @@ sheet. Inspect the render for:
 - overlap or near-overlap of symbols, fields, labels, and wires;
 - readable reference/value text;
 - clear sheet-pin or label interfaces;
+- visible local passive topology and unambiguous junctions;
 - page-frame fit and title-block clearance.
 
 If readability fails, repair by moving whole blocks or regions first, then local
@@ -114,8 +135,12 @@ Report completion with:
 
 - the block inventory and sheet/region assignment;
 - grouping or tag mechanism used for each block;
+- local passive networks hand-wired in each block and any justified exceptions;
 - group-closure evidence for labels, wires, no-connects, notes, and support
-  parts, or the exact Konnect grouping capability that is missing;
+  parts, including `NATIVE_GROUP`, `MANAGED_CLOSURE`, or
+  `BOUNDED_LAYOUT_ONLY` status;
+- for each executed block move, the relocation manifest and before/after
+  topology, old-region, overlap, and render evidence;
 - overlap, page-boundary, ERC, short, orphan, and connectivity checks run;
 - rendered sheet artifacts or the render/capture method used;
 - unresolved readability waivers and why they are acceptable.
@@ -123,3 +148,10 @@ Report completion with:
 The layout gate is blocked if any component, field, label, wire, note, or
 support part overlaps or is separated in a way a human would have to untangle
 before review, movement, or reuse.
+
+For a complete build or substantial cleanup, the handoff must include a
+schematic acceptance record with `blocks`, `local_wiring`, `group_closure`,
+`overlap_and_page`, `electrical_checks`, `renders_inspected`, `waivers`, and
+`verdict`, plus `relocation` when a block was moved. Omitted or unsupported
+fields produce `INCOMPLETE`; a prose claim that the sheet looks good is not an
+acceptance record.

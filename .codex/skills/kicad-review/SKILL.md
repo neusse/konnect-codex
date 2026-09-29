@@ -50,6 +50,12 @@ Use `get_active_toolsets()` only to diagnose a missing tool on a lazy server.
   simulator, router, or external helper.
 - Read [references/review-methodology.md](references/review-methodology.md) for
   every comprehensive or readiness review.
+- For every complete schematic review, read the schematic skill's
+  [layout acceptance gate](../kicad-schematic/references/schematic-layout-acceptance.md),
+  render every sheet, and verify local passive topology as well as electrical
+  correctness. For a relocated wired block, also read
+  [functional-block-relocation.md](../kicad-schematic/references/functional-block-relocation.md)
+  and verify the closure manifest and before/after equivalence evidence.
 - Use [references/design-checklist.md](references/design-checklist.md) as a
   coverage prompt after requirements and exact component evidence are known;
   unchecked or inapplicable entries must not be reported as passed.
@@ -106,6 +112,18 @@ A net with only one pin connected is almost always a mistake:
 ---
 
 ## Formal Checks
+
+### Schematic readability gate
+
+For a complete schematic or readiness review, call `render_schematic_png` with
+`inline: true` for every sheet and inspect the returned images. Apply the full
+schematic layout acceptance gate. Confirm functional blocks, page fit, fields,
+labels, notes, wires, no-connects, and group closure. Verify that local passive
+networks are visibly hand-wired around their parent device rather than scattered
+and connected only by matching labels. Missing render inspection or acceptance
+record evidence makes the review `INCOMPLETE` even when ERC passes. For every
+moved wired block, reject abandoned source geometry, incomplete reconstruction,
+or an unproved change in pin-to-net topology.
 
 ### ERC — Electrical Rules Check
 
@@ -358,19 +376,22 @@ Present findings grouped by severity with actionable fix suggestions:
 1. `find_shorted_nets()` — catch fatal issues
 2. `run_erc()` — schematic rule check
 3. `get_drc_violations()` — PCB rule check
-4. Report findings
+4. For complete schematic review, render every sheet and apply the readability gate
+5. Report findings
 
 ### Full Review (comprehensive)
 
 1. Establish and record the confirmed design context
 2. Load all review toolsets
 3. `run_design_review()` — full audit suite
-4. Run and reconcile the direct checks required by the contradiction gate
-5. Apply the datasheet trust gate to production-critical components
-6. Check `status`, `coverage`, and `diagnostics`; never approve an incomplete review
-7. Classify findings by severity, confidence, and evidence basis
-8. Compare against the prior evidence package when one exists
-9. Present findings, false-positive dispositions, and review limits
+4. Render every schematic sheet and apply schematic layout acceptance, including
+   visible local passive wiring and the acceptance record
+5. Run and reconcile the direct checks required by the contradiction gate
+6. Apply the datasheet trust gate to production-critical components
+7. Check `status`, `coverage`, and `diagnostics`; never approve an incomplete review
+8. Classify findings by severity, confidence, and evidence basis
+9. Compare against the prior evidence package when one exists
+10. Present findings, false-positive dispositions, and review limits
 
 ### Pre-Manufacturing Review
 
@@ -405,3 +426,5 @@ Present findings grouped by severity with actionable fix suggestions:
     fixed market thresholds without requirements or user confirmation
 16. **Label claim strength** — distinguish direct and datasheet evidence from
     aggregate output, inference, and unverified checks
+17. **Review schematic presentation independently** — ERC does not replace
+    rendered block, local-wiring, grouping, overlap, or page-boundary acceptance
