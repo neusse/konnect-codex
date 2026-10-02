@@ -18,7 +18,7 @@
    suitable for the simulator.
 4. Report the missing models, substitutions, or setup needed.
 
-Konnect v0.12.1 does not itself prove that a circuit simulation ran. Report only
+Konnect v0.13.0 does not itself prove that a circuit simulation ran. Report only
 readiness evidence; never convert model presence into a simulated result.
 
 ## Design review

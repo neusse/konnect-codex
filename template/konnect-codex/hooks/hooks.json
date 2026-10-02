@@ -48,7 +48,7 @@
         ]
       },
       {
-        "matcher": "^mcp__konnect__(delete_component|edit_component|edit_board_footprint_graphic|place_component_array|align_components|duplicate_component|route_trace|route_pad_to_pad|add_via|delete_trace|modify_trace|route_differential_pair|refill_zones|export_specctra_dsn|plan_specctra_ses_import|apply_specctra_ses)$",
+        "matcher": "^mcp__konnect__(delete_component|edit_component|edit_board_footprint_graphic|set_placed_footprint_models|place_component_array|align_components|duplicate_component|route_trace|route_pad_to_pad|add_via|delete_trace|modify_trace|route_differential_pair|refill_zones|export_specctra_dsn|plan_specctra_ses_import|apply_specctra_ses)$",
         "hooks": [
           {
             "type": "command",

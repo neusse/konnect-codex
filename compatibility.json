@@ -1,7 +1,7 @@
 {
-  "konnect_version": "0.12.1",
-  "companion_revision": 2,
-  "konnect_commit": "fa62e1ccb9eba359519bf8e3eab53a6cffeee33c",
-  "guidance_sha256": "77bc76bef5db3e03b873bb34bf7ded8f610a6d2b1670d3ae5682a88bb0693bcf",
+  "konnect_version": "0.13.0",
+  "companion_revision": 1,
+  "konnect_commit": "6bbe3e4f890ba1d37c0e5d5f38ccd03d90958c9e",
+  "guidance_sha256": "bc3461e8bfd63cd253a8f13d330e69e1dbdec0db78a79f2925682dcca698b395",
   "hook_sha256": "2989c8551340436cae0bfc4ee0240991974f2815ca25c40ff620bde563cfce9c"
 }

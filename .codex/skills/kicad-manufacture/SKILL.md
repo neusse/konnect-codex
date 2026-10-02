@@ -76,7 +76,7 @@ get_drc_violations()
 validate_for_manufacturing()
 ```
 
-In Konnect v0.12.1 this aggregate check confirms that Edge.Cuts content and
+In Konnect v0.13.0 this aggregate check confirms that Edge.Cuts content and
 footprints exist, evaluates configured minimum trace width, reports a coarse
 no-tracks heuristic, and incorporates direct KiCad DRC evidence. It does **not**
 prove that the outline is closed, every pad has copper, drills satisfy the
@@ -129,6 +129,13 @@ set contains only the intended production layers, drill counts are plausible,
 and assembly CSV files state or unambiguously use the intended units and origin.
 Exclude mounting holes, fiducials, and other non-placeable footprints from the
 CPL unless the assembly contract explicitly requires them.
+
+For JLCPCB assembly, open the exact target board with IPC enabled before export.
+The package uses a stable live board snapshot and native pad-box midpoints;
+`placement_orientation.geometry` records the observed source. Saved project
+settings and schematic BOM remain separate inputs. Review legacy position
+offsets that compensated for anchors before retaining them. Read
+`docs/JLCPCB_CPL_CORRECTIONS.md` for coordinates, refusals, and migration details.
 
 For `fab_house="jlcpcb"`, keep the default millimetre units and supply the BOM
 fields, labels, and grouping required by the current JLCPCB upload contract.
@@ -212,7 +219,7 @@ by the current uploader rather than normalizing to an old hard-coded spelling.
 estimate_cost(board, quantity?, layers?, fab_house?)
 ```
 
-In Konnect v0.12.1 this is a fixed rough heuristic, not a live quote. Label its
+In Konnect v0.13.0 this is a fixed rough heuristic, not a live quote. Label its
 result as an estimate and obtain a current vendor quote before making a cost or
 supplier decision.
 

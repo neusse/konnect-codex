@@ -50,7 +50,7 @@ page-frame overlap before completion.
 Use available standard KiCad symbols for generic parts before creating local
 symbols. Component-only grouping is not full grouping: labels, wires,
 no-connects, text notes, and support parts must stay in the same movable block
-region for readability. Konnect v0.12.1 has no native complete-group move;
+region for readability. Konnect v0.13.0 has no native complete-group move;
 `move_region` moves symbol units, carries pin-owned no-connect intent, and
 reconciles junctions, but it does not move wires, labels, notes, or graphics.
 For an existing wired block relocation, read and follow
@@ -177,8 +177,10 @@ connect_to_net(schematic, reference, pin_number, net)
 - Name the pin rather than passing `pin_x`/`pin_y`: the stub then points away
   from the symbol body on its own, instead of the label text running back
   across the pin names. Override with `direction` only to fix a layout clash.
-- `batch_connect_to_net` does the same for many pins in one read/write, and
-  places its labels directly on the pin endpoints without stubs.
+- `batch_connect_to_net` does the same for many pins in one read/write. By
+  default it places its labels directly on the pin endpoints without stubs;
+  pass `stub_length`, `direction`, and `label_type` for `connect_to_net`'s
+  layout on every pin in the call.
 - Placing a label by hand with `add_schematic_net_label` instead? Take its
   rotation from `orientation_degrees` in `get_schematic_pin_locations`, or the
   text reads back across the symbol's pin names.
@@ -194,9 +196,6 @@ connect_to_net(schematic, reference, pin_number, net)
   an electrically valid direct label solely to clear an orphan finding. Confirm
   it with ERC, exported connectivity or netlist evidence, and the short detector;
   record a contradictory orphan result as a verifier limitation.
-- Konnect v0.12.1 connectivity queries are not bus-aware (#328). On a bus sheet,
-  treat floating/orphan results at bus entries and bus labels as candidates and
-  use KiCad ERC plus exported connectivity as authority before changing wiring.
 
 ### add_power_symbol
 
@@ -209,6 +208,9 @@ add_power_symbol(schematic, power_net, x, y, rotation?)
 - Takes coordinates, not a reference and pin number. Place it on the pin
   endpoint (from `get_schematic_pin_locations`) — a power symbol carries its
   pin at its own origin, so the two coinciding is the connection.
+- The position is snapped to the 1.27mm grid, like every other placer, and the
+  response reports where the symbol landed. Pin endpoints of placed components
+  are already on that grid, so a pin endpoint is kept as given.
 - `power_net` is loaded as `power:<power_net>`, so it must name a symbol in
   KiCad's power library: `+3V3` and `+12V`, never `3V3` or `12V`. A miss is an
   error and nothing is placed.
@@ -243,7 +245,13 @@ Connect multiple pins to the same net in one call. Ideal for:
 
 ### batch_edit_schematic_components
 
-Bulk-modify component properties (values, footprints, fields) across multiple components.
+Bulk-modify component properties (values, footprints, fields) across multiple
+components. The default remains update-only. Set `create_missing: true` to
+create a missing custom field on every placed unit of each named component.
+`Reference`, `Value`, `Footprint`, and `Datasheet` are never created through
+this option; use the dedicated arguments or workflows for built-in fields.
+Inspect each result's `updated_units` and `created_units` counts because a
+partially populated multi-unit component can report both.
 
 ### When to Use Batch vs Individual
 
@@ -360,9 +368,9 @@ connectivity before changing geometry.
     declaring a generated or rearranged schematic human-usable
 14. **Use real libraries first** — standard KiCad symbols beat local placeholder
     symbols for generic parts, connectors, and power symbols
-15. **Do not call `move_connected` in v0.12.1** — it still refuses because wire
-    carrying is not implemented (#315). Ordinary component moves now reconcile
-    affected junction dots, but they do not carry attached wires. Use a plain
+15. **Do not call `move_connected`** — Konnect intentionally refuses it because
+    carrying attached wires is not implemented (#315). Ordinary component
+    moves reconcile affected junction dots but do not carry wires. Use a plain
     move, explicitly repair affected wires, then run ERC and connectivity
     checks.
 16. **Require full group closure** — a block is not movable until its labels,

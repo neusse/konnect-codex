@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "supported_konnect_version": "0.12.1",
-  "source": "Konnect v0.12.1 tool-directory.md and registered tool implementations at commit fa62e1ccb9eba359519bf8e3eab53a6cffeee33c",
+  "supported_konnect_version": "0.13.0",
+  "source": "Konnect v0.13.0 tool-directory.md and registered tool implementations at commit 6bbe3e4f890ba1d37c0e5d5f38ccd03d90958c9e",
   "tools": [
     {"name": "place_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
     {"name": "move_component", "hook": "pre-pcb-fallback", "mode": "live-or-closed-fallback"},
@@ -22,6 +22,7 @@
     {"name": "delete_component", "hook": "pre-pcb-live", "mode": "live-only"},
     {"name": "edit_component", "hook": "pre-pcb-live", "mode": "live-only"},
     {"name": "edit_board_footprint_graphic", "hook": "pre-pcb-live", "mode": "live-only"},
+    {"name": "set_placed_footprint_models", "hook": "pre-pcb-live", "mode": "live-only"},
     {"name": "place_component_array", "hook": "pre-pcb-live", "mode": "live-only"},
     {"name": "align_components", "hook": "pre-pcb-live", "mode": "live-only"},
     {"name": "duplicate_component", "hook": "pre-pcb-live", "mode": "live-only"},

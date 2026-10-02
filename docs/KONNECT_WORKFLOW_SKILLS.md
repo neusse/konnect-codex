@@ -303,7 +303,7 @@ a source and observation date. Distributor inventory does not prove active
 manufacturer lifecycle. A family datasheet or wrong package does not qualify
 an exact part.
 
-Current limitation: Konnect 0.12.1 does not expose a dedicated mutation for
+Current limitation: Konnect 0.13.0 does not expose a dedicated mutation for
 KiCad's native DNP attribute. A custom text field named `DNP` must not be
 treated as equivalent. When native DNP state must change, the workflow reports
 the smallest manual KiCad step and verifies the resulting export.
@@ -333,11 +333,13 @@ The ordered PCB path is:
 13. save and re-query; and
 14. close the process-lifecycle gate.
 
-Placement planners are deterministic starting points, not automatic approval.
-The workflow records a pre-score, reviews dry-run movement and the `held` set,
-applies only the reviewed plan, independently re-scores, and visually inspects
-pads, holes, courtyards, edge clearances, connectors, test points, silkscreen,
-and model coverage. Blocking overlaps prevent routing regardless of score.
+Placement planners are diagnostic starting points, not mutation authority.
+The workflow recovers intent, establishes the held set, applies small explicit
+move batches, reads every requested reference back from the exact live board,
+then independently re-scores, runs DRC, and visually inspects pads, holes,
+courtyards, edge clearances, connectors, test points, silkscreen, and model
+coverage. Blocking overlaps or unavailable source/containment evidence prevent
+routing regardless of score.
 
 Freerouting is the default for a complete board because it provides global
 obstacle avoidance, rip-up/retry, and congestion management. Segment tools are
@@ -345,7 +347,8 @@ for deliberate isolated work or a small understood repair, not a substitute
 whole-board autorouter.
 
 The route workflow first tests Konnect's revision-bound native export on the
-actual board. When the v0.12.1 profile rejects common legal KiCad geometry, the
+actual board. When the v0.13.0 profile rejects the board or cannot prove its
+geometry support, the
 companion offline bridge saves the checkpoint, requires PCB Editor to be
 closed, exports with KiCad's own DSN API, runs Freerouting headlessly, imports
 SES, and writes a separate routed board. A standalone JAR without working DSN
@@ -385,7 +388,7 @@ locks, autosaves, backups, and timestamps before stopping a proven stale
 session or reopening a recovered design.
 
 Simulation readiness is intentionally bounded. It identifies models, sources,
-parameters, pin mappings, observables, and unsupported devices. Konnect 0.12.1
+parameters, pin mappings, observables, and unsupported devices. Konnect 0.13.0
 does not prove that a simulation ran; model presence cannot be reported as a
 simulation result.
 
@@ -516,7 +519,7 @@ does not mutate the design or start every agent.
 | Class | Examples | Required state |
 |---|---|---|
 | Live or safe closed-board fallback | placement, movement, outline, zone creation, selected graphics deletion | Use live IPC when present; documented fallback only when ownership is safe |
-| Closed-board | footprint flip and predefined editor sizes | PCB Editor must not own the board |
+| Closed-board | predefined editor sizes | PCB Editor must not own the board |
 | Dry-run/apply | schematic transfer, library refresh, legacy repair | Review a plan and apply its exact revision under ownership rules |
 | Live-only | trace mutation, vias, routing support, zone refill | Exactly one responsive live PCB Editor owns the target |
 
@@ -566,9 +569,12 @@ missing requested artifact, or unresolved process ownership.
 
 ## Current known boundaries
 
-- The companion is reviewed for Konnect 0.12.1. A new Konnect release requires
+- The companion is reviewed for Konnect 0.13.0. A new Konnect release requires
   a compatibility and guidance-delta review.
-- Konnect 0.12.1 has no dedicated native-DNP mutation.
+- Konnect's once-per-version native guidance notice covers Konnect-installed
+  assets. `konnect-codex audit`, sync ownership, and doctor cover this plugin's
+  separately versioned Codex assets; neither silently overwrites user edits.
+- Konnect 0.13.0 has no dedicated native-DNP mutation.
 - The companion's offline DSN/SES bridge remains necessary until an equivalent
   released Konnect path passes the route benchmark.
 - A standalone Freerouting JAR is insufficient without DSN export and SES import.

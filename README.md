@@ -11,7 +11,7 @@
   <a href="https://github.com/neusse/konnect-codex/blob/main/LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-7c3aed.svg"></a>
   <img alt="Rust 1.85 or newer" src="https://img.shields.io/badge/Rust-1.85%2B-f97316.svg">
   <img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-10a37f.svg">
-  <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.12.1" src="https://img.shields.io/badge/Konnect-0.12.1-22d3ee.svg"></a>
+  <a href="https://github.com/mixelpixx/Konnect"><img alt="Reviewed for Konnect 0.13.0" src="https://img.shields.io/badge/Konnect-0.13.0-22d3ee.svg"></a>
   <a href="https://github.com/neusse/konnect-codex/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/neusse/konnect-codex"></a>
   <a href="https://discord.gg/NVp9RGMmDu"><img alt="Join the Konnect Discord" src="https://img.shields.io/badge/Discord-join%20the%20community-5865F2.svg?logo=discord&logoColor=white"></a>
 </p>
@@ -23,7 +23,7 @@ separate from Konnect so each release can preserve a known-good Codex workflow
 without changing Konnect itself.
 
 Release numbers identify the Konnect release reviewed by the plugin:
-`konnect-codex v0.12.1` supports `Konnect v0.12.1`. A later `-codex.N`
+`konnect-codex v0.13.0` supports `Konnect v0.13.0`. A later `-codex.N`
 suffix identifies a companion-only revision for that unchanged upstream release.
 The exact reviewed upstream
 commit and guidance fingerprints are recorded in
@@ -97,10 +97,10 @@ release for the current operating system, verify it, install the plugin, and
 run its health check for you:
 
 ```text
-Install the konnect-codex v0.12.1-codex.2 companion plugin from
-https://github.com/neusse/konnect-codex/releases/tag/v0.12.1-codex.2 for this operating
+Install the konnect-codex v0.13.0-codex.1 companion plugin from
+https://github.com/neusse/konnect-codex/releases/tag/v0.13.0-codex.1 for this operating
 system. First locate the Konnect executable and run `konnect --version`. Stop
-without changing anything if Konnect is missing or is not exactly v0.12.1.
+without changing anything if Konnect is missing or is not exactly v0.13.0.
 Download SHA256SUMS.txt and verify the plugin archive before extracting it.
 Install the konnect-codex executable in a user-writable location on PATH. Do
 not run `konnect init --client codex`. If Konnect's native Codex guidance is
@@ -126,7 +126,7 @@ Then download the archive for your operating system from
 `konnect-codex` on `PATH`, and run:
 
 ```powershell
-konnect --version            # must report: konnect 0.12.1
+konnect --version            # must report: konnect 0.13.0
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -134,7 +134,7 @@ konnect-codex doctor
 You can also install the version-matched source release with Cargo:
 
 ```powershell
-cargo install --git https://github.com/neusse/konnect-codex --tag v0.12.1-codex.2
+cargo install --git https://github.com/neusse/konnect-codex --tag v0.13.0-codex.1
 konnect-codex sync
 konnect-codex doctor
 ```
@@ -160,7 +160,7 @@ it runs them.
 ```powershell
 konnect-codex disable       # remove active plugin and agents, retain generated state
 konnect-codex enable        # reactivate the retained integration
-konnect-codex audit         # verify installed Claude-side assets still match this release
+konnect-codex audit         # verify exact Konnect source/assets match this release
 konnect-codex native-status # compare native Konnect coverage with the plugin
 konnect-codex sessions      # list active companion -> Konnect MCP process pairs
 konnect-codex stop-sessions # retire those pairs before an upgrade or after a stale task
@@ -172,8 +172,9 @@ konnect-codex uninstall     # remove only plugin-owned files and marketplace ent
 For a complete-board route, first test Konnect's native MCP sequence on the
 actual board: `check_freerouting`, `export_specctra_dsn`,
 `route_specctra_dsn`, `plan_specctra_ses_import`, then
-`apply_specctra_ses`. Konnect v0.12.1's Rust exporter still rejects common legal
-geometry including roundrect and unnumbered NPTH pads. For those boards, close
+`apply_specctra_ses`. Konnect v0.13.0 still lacks release evidence for the full
+representative roundrect and unnumbered-NPTH route benchmark. If native preflight
+rejects the board, close
 PCB Editor and use `konnect-codex freerouting route --board <path>`, which uses
 KiCad's own DSN/SES APIs and writes a separate routed board. Both paths require
 inventory, unrouted, short, visual, physics, and direct DRC acceptance.
@@ -182,7 +183,7 @@ inventory, unrouted, short, visual, physics, and direct DRC acceptance.
 edited after installation, it stops and preserves the file. `--force` is
 available only for intentionally discarding those plugin-owned edits.
 
-Konnect v0.12.1 keeps MCP startup non-mutating; native guidance is installed
+Konnect v0.13.0 keeps MCP startup non-mutating; native guidance is installed
 only by explicit `konnect init`. The companion therefore no longer creates or
 repairs `~/.konnect/.installed-codex`. The first real v0.11 sync removes the
 legacy suppression guard and removes that marker only when an older companion
