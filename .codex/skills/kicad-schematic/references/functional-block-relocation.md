@@ -1,6 +1,6 @@
 # Functional-block relocation
 
-Konnect 0.12.1 does not provide native schematic grouping or editor-style
+Konnect 0.13.0 does not provide native schematic grouping or editor-style
 connected dragging. Treat block movement as a managed reconstruction, not as a
 symbol move with an optimistic success report.
 
@@ -44,7 +44,7 @@ owned by one block merely because it is rendered nearby.
 2. Move the exact symbol-reference set by the same translation vector. Prefer
    an exact batch move. Use `move_region` only after proving its bounding box
    selects exactly the manifest's symbols.
-3. Konnect 0.12.1 placement operations reconcile junctions and carry
+3. Konnect 0.13.0 placement operations reconcile junctions and carry
    pin-owned no-connect intent. Verify their reported counts and read back the
    new pin locations; do not recreate duplicate no-connect markers.
 4. Recreate every owned closure item at the translated coordinates. Rebuild

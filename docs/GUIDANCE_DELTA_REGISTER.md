@@ -14,13 +14,13 @@ fail if either side loses an entry.
 
 ## Release review state
 
-- Supported Konnect: `0.12.1`, commit
-  `fa62e1ccb9eba359519bf8e3eab53a6cffeee33c`
-- Companion release: `v0.12.1-codex.2` (`companion_revision = 2`)
-- Last full guidance review: 2026-09-29
-- Upstream guidance issues reviewed: #356, #357, #358 and the v0.12.1
-  guidance delta
-- Upstream issue #358 correction: Konnect v0.12.1 still registers
+- Supported Konnect: `0.13.0`, commit
+  `6bbe3e4f890ba1d37c0e5d5f38ccd03d90958c9e`
+- Companion release: `v0.13.0-codex.1` (`companion_revision = 1`)
+- Last full guidance review: 2026-10-02
+- Upstream guidance issues reviewed: #315, #328, #594, #667, #728 and the
+  v0.13.0 guidance delta
+- Upstream issue #358 correction remains applicable: Konnect v0.13.0 registers
   `refill_zones` under `pcb_export`; the companion therefore keeps that real
   tool in the live-only hook class. The issue's broader structured-output and
   runtime-classification findings still apply.
@@ -38,7 +38,7 @@ fail if either side loses an entry.
 | `doctor-agent-reporting` | Report companion and native agents separately | Doctor tests |
 | `pcb-builder-delegation` | Give transfer/layout/routing to one PCB owner | Router/agent assertions |
 | `freerouting-first-routing` | Use Freerouting for complete boards; local segments only for repairs | PCB skill/reference/agent assertions and route benchmark |
-| `offline-freerouting-bridge` | Use KiCad-native DSN/SES as a non-overwriting fallback when the v0.12.1 native profile rejects common legal board geometry | CLI tests, actual-board export/route benchmark, and post-route acceptance |
+| `offline-freerouting-bridge` | Use KiCad-native DSN/SES as a non-overwriting fallback until v0.13 native routing passes the representative roundrect/unnumbered-NPTH benchmark | CLI tests, actual-board export/route benchmark, and post-route acceptance |
 | `pcb-live-state-and-placement-gates` | Stop on IPC ownership loss and require visible placement acceptance | PCB/reviewer assertions and preflight tests |
 | `custom-part-physical-pin-acceptance` | Require view-aware datasheet lead-to-pad proof | Library reference/agent assertions |
 | `visual-placement-checkpoint` | Require a reviewed 2D placement artifact before routing | PCB reference/agent assertions |
@@ -48,8 +48,8 @@ fail if either side loses an entry.
 | `legacy-sourcing-and-review-evidence` | Track lifecycle/socket/manual-assembly risk and raw evidence packages | Manufacture/review references |
 | `evidence-grounded-review-methodology` | Record context, evidence basis, confidence, limits, and review delta | Review skill/reference/agent assertions |
 | `bom-lifecycle-workflow` | Qualify MPN/datasheet/alternate/lifecycle data and verify BOM export | BOM/router assertions |
-| `v0.10-feedback-acceptance-integration` | Convert placement scores, v0.11 held sets, and visual baselines into independent acceptance gates | Skill/agent assertions and placement benchmark |
-| `v0.9-known-safety-gates` | Preserve the remaining #315 and #328 workarounds | Release-specific assertions; #326 and #331 retired in v0.11 |
+| `v0.10-feedback-acceptance-integration` | Add Codex delegation, visual inspection, and independent acceptance around v0.13's native bounded placement loop | Skill/agent assertions and placement benchmark |
+| `v0.9-known-safety-gates` | Preserve only the #315 explicit-move/wire-repair boundary | Release-specific assertions; #328 retired in v0.13 |
 | `reference-reachability-and-evidence-contracts` | Link every reference, align agents with skills, correct manufacturing claims, and forbid invented evidence | Reachability and evidence-phrase tests; upstream #357 |
 | `codex-hook-contract` | Emit structured Codex context and classify each matched PCB tool by runtime ownership contract | Hook-policy/matcher/output tests; upstream #358 findings adapted for Codex |
 | `guidance-governance-register` | Require this living register and stable guidance standards on every release | Bidirectional policy/register test |
@@ -57,6 +57,27 @@ fail if either side loses an entry.
 | `owned-process-lifecycle-cleanup` | Baseline pre-existing versus task-owned applications, prevent duplicate restarts, and close or terminate only verified task-owned editors and helpers before completion | Shared lifecycle reference, PCB/Freerouting/recovery agent assertions, and orphan-process regression scenarios |
 | `pcb-layout-physics-acceptance` | Require context-calibrated evidence for return planes, critical loops, thermal/current paths, RF/edge/stitching constraints, via process, and DFT access beyond DRC | PCB reference, builder, reviewer, release, and routed-board benchmarks |
 | `benchmark-ledger-completeness` | Keep a gate-by-gate project-local record of failures, recovery, artifacts, cleanup, and terminal outcome | Workflow assertion and completed benchmark artifact inventory |
+
+## v0.13.0 review decisions
+
+- **Retire** the #328 bus-connectivity workaround. Konnect v0.13.0 makes its
+  connectivity analysis bus-aware, so Codex no longer distrusts bus findings by
+  default.
+- **Revise** #315 into a stable architecture boundary: `move_connected` remains
+  refused, so explicit movement, wire repair or managed reconstruction, ERC,
+  and connectivity proof remain required.
+- **Revise** placement guidance to consume the native bounded explicit-move
+  loop, held-set rules, live readback, decoupling associations, and blocked
+  diagnostic planners. Retain Codex delegation, render inspection, and
+  independent acceptance rather than duplicating the native planner contract.
+- **Revise** manufacturing guidance to consume native live-snapshot pad-box
+  midpoints and stop carrying legacy JLCPCB anchor offsets automatically.
+- **Revise** PCB physics to use native read-only stackup evidence and add the
+  live-only placed-footprint model mutator to the Codex hook contract.
+- **Retain** the offline Freerouting bridge pending the representative route
+  benchmark; v0.13.0 does not provide sufficient release evidence to retire it.
+- **Retain** all other active Codex-only workflow, evidence, lifecycle, agent,
+  BOM, review, and bring-up controls.
 
 ## v0.12.1 review decisions
 
@@ -106,6 +127,7 @@ fail if either side loses an entry.
 |---|---|---|
 | `native-auto-install-suppression` | Konnect v0.11.0 startup is non-mutating and guidance installation requires explicit `konnect init` (#242) | A v0.11 sync removes the companion's legacy guard and only a marker it originally created. |
 | `verified-symbol-and-pin-guidance` | Konnect v0.11.0 corrected unsafe universal pin rules, known invalid library IDs, and LED polarity, with asset tests (#356) | The corrected text remains in the Codex translation; it is no longer counted as a companion-only delta. |
+| `bus-connectivity-workaround` | Konnect v0.13.0 makes connectivity analysis bus-aware and closes #328 | Bus findings still require normal ERC/export corroboration, but no release-specific distrust rule remains. |
 
 ## Update procedure
 

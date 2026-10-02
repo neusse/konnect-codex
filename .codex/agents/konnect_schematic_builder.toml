@@ -32,7 +32,7 @@ procedure in bundled `kicad-schematic/references/workflows.md`.
 4. Place functional blocks on the schematic grid with explicit references,
    values, footprints, and required support components. Group or tag each block's
    symbols, local labels, local wires, no-connect markers, text notes, and
-   boundary graphics when the tools support it. In Konnect v0.12.1,
+   boundary graphics when the tools support it. In Konnect v0.13.0,
    `group_components` is component-only metadata. `move_region` moves symbol
    units, carries pin-owned no-connect intent, and reconciles junctions, but it
    does not carry wires, labels, notes, or graphics. Keep closure items in the
@@ -53,11 +53,11 @@ procedure in bundled `kicad-schematic/references/workflows.md`.
    after automatic stub placement; a clean result completes that wiring step.
    Local labels remain separate per repeated-sheet instance; global labels and
    power symbols join every instance. Choose the scope deliberately.
-   On bus sheets, treat Konnect v0.12.1 connectivity findings at bus
-   entries as incomplete and use KiCad ERC plus exported connectivity before
-   changing geometry. Do not call `move_connected`; it remains unavailable
-   under #315. Use a plain move, repair attached wires explicitly, and rerun
-   ERC; v0.12.1 reconciles affected junction dots for ordinary and batch placement.
+   Bus-entry and bus-label connectivity is supported in v0.13.0; still reconcile
+   it with KiCad ERC and exported connectivity before changing known-good
+   geometry. Do not call `move_connected`; it remains unavailable under #315.
+   Use a plain move, repair attached wires explicitly, and rerun ERC; ordinary
+   and batch placement reconcile affected junction dots.
 7. Run `annotate_schematic` as a dry run, then apply and inspect `outcome` and
    `unresolved`. A `partial` outcome remains incomplete; use
    `resolve_duplicates: true` only for separate parts and correct ambiguous

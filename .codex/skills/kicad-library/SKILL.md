@@ -53,7 +53,7 @@ successful apply is one undo entry; a stale plan, unresolved library, removed
 connected pad, or unsupported content is a non-mutating conflict for the full
 selection.
 
-Konnect v0.12.1 preserves official KiCad `fp_text user` during library refresh,
+Konnect v0.13.0 preserves official KiCad `fp_text user` during library refresh,
 closing the common #331 rejection. Do not remove user text to force a refresh;
 preserve the placed instance and report any remaining exact
 conflict until the server supports lossless refresh.
@@ -295,6 +295,8 @@ set_footprint_metadata(
   implicitly adding `exclude_from_bom`.
 - Use `edit_footprint_pad` with `new_number` and optional `match_all=true` to
   renumber one or every matching direct-child pad atomically.
+- Use `edit_footprint_pad` with `zone_connect` (`solid`, `thermal`, `none`) to
+  override how zones connect to one pad, or `inherited` to remove the override.
 
 ### Existing Footprint 3D Models
 

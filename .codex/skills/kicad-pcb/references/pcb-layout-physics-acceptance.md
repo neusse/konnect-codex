@@ -13,6 +13,11 @@ layers, interfaces, operating limits, and the evidence used. A generic rule of
 thumb is not evidence when a stackup, component layout example, interface
 specification, current calculation, or assembly process is available.
 
+Start with `get_board_stackup` against the exact target board. Record its
+reported source and construction as direct read-only evidence. The tool does
+not mutate layer count or stackup; an unavailable, incomplete, or saved-only
+result remains an explicit evidence gap rather than permission to infer layers.
+
 ## Acceptance checks
 
 1. **Reference-plane continuity** - Inspect every fast-edge, clock, RF, and

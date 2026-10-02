@@ -41,7 +41,7 @@ of the parent device's group. Pin labels placed on a large IC are part of that
 IC's group.
 
 When Konnect exposes grouping tools that include every closure item, create a
-real schematic group for all of them. In Konnect v0.12.1,
+real schematic group for all of them. In Konnect v0.13.0,
 `group_components` adds component metadata only. `move_region` moves symbol
 units, carries pin-owned no-connect intent, and reconciles junctions; it does
 not carry wires, labels, notes, or graphics.

@@ -1,7 +1,7 @@
 # Whole-board Freerouting workflow
 
 Use this branch for a complete board or interacting nets that require global
-obstacle avoidance, rip-up/retry, and congestion management. Konnect v0.12.1's
+obstacle avoidance, rip-up/retry, and congestion management. Konnect v0.13.0's
 native Specctra path is preferred when it accepts the actual board. The
 companion KiCad-native bridge is the compatibility fallback for ordinary KiCad
 geometry outside that first native profile.
@@ -44,11 +44,11 @@ value keeps the gate closed.
    the smallest manual option. A whole board is not rerouted with local segment
    tools.
 
-Konnect v0.12.1's Rust exporter has an intentionally narrow first profile. It
+Konnect v0.13.0's Rust exporter retains an intentionally narrow first profile. It
 rejects common constructs including unnumbered NPTH pads and `roundrect` pads,
 as well as unsupported layer counts, zones/rule areas, custom DRC rules, arcs,
 and unlocked existing routing. `native_bridge_mode` does not widen this profile
-in v0.12.1 because the restricted Rust baseline is constructed before the
+in v0.13.0 because the restricted Rust baseline is constructed before the
 optional ActionPlugin export is selected. Treat these as compatibility results,
 not defects to remove from the board merely to satisfy the exporter.
 
@@ -84,7 +84,7 @@ local violations.
 Apply the shared
 [process-lifecycle gate](../../kicad-workflows/references/process-lifecycle.md)
 to PCB Editor, Konnect, Freerouting, Java, and bridge/helper processes. A
-Konnect server started before KiCad may retain an unresolved v0.12.1 IPC
+Konnect server started before KiCad may retain an unresolved v0.13.0 IPC
 endpoint. If a live query still cannot see a newly opened editor, preserve the
 current task server, report the startup-order limitation, and restart only a
 verified task-owned secondary server or task from the saved checkpoint.
